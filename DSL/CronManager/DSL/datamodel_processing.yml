@@ -1,0 +1,5 @@
+datamodel_deletion:
+  trigger: off
+  type: exec
+  command: "../app/scripts/datamodel_deletion_exec.sh"
+  allowedEnvs: ["cookie","modelId"]

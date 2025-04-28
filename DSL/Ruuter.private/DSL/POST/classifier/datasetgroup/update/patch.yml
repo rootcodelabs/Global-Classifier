@@ -1,0 +1,118 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'PATCH'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: dgId
+        type: number
+        description: "Body field 'dgId'"
+      - field: updateDataPayload
+        type: json
+        description: "Body field 'updateDataPayload'"
+    headers:
+      - field: cookie
+        type: string
+        description: "Cookie field"
+
+extract_request_data:
+  assign:
+    dg_id: ${incoming.body.dgId}
+    group_key: ${incoming.body.groupKey}
+    update_data_payload: ${incoming.body.updateDataPayload}
+  next: get_dataset_group
+
+get_dataset_group:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-dataset-group-key-by-id"
+    body:
+      id: ${dg_id}
+  result: res
+  next: check_status
+
+check_status:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: check_data_exist
+  next: return_not_found
+
+check_data_exist:
+  switch:
+    - condition: ${res.response.body.length>0}
+      next: assign_group_key
+  next: return_not_found
+
+assign_group_key:
+  assign:
+    group_key: ${res.response.body[0].groupKey}
+    major_version: ${res.response.body[0].majorVersion}
+    minor_version: ${res.response.body[0].minorVersion}
+  next: update_old_dataset_group
+
+update_old_dataset_group:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/update-patch-version-dataset-group"
+    body:
+      id: ${dg_id}
+      last_updated_timestamp: ${new Date().toISOString()}
+      group_key: ${group_key}
+  result: res
+  next: check_old_dataset_status
+
+check_old_dataset_status:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: execute_cron_manager
+  next: assign_fail_response
+
+execute_cron_manager:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_CRON_MANAGER]/execute/data_validation/data_validation"
+    query:
+      cookie: ${incoming.headers.cookie}
+      dgId: ${dg_id}
+      newDgId: 0
+      updateType: 'patch'
+      savedFilePath: 'None'
+      patchPayload: ${encodeURIComponent(JSON.stringify(update_data_payload))}
+  result: res
+  next: assign_success_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      dgId: '${dg_id}',
+      operationSuccessful: true,
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      dgId: '${dg_id}',
+      operationSuccessful: false,
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_not_found:
+  status: 400
+  return: "Data Group Not Found"
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end
+

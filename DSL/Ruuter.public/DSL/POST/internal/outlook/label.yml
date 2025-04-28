@@ -1,0 +1,123 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'Label'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: mailId
+        type: string
+        description: "Body field 'mailId'"
+      - field: folderId
+        type: string
+        description: "Body field 'folderId'"
+
+extract_request_data:
+  assign:
+    mail_id: ${incoming.body.mailId}
+    folder_id: ${incoming.body.folderId}
+  next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${mail_id !== null || folder_id !== null}
+      next: get_token_info
+  next: return_incorrect_request
+
+get_token_info:
+  call: http.get
+  args:
+    url: "[#CLASSIFIER_RUUTER_PUBLIC_INTERNAL]/internal/outlook/token"
+  result: res
+  next: check_access_token
+
+check_access_token:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: assign_access_token
+  next: return_access_token_not_found
+
+assign_access_token:
+  assign:
+    access_token: ${res.response.body.response.access_token}
+  next: get_email_exist
+
+get_email_exist:
+  call: http.get
+  args:
+    url: "https://graph.microsoft.com/v1.0/me/messages/${mail_id}"
+    headers:
+      Authorization: ${'Bearer ' + access_token}
+  result: res
+  next: check_email_status
+
+check_email_status:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: get_folder_exist
+  next: return_email_not_found
+
+get_folder_exist:
+  call: http.get
+  args:
+    url: "https://graph.microsoft.com/v1.0/me/mailFolders/${folder_id}"
+    headers:
+      Authorization: ${'Bearer ' + access_token}
+  result: res
+  next: check_folder_status
+
+check_folder_status:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: update_mail_folder
+  next: return_folder_not_found
+
+update_mail_folder:
+  call: http.post
+  args:
+    url: "https://graph.microsoft.com/v1.0/me/messages/${mail_id}/move"
+    headers:
+      Authorization: ${'Bearer ' + access_token}
+    body:
+      destinationId: ${folder_id}
+  result: res_mail
+  next: check_status
+
+check_status:
+  switch:
+    - condition: ${200 <= res_mail.response.statusCodeValue && res_mail.response.statusCodeValue < 300}
+      next: return_ok
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: "Outlook Email Destination Updated"
+  next: end
+
+return_folder_not_found:
+  status: 404
+  return: 'Folder Not Found'
+  next: end
+
+return_email_not_found:
+  status: 404
+  return: 'Email Not Found'
+  next: end
+
+return_bad_request:
+  status: 400
+  return: "Bad Request"
+  next: end
+
+return_incorrect_request:
+  status: 400
+  return: 'missing labels'
+  next: end
+
+return_access_token_not_found:
+  status: 404
+  return: "Access Token Not Found"
+  next: end

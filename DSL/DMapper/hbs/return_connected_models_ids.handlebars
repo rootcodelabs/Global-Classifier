@@ -1,0 +1,5 @@
+{{#each data}}
+  {{#if @first}}[{{/if}}
+  {{~modelId}}{{#unless @last}}, {{/unless~}}
+  {{#if @last}}]{{/if}}
+{{/each}}

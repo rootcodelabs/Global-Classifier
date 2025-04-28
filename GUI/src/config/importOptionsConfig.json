@@ -1,0 +1,5 @@
+[
+    { "label": "Import to add", "value": "add" },
+    { "label": "Import to delete", "value": "delete" }
+
+  ]
