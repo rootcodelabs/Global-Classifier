@@ -17,21 +17,19 @@ logger = logging.getLogger("AgencyParser")
 class AgencyDataParser:
     """
     Parser for chunked agency data from JSON files.
-    Processes multiple JSON files and outputs a single concatenated text file.
+    Processes each JSON file and outputs a corresponding text file.
     """
     
-    def __init__(self, input_dir: str, output_dir: str, output_filename: str = "concatenated_agencies.txt"):
+    def __init__(self, input_dir: str, output_dir: str):
         """
         Initialize the parser with input and output directories.
         
         Args:
             input_dir: Directory containing JSON files with chunked agency data
-            output_dir: Directory where the output text file will be saved
-            output_filename: Name of the output file
+            output_dir: Directory where the output text files will be saved
         """
         self.input_dir = input_dir
         self.output_dir = output_dir
-        self.output_filename = output_filename
         
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -60,6 +58,32 @@ class AgencyDataParser:
             logger.error(f"Error parsing file {file_path}: {str(e)}")
         
         return None
+    
+    def _clean_content(self, content: str) -> str:
+        """
+        Clean the content by:
+        1. Removing lines that have only one character
+        2. Replacing multiple consecutive empty lines with a single empty line
+        
+        Args:
+            content: The raw content string
+            
+        Returns:
+            Cleaned content string
+        """
+        # Split content into lines
+        lines = content.split('\n')
+        
+        # Filter out lines with only one character
+        filtered_lines = [line for line in lines if len(line.strip()) > 1 or not line.strip()]
+        
+        joined_content = '\n'.join(filtered_lines)
+        
+        # Replace multiple consecutive empty lines with a single empty line
+        import re
+        cleaned_content = re.sub(r'\n\s*\n\s*\n+', '\n\n', joined_content)
+        
+        return cleaned_content.strip()
     
     def _extract_agency_info(self, data: List[Dict[str, Any]], file_name: str) -> Dict[str, Any]:
         """
@@ -106,7 +130,10 @@ class AgencyDataParser:
                 content_text += item["content"]["chunk"] + "\n"
                 chunk_count += 1
         
-        agency_data["content"] = content_text.strip()
+        # Clean the content
+        cleaned_content = self._clean_content(content_text)
+        
+        agency_data["content"] = cleaned_content
         agency_data["metadata"]["chunk_count"] = chunk_count
         
         logger.debug(f"Created standardized internal representation with {chunk_count} chunks for {file_name}")
@@ -136,43 +163,38 @@ class AgencyDataParser:
             logger.error(f"Error extracting agency info from {file_name}: {str(e)}")
             return None
     
-    def append_to_output_file(self, agency_data: Dict[str, Any]) -> bool:
+    def save_to_text_file(self, agency_data: Dict[str, Any], file_name: str) -> bool:
         """
-        Append agency data to the concatenated output file.
+        Save agency data to an individual text file.
         
         Args:
             agency_data: Structured agency data (in standardized internal representation)
+            file_name: Name of the JSON file (used to derive output file name)
             
         Returns:
             True if successful, False otherwise
         """
         try:
-            output_path = os.path.join(self.output_dir, self.output_filename)
+            # Generate output file name (replacing extension)
+            output_file_name = os.path.splitext(file_name)[0] + ".txt"
+            output_path = os.path.join(self.output_dir, output_file_name)
             
-            # Determine if we're appending or creating a new file
-            mode = 'a' if os.path.exists(output_path) else 'w'
-            
-            with open(output_path, mode, encoding='utf-8') as file:
-               # TODO: do we need a separator?
-                #if mode == 'a':
-                #    file.write("\n\n" + "="*80 + "\n\n")
-                
+            with open(output_path, 'w', encoding='utf-8') as file:
                 # Write title
                 file.write(f"# {agency_data['title']}\n\n")
                 
                 # Write content
                 file.write(agency_data['content'])
-        
             
-            logger.info(f"Successfully appended agency data to {output_path}")
+            logger.info(f"Successfully saved agency data to {output_path}")
             return True
         except Exception as e:
-            logger.error(f"Error appending agency data: {str(e)}")
+            logger.error(f"Error saving agency data: {str(e)}")
             return False
     
     def process_directory(self) -> int:
         """
-        Process all JSON files in the input directory and concatenate them into a single output file.
+        Process all JSON files in the input directory and create individual text files.
         
         Returns:
             Number of successfully processed files
@@ -189,13 +211,7 @@ class AgencyDataParser:
             
             logger.info(f"Found {len(json_files)} files to process")
             
-            # Delete output file if it already exists (to start fresh)
-            output_path = os.path.join(self.output_dir, self.output_filename)
-            if os.path.exists(output_path):
-                os.remove(output_path)
-                logger.info(f"Removed existing output file: {output_path}")
-            
-            # Process each file and append to the output
+            # Process each file and create an individual output file
             for file_name in json_files:
                 logger.info(f"Processing file: {file_name}")
                 
@@ -204,8 +220,8 @@ class AgencyDataParser:
                 if not agency_data:
                     continue
                 
-                # Append to output file
-                if self.append_to_output_file(agency_data):
+                # Save to individual text file
+                if self.save_to_text_file(agency_data, file_name):
                     success_count += 1
             
             logger.info(f"Successfully processed {success_count} out of {len(json_files)} files")
@@ -217,17 +233,19 @@ class AgencyDataParser:
 
 
 def main():
-    # Define the data directories, input_dir is where the agencies JSON files are located and output_dir is where the output file will be saved
-    input_dir = "data/Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory with JSON files
-    output_dir = "data/output_Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory for output text file
-    output_filename = "output.txt"  # Name of the output file
-    
-    parser = AgencyDataParser(input_dir, output_dir, output_filename)
+    # Define the data directories, input_dir is where the agencies JSON files are located and output_dir is where the output files will be saved
+    #input_dir = "data/Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory with JSON files
+    #output_dir = "data/output_Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory for output text files
+    #input_dir = "data/ID.ee"
+    #output_dir = "data/output_ID.ee"
+    input_dir = "data/Politsei-_ja_Piirivalveamet"
+    output_dir = "data/output_Politsei-_ja_Piirivalveamet"
+    parser = AgencyDataParser(input_dir, output_dir)
     
     processed_count = parser.process_directory()
     
     print(f"Processed {processed_count} agency files.")
-    print(f"Output file saved to {os.path.join(output_dir, output_filename)}")
+    print(f"Output files saved to {output_dir}")
     print("Check logs for details.")
 
 

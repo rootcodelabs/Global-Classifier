@@ -1,0 +1,3 @@
+# Dokumendiregister
+
+Dokumendiregistris on andmed dokumentide kohta, mis on loodud või saadud ameti tegevuse käigus.
