@@ -89,8 +89,14 @@ try:
         mlflow.log_metric(METRIC_ACCURACY, random.uniform(METRIC_ACCURACY_MIN, METRIC_ACCURACY_MAX))
         mlflow.log_metric(METRIC_LOSS, random.uniform(METRIC_LOSS_MIN, METRIC_LOSS_MAX))
         
-        # Create and log an artifact
+                # Create and log an artifact
         logger.info("Creating artifact...")
+        # Ensure the directory exists
+        artifact_dir = os.path.dirname(ARTIFACT_PATH)
+        if artifact_dir and not os.path.exists(artifact_dir):
+            logger.info(f"Creating directory for artifact: {artifact_dir}")
+            os.makedirs(artifact_dir, exist_ok=True)
+            
         with open(ARTIFACT_PATH, "w") as f:
             f.write(MSG_ARTIFACT_CONTENT.format(datetime.now().isoformat()))
         
