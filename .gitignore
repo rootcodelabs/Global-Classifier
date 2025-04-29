@@ -15,3 +15,11 @@ htmlcov/
 .vscode/
 *.swp
 *.swo
+
+# Logs
+logs/
+*.log
+test/logs/
+**/logs/
+*.log.*
+*.zip

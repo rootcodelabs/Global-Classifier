@@ -32,3 +32,7 @@ METRIC_LOSS_MAX = 0.3
 # Messages
 MSG_ARTIFACT_CONTENT = "This is a test artifact created at {}"
 MSG_SUCCESS = "\nTest completed successfully! Check the MLflow UI at {}"
+
+# Logging settings
+LOGS_DIR = "logs"
+LOG_FILE = "test_mlflow_connection.log"
