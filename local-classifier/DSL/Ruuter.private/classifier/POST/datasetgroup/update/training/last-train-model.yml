@@ -1,0 +1,112 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'STATUS'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: dgId
+        type: number
+        description: "Body field 'dgId'"
+      - field: lastTrainModel
+        type: string
+        description: "Body field 'lastTrainModel'"
+
+extract_request_data:
+  assign:
+    dg_id: ${incoming.body.dgId}
+    last_train_model: ${incoming.body.lastTrainModel}
+  next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${dg_id !== null && last_train_model !== null}
+      next: get_dataset_group_by_id
+  next: return_incorrect_request
+
+get_dataset_group_by_id:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-dataset-group-by-id"
+    body:
+      id: ${dg_id}
+  result: res_dataset
+  next: check_dataset_status
+
+check_dataset_status:
+  switch:
+    - condition: ${200 <= res_dataset.response.statusCodeValue && res_dataset.response.statusCodeValue < 300}
+      next: check_dataset_exist
+  next: assign_fail_response
+
+check_dataset_exist:
+  switch:
+    - condition: ${res_dataset.response.body.length>0}
+      next: update_last_train_model
+  next: assign_fail_response
+
+update_last_train_model:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/update-last-train-model-in-dataset-group"
+    body:
+      id: ${dg_id}
+      last_model_trained: ${last_train_model}
+  result: res_update
+  next: check_data_model_update_status
+
+check_data_model_update_status:
+  switch:
+    - condition: ${200 <= res_update.response.statusCodeValue && res_update.response.statusCodeValue < 300}
+      next: assign_success_response
+  next: assign_fail_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      dgId: '${dg_id}',
+      lastTrainModel: '${last_train_model}',
+      operationSuccessful: true,
+    }
+  next: return_ok
+
+assign_empty_response:
+  assign:
+    format_res: {
+      dgId: '${dg_id}',
+      lastTrainModel: '${last_train_model}',
+      operationSuccessful: true,
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      dgId: '${dg_id}',
+      lastTrainModel: '${last_train_model}',
+      operationSuccessful: false,
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_incorrect_request:
+  status: 400
+  return: 'Missing Required Fields'
+  next: end
+
+return_not_found:
+  status: 404
+  return: "Data Group Not Found"
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end

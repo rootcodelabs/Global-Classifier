@@ -1,0 +1,66 @@
+.correctedHierarchy {
+  text-align: center;
+  display: flex;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  text-wrap: wrap;
+  width: 100%;
+}
+
+.hierarchyLabels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 500px;
+  text-wrap: wrap;
+}
+
+.probabilityLabels {
+  text-align: center;
+  display: flex;
+  align-content: center;
+  width: 200px;
+  text-wrap: wrap;
+  justify-content: center;
+}
+
+.inferenceTimeLabel {
+  text-align: right;
+  display: flex;
+  align-content: center;
+  align-items: center;
+}
+
+.inferenceTimeCell {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  flex-direction: column;
+}
+
+.w-750 {
+  width: 750px;
+}
+
+.w-750-wrap {
+  width: 750px;
+  text-wrap: wrap;
+}
+
+.w-150 {
+  width: 150px;
+}
+
+.card-div {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-div {
+  margin-bottom: 20px;
+  margin-top: 20px;
+}

@@ -1,0 +1,214 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'ACCEPT'"
+  method: post
+  accepts: json
+  returns: text/*
+  namespace: classifier
+  allowlist:
+    params:
+      - field: validationToken
+        type: string
+        description: "parameter 'validationToken'"
+    body:
+      - field: payload
+        type: json
+        description: "body field is 'payload'"
+
+extract_request_data:
+  assign:
+    validation_token: ${incoming.params.validationToken}
+    payload: ${incoming.body}
+  next: check_process_flow
+
+check_process_flow:
+  switch:
+    - condition: ${validation_token !==null}
+      next: return_validation_token_response
+    - condition: ${payload !==null}
+      next: assign_outlook_mail_info
+  next: return_error_found
+
+return_validation_token_response:
+  wrapper: false
+  headers:
+    Content-Type: text/*
+  return: ${validation_token}
+  status: 200
+  next: end
+
+assign_outlook_mail_info:
+  assign:
+    resource: ${payload.value[0].resource}
+    event_type: ${payload.value[0].changeType}
+  next: get_refresh_token
+
+get_refresh_token:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-token"
+    body:
+      platform: 'OUTLOOK'
+  result: res
+  next: set_refresh_token
+
+set_refresh_token:
+  assign:
+    refresh_token: ${res.response.body[0].token}
+  next: check_refresh_token
+
+check_refresh_token:
+  switch:
+    - condition: ${refresh_token !== null}
+      next: decrypt_token
+  next: return_not_found
+
+decrypt_token:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_DMAPPER]/hbs/classifier/return_decrypted_outlook_token"
+    headers:
+      type: json
+    body:
+      token: ${refresh_token}
+  result: token_data
+  next: get_access_token
+
+get_access_token:
+  call: http.post
+  args:
+    url: "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+    contentType: formdata
+    headers:
+      type: json
+    body:
+      client_id: "[#OUTLOOK_CLIENT_ID]"
+      scope: "User.Read Mail.ReadWrite MailboxSettings.ReadWrite offline_access"
+      refresh_token: ${token_data.response.body.token.content}
+      grant_type: "refresh_token"
+      client_secret: "[#OUTLOOK_SECRET_KEY]"
+  result: res
+  next: assign_access_token
+
+check_access_token:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: assign_access_token
+  next: return_access_token_not_found
+
+assign_access_token:
+  assign:
+    access_token: ${res.response.body.access_token}
+  next: get_extracted_mail_info
+
+get_extracted_mail_info:
+  call: http.get
+  args:
+    url: "https://graph.microsoft.com/v1.0/${resource}?$expand=attachments"
+    headers:
+      Authorization: ${'Bearer ' + access_token}
+  result: mail_info_data
+  next: check_extracted_mail_info
+
+check_extracted_mail_info:
+  switch:
+    - condition: ${200 <= mail_info_data.response.statusCodeValue && mail_info_data.response.statusCodeValue < 300}
+      next: get_existing_folder_id
+  next: return_mail_info_not_found
+
+get_existing_folder_id:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-outlook-input-row-data"
+    body:
+      inputId: ${mail_info_data.response.body.internetMessageId}
+  result: existing_outlook_info
+  next: check_input_response
+
+check_input_response:
+  switch:
+    - condition: ${200 <= existing_outlook_info.response.statusCodeValue && existing_outlook_info.response.statusCodeValue < 300}
+      next: check_folders_exist
+  next: return_db_request_fail
+
+check_folders_exist:
+  switch:
+    - condition: ${existing_outlook_info.response.body.length>0}
+      next: check_folder_id
+  next: check_event_type
+
+check_folder_id:
+  switch:
+    - condition: ${existing_outlook_info.response.body[0].primaryFolderId !== mail_info_data.response.body.parentFolderId}
+      next: rearrange_mail_payload
+  next: return_Folder_Match
+
+check_event_type:
+  switch:
+    - condition: ${event_type === 'updated'}
+      next: return_folder_not_found
+  next: rearrange_mail_payload
+
+rearrange_mail_payload:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_DMAPPER]/hbs/classifier/return_outlook_payload_info"
+    headers:
+      type: json
+    body:
+      data: ${mail_info_data.response.body}
+  result: outlook_body
+  next: send_outlook_data
+
+send_outlook_data:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_ANONYMIZER]/anonymize"
+    headers:
+      type: json
+    body:
+      platform: 'OUTLOOK'
+      key: ${mail_info_data.response.body.internetMessageId}
+      data: ${outlook_body.response.body}
+      parentFolderId: ${mail_info_data.response.body.parentFolderId}
+      mailId: ${mail_info_data.response.body.id}
+      labels: None
+  result: res
+  next: check_response
+
+check_response:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: return_ok
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: "Outlook data send successfully"
+  next: end
+
+return_Folder_Match:
+  status: 200
+  return: "Folder Match,No Update"
+  next: end
+
+return_mail_info_not_found:
+  status: 404
+  return: "Mail Info Not Found"
+  next: end
+
+return_access_token_not_found:
+  status: 404
+  return: "Access Token Not Found"
+  next: end
+
+return_folder_not_found:
+  status: 404
+  return: "Folder Data Not Found"
+  next: end
+
+return_bad_request:
+  status: 400
+  return: "Bad Request"
+  next: end

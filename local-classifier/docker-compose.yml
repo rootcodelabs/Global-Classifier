@@ -1,0 +1,514 @@
+services:
+  ruuter-public:
+    container_name: ruuter-public
+    image: ruuter
+    environment:
+      - application.cors.allowedOrigins=http://localhost:8086,http://localhost:3001,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8000
+      - application.httpCodesAllowList=200,201,202,204,400,401,403,500
+      - application.internalRequests.allowedIPs=127.0.0.1
+      - application.logging.displayRequestContent=true
+      - application.logging.displayResponseContent=true
+      - application.logging.printStackTrace=true
+      - application.internalRequests.disabled=true
+      - server.port=8086
+    volumes:
+      - ./DSL/Ruuter.public:/DSL
+      - ./constants.ini:/app/constants.ini
+    ports:
+      - 8086:8086
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.2
+    cpus: "0.5"
+    mem_limit: "512M"
+
+  ruuter-private:
+    container_name: ruuter-private
+    image: ruuter
+    environment:
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.httpCodesAllowList=200,201,202,400,401,403,500
+      - application.internalRequests.allowedIPs=127.0.0.1
+      - application.logging.displayRequestContent=true
+      - application.logging.displayResponseContent=true
+      - application.logging.printStackTrace=true
+      - application.internalRequests.disabled=true
+      - server.port=8088
+    volumes:
+      - ./DSL/Ruuter.private:/DSL
+      - ./constants.ini:/app/constants.ini
+    ports:
+      - 8088:8088
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.3
+    cpus: "0.5"
+    mem_limit: "512M"
+
+  data-mapper:
+    container_name: data-mapper
+    image: data-mapper
+    environment:
+      - PORT=3000
+      - CONTENT_FOLDER=/data
+    volumes:
+      - ./DSL:/data
+      - ./DSL/DMapper/classifier/hbs:/workspace/app/views/classifier
+      - ./DSL/DMapper/classifier/lib:/workspace/app/lib
+    ports:
+      - 3000:3000
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.4
+
+  tim:
+    container_name: tim
+    image: tim
+    depends_on:
+      - tim-postgresql
+    environment:
+      - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
+      - KEY_PASS=ppjjpp
+    ports:
+      - 8085:8085
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    cpus: "0.5"
+    mem_limit: "512M"
+
+  tim-postgresql:
+    container_name: tim-postgresql
+    image: postgres:14.1
+    environment:
+      - POSTGRES_USER=tim
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=tim
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./tim-db:/var/lib/postgresql/data
+    ports:
+      - 9876:5432
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.6
+
+  gui:
+    container_name: gui
+    environment:
+      - NODE_ENV=local
+      - REACT_APP_RUUTER_API_URL=http://localhost:8086
+      - REACT_APP_RUUTER_PRIVATE_API_URL=http://localhost:8088
+      - REACT_APP_EXTERNAL_API_URL=http://localhost:8000
+      - REACT_APP_CUSTOMER_SERVICE_LOGIN=http://localhost:3004/et/dev-auth
+      - REACT_APP_NOTIFICATION_NODE_URL=http://localhost:4040
+      - REACT_APP_CSP=upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' http://localhost:8086 http://localhost:8088 http://localhost:8085 http://localhost:4040 http://localhost:3001 http://localhost:8000;
+      - DEBUG_ENABLED=true
+      - CHOKIDAR_USEPOLLING=true
+      - PORT=3001
+      - REACT_APP_SERVICE_ID=conversations,settings,monitoring
+      - REACT_APP_ENABLE_HIDDEN_FEATURES=TRUE
+
+    build:
+      context: ./GUI
+      dockerfile: Dockerfile.dev
+    ports:
+      - 3001:3001
+    volumes:
+      - /app/node_modules
+      - ./GUI:/app
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.20
+    cpus: "0.5"
+    mem_limit: "1G"
+
+  authentication-layer:
+    container_name: authentication-layer
+    image: authentication-layer
+    ports:
+      - 3004:3004
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.8
+
+  resql:
+    container_name: resql
+    image: resql
+    depends_on:
+      - users_db
+    environment:
+      - sqlms.datasources.[0].name=byk
+      - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/classifier #For LocalDb Use
+      # sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://171.22.247.13:5433/byk?sslmode=require
+      - sqlms.datasources.[0].username=postgres
+      - sqlms.datasources.[0].password=dbadmin
+      - logging.level.org.springframework.boot=INFO
+    ports:
+      - 8082:8082
+    volumes:
+      - ./DSL/Resql:/DSL
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.9
+
+  users_db:
+    container_name: users_db
+    image: postgres:14.1
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=dbadmin
+      - POSTGRES_DB=classifier
+    ports:
+      - 5433:5432
+    volumes:
+      - ~/buerokratt_classifier/db_files:/var/lib/postgresql/data
+
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.10
+    restart: always
+
+
+  init:
+    image: busybox
+    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer"]
+    volumes:
+      - shared-volume:/shared
+      - ./model_trainer:/app/model_trainer
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.12
+
+
+  cron-manager:
+    container_name: cron-manager
+    image: cron-manager-python
+    volumes:
+      - ./DSL/CronManager/DSL:/DSL
+      - ./DSL/CronManager/script:/app/scripts
+      - ./DSL/CronManager/config:/app/config
+      - ./model_trainer:/app/model_trainer
+      - shared-volume:/shared
+    environment:
+      - server.port=9010
+    ports:
+      - 9010:8080
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.11
+    depends_on:
+      - init
+      - s3-ferry
+    command: ["sh", "-c", "chmod -R 777 /app/model_trainer"]
+
+  file-handler:
+    build:
+      context: ./file-handler
+      dockerfile: Dockerfile
+    container_name: file-handler
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - UPLOAD_DIRECTORY=/shared
+      - RUUTER_PRIVATE_URL=http://ruuter-private:8088/classifier
+      - S3_FERRY_URL=http://s3-ferry:3000/v1/files/copy
+      - IMPORT_STOPWORDS_URL=http://ruuter-private:8088/classifier/datasetgroup/update/stop-words
+      - DELETE_STOPWORDS_URL=http://ruuter-private:8088/classifier/datasetgroup/delete/stop-words
+      - GET_PAGE_COUNT_URL=http://ruuter-private:8088/classifier/datasetgroup/group/page-count?groupId=dgId
+      - DATAGROUP_DELETE_CONFIRMATION_URL= http://ruuter-private:8088/classifier/datasetgroup/metadata/delete
+      - DATAMODEL_DELETE_CONFIRMATION_URL= http://ruuter-private:8088/classifier/datamodel/update/dataset-group
+      - JIRA_ACTIVE_MODEL_DELETE_URL=http://model-inference:8003/classifier/datamodel/deployment/jira/delete
+      - OUTLOOK_ACTIVE_MODEL_DELETE_URL=http://model-inference:8003/classifier/datamodel/deployment/outlook/delete
+      - TEST_MODEL_DELETE_URL=http://model-inference:8003/classifier/datamodel/deployment/testing/delete
+      - MODEL_METADATA_DELETE_URL=http://ruuter-private:8088/classifier/datamodel/metadata/delete
+      - CORRECTED_TEXT_EXPORT=http://ruuter-private:8088/classifier/inference/corrected-metadata-export
+    ports:
+      - "8000:8000"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.13
+    depends_on:
+      - init
+
+  s3-ferry:
+    image: s3-ferry:latest
+    container_name: s3-ferry
+    volumes:
+      - shared-volume:/shared
+    env_file:
+      - config.env
+    ports:
+      - "3006:3000"
+    depends_on:
+      - file-handler
+      - init
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.14
+
+  dataset-processor:
+    build:
+      context: ./dataset-processor
+      dockerfile: Dockerfile
+    container_name: dataset-processor
+    environment:
+      - RUUTER_PRIVATE_URL=http://ruuter-private:8088/classifier
+      - GET_VALIDATION_SCHEMA=http://ruuter-private:8088/classifier/datasetgroup/schema
+      - FILE_HANDLER_DOWNLOAD_JSON_URL=http://file-handler:8000/datasetgroup/data/download/json
+      - FILE_HANDLER_DOWNLOAD_LOCATION_JSON_URL=http://file-handler:8000/datasetgroup/data/download/json/location
+      - GET_STOPWORDS_URL=http://ruuter-private:8088/classifier/datasetgroup/stop-words
+      - FILE_HANDLER_IMPORT_CHUNKS_URL=http://file-handler:8000/datasetgroup/data/import/chunk
+      - FILE_HANDLER_COPY_CHUNKS_URL=http://file-handler:8000/datasetgroup/data/copy
+      - GET_PAGE_COUNT_URL=http://ruuter-private:8088/classifier/datasetgroup/group/data?groupId=dgId&pageNum=1
+      - SAVE_JSON_AGGREGRATED_DATA_URL=http://file-handler:8000/datasetgroup/data/import/json
+      - DOWNLOAD_CHUNK_URL=http://file-handler:8000/datasetgroup/data/download/chunk
+      - STATUS_UPDATE_URL=http://ruuter-private:8088/classifier/datasetgroup/update/preprocess/status
+      - PARAPHRASE_API_URL=http://data-enrichment-api:8005/paraphrase
+      - VALIDATION_CONFIRMATION_URL=http://ruuter-private:8088/classifier/datasetgroup/update/validation/status
+      - GET_DATAGROUP_METADATA_URL=http://ruuter-private:8088/classifier/datasetgroup/group/metadata?groupId=dgId
+      - CREATE_PROGRESS_SESSION_URL=http://ruuter-private:8088/classifier/datasetgroup/progress/create
+      - UPDATE_PROGRESS_SESSION_URL=http://ruuter-private:8088/classifier/datasetgroup/progress/update
+      - GET_PROGRESS_SESSIONS_URL=http://ruuter-private:8088/classifier/datasetgroup/progress
+      - DATASET_MODEL_STATUS_UPDATE_URL=http://ruuter-private:8088/classifier/datasetgroup/update/training/status
+    ports:
+      - "8001:8001"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.15
+    depends_on:
+      - init
+      - s3-ferry
+      - file-handler
+
+  model-inference:
+    build:
+      context: ./model-inference
+      dockerfile: Dockerfile.cpu
+    container_name: model-inference
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - UPLOAD_DIRECTORY=/shared
+      - RUUTER_PRIVATE_URL=http://ruuter-private:8088/classifier
+      - S3_FERRY_URL=http://s3-ferry:3000/v1/files/copy
+      - JIRA_MODEL_DOWNLOAD_DIRECTORY=/shared/models/jira
+      - OUTLOOK_MODEL_DOWNLOAD_DIRECTORY=/shared/models/outlook
+      - TEST_MODEL_DOWNLOAD_ROOT_DIRECTORY=/shared/models/testing
+      - GET_INFERENCE_DATASET_EXIST_URL=http://ruuter-public:8086/internal/exist
+      - CREATE_INFERENCE_URL=http://ruuter-public:8086/internal/create
+      - UPDATE_INFERENCE_URL=http://ruuter-public:8086/internal/corrected
+      - CLASS_HIERARCHY_VALIDATION_URL=http://hierarchy-validation:8009/check-folder-hierarchy
+      - OUTLOOK_ACCESS_TOKEN_API_URL=http://ruuter-public:8086/internal/validate
+      - BUILD_CORRECTED_FOLDER_HIERARCHY_URL=http://hierarchy-validation:8009/corrected-folder-hierarchy
+      - FIND_FINAL_FOLDER_ID_URL=http://hierarchy-validation:8009/find-folder-id
+      - UPDATE_DATAMODEL_PROGRESS_URL=http://ruuter-private:8088/classifier/datamodel/progress/update
+      - UPDATE_MODEL_TRAINING_STATUS_ENDPOINT=http://ruuter-private:8088/classifier/datamodel/update/training/status
+      - GET_DATASET_METADATA_ENDPOINT=http://ruuter-private:8088/classifier/datasetgroup/group/metadata
+    ports:
+      - "8003:8003"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.7
+    depends_on:
+      - init
+      - s3-ferry
+
+  model-trainer:
+    build:
+      context: ./model_trainer
+      dockerfile: Dockerfile.cpu
+    container_name: model-trainer
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - UPLOAD_DIRECTORY=/shared
+      - RUUTER_PRIVATE_URL=http://ruuter-private:8088/classifier
+      - S3_FERRY_URL=http://s3-ferry:3000/v1/files/copy
+      - JIRA_MODEL_DOWNLOAD_DIRECTORY=/shared/models/jira
+      - OUTLOOK_MODEL_DOWNLOAD_DIRECTORY=/shared/models/outlook
+      - TEST_MODEL_DOWNLOAD_ROOT_DIRECTORY=/shared/models/testing
+      - GET_INFERENCE_DATASET_EXIST_URL=http://ruuter-public:8086/internal/exist
+      - CREATE_INFERENCE_URL=http://ruuter-public:8086/internal/create
+      - UPDATE_INFERENCE_URL=http://ruuter-public:8086/internal/corrected
+      - CLASS_HIERARCHY_VALIDATION_URL=http://hierarchy-validation:8009/check-folder-hierarchy
+      - OUTLOOK_ACCESS_TOKEN_API_URL=http://ruuter-public:8086/internal/validate
+      - BUILD_CORRECTED_FOLDER_HIERARCHY_URL=http://hierarchy-validation:8009/corrected-folder-hierarchy
+      - FIND_FINAL_FOLDER_ID_URL=http://hierarchy-validation:8009/find-folder-id
+      - UPDATE_DATAMODEL_PROGRESS_URL=http://ruuter-private:8088/classifier/datamodel/progress/update
+      - UPDATE_MODEL_TRAINING_STATUS_ENDPOINT=http://ruuter-private:8088/classifier/datamodel/update/training/status
+      - UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT=http://ruuter-private:8088/classifier/datamodel/progress/update
+    ports:
+      - "8900:8900"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.25
+    depends_on:
+      - init
+      - s3-ferry
+
+  trainer-queue:
+    build:
+      context: ./trainer_queue
+      dockerfile: Dockerfile
+    container_name: trainer-queue
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - MODEL_TRAINER_URL=http://model-trainer:8900/model_trainer/
+      - MODEL_CHECKER_URL=http://model-trainer:8900/model_checker/
+    ports:
+      - "8901:8901"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.26
+
+  hierarchy-validation:
+    build:
+      context: ./hierarchy_validation
+      dockerfile: Dockerfile
+    container_name: hierarchy-validation
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - UPLOAD_DIRECTORY=/shared
+      - RUUTER_PRIVATE_URL=http://ruuter-private:8088/classifier
+      - S3_FERRY_URL=http://s3-ferry:3000/v1/files/copy
+      - JIRA_MODEL_DOWNLOAD_DIRECTORY=/shared/models/jira
+      - OUTLOOK_MODEL_DOWNLOAD_DIRECTORY=/shared/models/outlook
+      - OUTLOOK_ACCESS_TOKEN_API_URL=http://ruuter-public:8086/internal/validate
+    ports:
+      - "8009:8009"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.22
+    depends_on:
+      - init
+      - file-handler
+
+  opensearch-node:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-node
+    environment:
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.16
+
+  notifications-node:
+    container_name: notifications-node
+    build:
+      context: ./notification-server
+      dockerfile: Dockerfile
+    ports:
+      - 4040:4040
+    depends_on:
+      - opensearch-node
+    environment:
+      OPENSEARCH_PROTOCOL: http
+      OPENSEARCH_HOST: opensearch-node
+      OPENSEARCH_PORT: 9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      PORT: 4040
+      REFRESH_INTERVAL: 1000
+      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
+      RUUTER_URL: http://ruuter-public:8086
+    volumes:
+      - /app/node_modules
+      - ./notification-server:/app
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.17
+
+  data-enrichment-api:
+    container_name: data-enrichment-api
+    image: data-enrichment-api
+    build:
+      context: ./data_enrichment
+      dockerfile: Dockerfile.cpu
+    ports:
+      - "8005:8005"
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.18
+
+  anonymizer:
+    build:
+      context: ./anonymizer
+      dockerfile: Dockerfile
+    container_name: anonymizer
+    ports:
+      - "8010:8010"
+    environment:
+      - JIRA_INFERENCE_ENDPOINT=http://model-inference:8003/classifier/deployment/jira/inference
+      - OUTLOOK_INFERENCE_ENDPOINT=http://model-inference:8003/classifier/deployment/outlook/inference
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.19
+
+  jira-verification:
+    container_name: jira-verification
+    image: jira-verification
+    build:
+      context: ./jira-verification
+      dockerfile: Dockerfile
+    ports:
+      - "3008:3008"
+    env_file:
+      - ./jira-verification/.env
+    environment:
+      RUUTER_PUBLIC_JIRA_URL: http://ruuter-public:8086/internal/jira/accept
+    networks:
+      bykstack:
+        ipv4_address: 172.25.0.21
+
+
+  #Uncomment below container if you wish to debug progress bar sessions in opensearch dashboard
+  opensearch-dashboards:
+      image: opensearchproject/opensearch-dashboards:2.11.1
+      container_name: opensearch-dashboards
+      environment:
+        - OPENSEARCH_HOSTS=http://opensearch-node:9200
+        - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      ports:
+        - 5601:5601
+      networks:
+        bykstack:
+          ipv4_address: 172.25.0.24
+
+
+
+volumes:
+  shared-volume:
+  opensearch-data:
+
+
+
+networks:
+  bykstack:
+    name: bykstack
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/27
+          gateway: 172.25.0.1

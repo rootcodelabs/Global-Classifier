@@ -1,0 +1,124 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'STOP-WORDS'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: stopWords
+        type: array
+        description: "Body field 'stopWords'"
+
+extract_request_data:
+  assign:
+    stop_words: ${incoming.body.stopWords}
+    next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${stop_words !== null || stop_words.length > 0 }
+      next: get_stop_words
+  next: return_incorrect_request
+
+get_stop_words:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-stop-words"
+  result: res_stop_words
+  next: check_stop-words_status
+
+check_stop-words_status:
+  switch:
+    - condition: ${200 <= res_stop_words.response.statusCodeValue && res_stop_words.response.statusCodeValue < 300}
+      next: check_data_exist
+  next: assign_fail_response
+
+check_data_exist:
+  switch:
+    - condition: ${res_stop_words.response.body.length>0 && res_stop_words.response.body[0].stopWordsArray !== null}
+      next: get_not_existing_stop_words
+  next: assign_fail_response
+
+get_not_existing_stop_words:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_DMAPPER]/hbs/classifier/return_stop_words_not_existing"
+    headers:
+      type: json
+    body:
+      inputArray: ${stop_words}
+      existingArray: ${res_stop_words.response.body[0].stopWordsArray}
+  result: res_not_existing
+  next: check_not_existing_status
+
+check_not_existing_status:
+  switch:
+    - condition: ${200 <= res_not_existing.response.statusCodeValue && res_not_existing.response.statusCodeValue < 300}
+      next: check_for_not_existing
+  next: return_not_found
+
+check_for_not_existing:
+  switch:
+    - condition: ${res_not_existing.response.body.notExisting.length > 0 }
+      next: assign_not_existing_response
+  next: delete_stop_words
+
+delete_stop_words:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/delete-stop-words"
+    body:
+      stop_words: ${stop_words}
+  result: res_stop_words
+  next: check_delete_status
+
+check_delete_status:
+  switch:
+    - condition: ${200 <= res_stop_words.response.statusCodeValue && res_stop_words.response.statusCodeValue < 300}
+      next: assign_success_response
+  next: assign_fail_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      operationSuccessful: true,
+      nonexistent: false,
+      nonexistentItems: '${[]}'
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      operationSuccessful: false,
+      nonexistent: false,
+      nonexistentItems: '${[]}'
+    }
+  next: return_bad_request
+
+assign_not_existing_response:
+  assign:
+    format_res: {
+      operationSuccessful: false,
+      nonexistent: true,
+      nonexistentItems: '${res_not_existing.response.body.notExisting}'
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_incorrect_request:
+  status: 400
+  return: 'Missing Required Fields'
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end
