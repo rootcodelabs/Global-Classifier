@@ -1,0 +1,228 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Insert model metadata"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: modelName
+        type: string
+        description: "Body field 'modelName'"
+      - field: dgId
+        type: number
+        description: "Body field 'dgId'"
+      - field: baseModels
+        type: array
+        description: "Body field 'baseModels'"
+      - field: deploymentPlatform
+        type: string
+        description: "Body field 'deploymentPlatform'"
+      - field: maturityLabel
+        type: string
+        description: "Body field 'maturityLabel'"
+    headers:
+      - field: cookie
+        type: string
+        description: "Cookie field"
+
+extract_request_data:
+  assign:
+    model_name: ${incoming.body.modelName}
+    dg_id: ${incoming.body.dgId}
+    base_models: ${incoming.body.baseModels}
+    deployment_platform: ${incoming.body.deploymentPlatform}
+    maturity_label: ${incoming.body.maturityLabel}
+  next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${model_name !== null && dg_id !== null && base_models !== null && deployment_platform !== null && maturity_label !== null}
+      next: get_dataset_group_data
+  next: return_incorrect_request
+
+get_dataset_group_data:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-dataset-group-basic-metadata-by-id"
+    body:
+      id: ${dg_id}
+  result: res_dataset_group
+  next: check_dataset_group_status
+
+check_dataset_group_status:
+  switch:
+    - condition: ${200 <= res_dataset_group.response.statusCodeValue && res_dataset_group.response.statusCodeValue < 300}
+      next: check_dataset_group_exist
+  next: assign_fail_response
+
+check_dataset_group_exist:
+  switch:
+    - condition: ${res_dataset_group.response.body.length>0}
+      next: assign_dataset_group_data
+  next: return_dataset_group_not_found
+
+assign_dataset_group_data:
+  assign:
+    dataset_group_name: ${res_dataset_group.response.body[0].groupName}
+    dg_major_version: ${res_dataset_group.response.body[0].majorVersion}
+    dg_minor_version: ${res_dataset_group.response.body[0].minorVersion}
+    dg_patch_version: ${res_dataset_group.response.body[0].patchVersion}
+  next: get_epoch_date
+
+get_epoch_date:
+  assign:
+    current_epoch: ${Date.now()}
+    random_num: ${Math.floor(Math.random() * 100000)}
+  next: check_deployment_platform
+
+check_deployment_platform:
+  switch:
+    - condition: ${deployment_platform == 'jira' || deployment_platform == 'outlook'}
+      next: update_existing_models_deployment_platform
+    - condition: ${deployment_platform == 'testing' || deployment_platform == 'undeployed'}
+      next: create_model_metadata
+  next: assign_fail_response
+
+update_existing_models_deployment_platform:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/update-models-deployment-platform"
+    body:
+      updating_platform: 'undeployed'
+      existing_platform: ${deployment_platform}
+  result: res_update
+  next: check_deployment_platform__status
+
+check_deployment_platform__status:
+  switch:
+    - condition: ${200 <= res_update.response.statusCodeValue && res_update.response.statusCodeValue < 300}
+      next: create_model_metadata
+  next: assign_fail_response
+
+create_model_metadata:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/insert-model-metadata"
+    body:
+      model_name: ${model_name}
+      model_group_key: "${random_num+ '_'+current_epoch}"
+      connected_dg_id: ${dg_id}
+      connected_dg_name: ${dataset_group_name}
+      connected_dg_major_version: ${dg_major_version}
+      connected_dg_minor_version: ${dg_minor_version}
+      connected_dg_patch_version: ${dg_patch_version}
+      base_models: ${base_models}
+      deployment_env: ${deployment_platform}
+      maturity_label: ${maturity_label}
+      training_status: not trained
+      major_version: 1
+      minor_version: 0
+      latest: true
+      created_timestamp: ${new Date(current_epoch).toISOString()}
+  result: res_model
+  next: check_status
+
+check_status:
+  switch:
+    - condition: ${200 <= res_model.response.statusCodeValue && res_model.response.statusCodeValue < 300}
+      next: assign_model_id
+  next: assign_fail_response
+
+assign_model_id:
+  assign:
+    model_id: ${res_model.response.body[0].id}
+  next: get_model_data_by_id
+
+get_model_data_by_id:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-data-model-basic-metadata-by-id"
+    body:
+      id: ${model_id}
+  result: res_model_id
+  next: check_model_status
+
+check_model_status:
+  switch:
+    - condition: ${200 <= res_model_id.response.statusCodeValue && res_model_id.response.statusCodeValue < 300}
+      next: check_model_exist
+  next: assign_fail_response
+
+check_model_exist:
+  switch:
+    - condition: ${res_model_id.response.body.length>0}
+      next: update_dataset_group_connected_model
+  next: return_not_found
+
+update_dataset_group_connected_model:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/update-dataset-group-connected-models"
+    body:
+      id: ${dg_id}
+      connected_model: ${JSON.stringify(res_model_id.response.body[0])}
+  result: res_dataset
+  next: check_connected_model_updated_status
+
+check_connected_model_updated_status:
+  switch:
+    - condition: ${200 <= res_dataset.response.statusCodeValue && res_dataset.response.statusCodeValue < 300}
+      next: execute_cron_manager
+  next: assign_fail_response
+
+execute_cron_manager:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_CRON_MANAGER]/execute/data_model/model_trainer"
+    query:
+      cookie: ${incoming.headers.cookie.replace('customJwtCookie=','')} #Removing the customJwtCookie phrase from payload to to send cookie token only
+      modelId: ${model_id}
+      newModelId: ${model_id}
+      updateType: 'major'
+      prevDeploymentEnv: 'None'
+  result: res
+  next: assign_success_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      modelId: '${model_id}',
+      operationSuccessful: true
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      modelId: '',
+      operationSuccessful: false
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end
+
+return_incorrect_request:
+  status: 400
+  return: 'Missing Required Fields'
+  next: end
+
+return_dataset_group_not_found:
+  status: 404
+  return: "Dataset Group Not Found"
+  next: end
+
+return_not_found:
+  status: 404
+  return: "Model Not Found"
+  next: end

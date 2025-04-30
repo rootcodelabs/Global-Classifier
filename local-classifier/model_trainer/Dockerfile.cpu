@@ -1,0 +1,32 @@
+# Use an official Python runtime as a base image
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install additional dependencies (non-Python related)
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        git \
+        unzip \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install Python dependencies using pip
+RUN pip install --no-cache-dir -r model_trainer_requirements.txt
+
+# Expose the port the FastAPI app will run on
+EXPOSE 8900
+
+# Optional: Set Hugging Face cache directory to /cache
+ENV HF_HOME=/cache/
+
+# Set the entry point to run the FastAPI server
+CMD ["uvicorn", "model_trainer_api:app", "--host", "0.0.0.0", "--port", "8900"]

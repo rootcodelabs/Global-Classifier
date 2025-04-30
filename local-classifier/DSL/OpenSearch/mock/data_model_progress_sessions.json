@@ -1,0 +1,8 @@
+{"index":{"_id":"1"}}
+{"sessionId": "10001000","trainingStatus": "Initiating Training","trainingMessage": "","progressPercentage": 1,"timestamp": "1801371325497", "sentTo": []}
+{"index":{"_id":"2"}}
+{"sessionId": "10002000","trainingStatus": "Training In-Progress","trainingMessage": "","progressPercentage": 26,"timestamp": "1801371325597", "sentTo": []}
+{"index":{"_id":"3"}}
+{"sessionId": "10003000","trainingStatus": "Deploying Model","trainingMessage": "","progressPercentage": 52,"timestamp": "1801371325697", "sentTo": []}
+{"index":{"_id":"4"}}
+{"sessionId": "100040000","trainingStatus": "Model Trained And Deployed","trainingMessage": "","progressPercentage": 97,"timestamp": "1801371325797", "sentTo": []}

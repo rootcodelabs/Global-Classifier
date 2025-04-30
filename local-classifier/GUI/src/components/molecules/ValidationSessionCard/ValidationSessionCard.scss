@@ -1,0 +1,8 @@
+.validationHeader {
+  display: flex;
+  gap: 10px;
+
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+  }
+}

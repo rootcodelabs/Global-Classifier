@@ -1,0 +1,5 @@
+dataset_processor:
+  trigger: off
+  type: exec
+  command: "../app/scripts/data_processor_exec.sh"
+  allowedEnvs: ["cookie","dgId", "newDgId","updateType","savedFilePath","patchPayload", "sessionId"]

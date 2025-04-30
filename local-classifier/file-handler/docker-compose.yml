@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  init:
+    image: busybox
+    command: ["sh", "-c", "chmod -R 777 /shared"]
+    volumes:
+      - shared-volume:/shared
+
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: file-receiver
+    volumes:
+      - shared-volume:/shared
+    environment:
+      - UPLOAD_DIRECTORY=/shared
+    ports:
+      - "8000:8000"
+    depends_on:
+      - init
+
+  api:
+    image: s3-ferry:latest
+    container_name: s3-ferry
+    volumes:
+      - shared-volume:/shared
+    env_file:
+      - config.env
+    environment:
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - receiver
+      - init
+
+volumes:
+  shared-volume:
+
+networks:
+  default:
+    driver: bridge
