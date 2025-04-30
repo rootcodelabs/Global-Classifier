@@ -2,6 +2,7 @@ import json
 from transformers import MarianMTModel, MarianTokenizer
 from typing import Dict, Tuple
 import torch
+import time
 
 class Translator:
     def __init__(self, config_path: str = "config_files/translator_config.json"):
@@ -13,7 +14,7 @@ class Translator:
         self.models_instances: Dict[str, MarianMTModel] = {}
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        for key, (model_name, reverse_model_name) in self.models.items():
+        for key, (model_name, reverse_model_name) in self.models.items():          
             self.tokenizers[key] = MarianTokenizer.from_pretrained(model_name)
             self.models_instances[key] = MarianMTModel.from_pretrained(model_name).to(self.device)
             print(f"[Translator __init__] Model '{key}' is on device: {next(self.models_instances[key].parameters()).device}")

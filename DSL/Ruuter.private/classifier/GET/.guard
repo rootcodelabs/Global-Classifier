@@ -5,7 +5,7 @@ check_for_cookie:
   next: authenticate
 
 authenticate:
-  template: check-user-authority-admin
+  template: "[#CLASSIFIER_PROJECT_LAYER]/check-user-authority"
   requestType: templates
   headers:
     cookie: ${incoming.headers.cookie}

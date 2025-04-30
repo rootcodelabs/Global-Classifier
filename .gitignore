@@ -410,3 +410,4 @@ protected_configs/
 
 ./config.env
 ./constants.ini
+.qodo

@@ -45,7 +45,7 @@ validate_request:
 get_token_info:
   call: http.get
   args:
-    url: "[#CLASSIFIER_RUUTER_PRIVATE]/classifier/integration/outlook/token"
+    url: "[#CLASSIFIER_RUUTER_PRIVATE]/integration/outlook/token"
     headers:
       cookie: ${incoming.headers.cookie}
   result: res

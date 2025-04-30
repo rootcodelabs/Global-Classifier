@@ -65,7 +65,7 @@ assign_outlook_url:
 route_to_platform:
   call: http.post
   args:
-    url: "[#CLASSIFIER_RUUTER_PRIVATE]/classifier/integration/${url}"
+    url: "[#CLASSIFIER_RUUTER_PRIVATE]/integration/${url}"
     headers:
       type: json
       cookie: ${cookie}

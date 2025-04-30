@@ -72,7 +72,6 @@ async def authenticate_user(cookie: str):
         }
 
         response = requests.get(url, headers=headers)
-
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail="Authentication failed")
     except Exception as e:

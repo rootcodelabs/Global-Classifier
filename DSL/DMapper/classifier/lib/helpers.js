@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 
+
 export function getAuthHeader(username, token) {
   const auth = `${username}:${token}`;
   const encodedAuth = Buffer.from(auth).toString("base64");
@@ -114,3 +115,8 @@ export function jsEscape(str) {
   return JSON.stringify(str).slice(1, -1)
 }
 
+export function isValidIntentName(name) {
+  // Allows letters (any unicode letter), numbers, and underscores
+  // Matches front-end validation with spaces replaced with underscores
+  return /^[\p{L}\p{N}_]+$/u.test(name);
+}

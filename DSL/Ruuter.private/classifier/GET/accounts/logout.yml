@@ -5,7 +5,7 @@ declaration:
   method: post
   accepts: json
   returns: json
-  namespace: backoffice
+  namespace: classifier
   allowlist:
     headers:
       - field: cookie

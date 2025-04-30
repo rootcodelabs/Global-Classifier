@@ -5,10 +5,12 @@ import torch
 
 class Paraphraser:
     def __init__(self, config_path: str = "config_files/paraphraser_config.json"):
+        print(f"in para init")
         with open(config_path, 'r') as file:
             config = json.load(file)
         
         self.model_name = config["model_name"]
+        print("in para init2")
         self.num_beams = config["num_beams"]
         self.num_beam_groups = config["num_beam_groups"]
         self.default_num_return_sequences = config["num_return_sequences"]
@@ -21,8 +23,8 @@ class Paraphraser:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name).to(self.device)  # Move model to device
-
-        print(f"[Paraphraser __init__] Model is on device: {next(self.model.parameters()).device}")
+        # self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, local_files_only=True)
+        # self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name, local_files_only=True).to(self.device)
 
     def generate_paraphrases(self, question: str, num_return_sequences: int = None) -> List[str]:
         if num_return_sequences is None or num_return_sequences <= 0:

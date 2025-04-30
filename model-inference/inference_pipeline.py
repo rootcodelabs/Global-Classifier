@@ -120,14 +120,23 @@ class InferencePipeline:
         logger.info(f"PLATFORM IN PREDICT CLASS {platform}")
         
         data = self.hierarchy_file
-        if platform == 'jira':
+        # if platform == 'jira':
+        #     data = data['classHierarchy']
+        # parent = 1
+        #---------------------------------------------------------------
+        if isinstance(data, dict) and 'classHierarchy' in data:
             data = data['classHierarchy']
         parent = 1
+        #---------------------------------------------------------------
 
         logger.info(f"DATA - {data}")
         logger.info("RIGHT BEFORE ENTERING WHILE DATA")
         
         try:
+            # Check if data is actually a list before trying to iterate over it
+            if not isinstance(data, list):
+                logger.error(f"Data is not a list. Type: {type(data)}, Value: {data}")
+                return [], []
             
             while data:
                 current_classes = {parent: [d['class'] for d in data]}

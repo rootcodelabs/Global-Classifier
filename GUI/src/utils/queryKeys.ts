@@ -58,7 +58,7 @@ export const stopWordsQueryKeys = {
 };
 
 export const authQueryKeys = {
-  USER_DETAILS: () => ['auth/jwt/userinfo', 'prod'],
+  USER_DETAILS: () => ['classifier/auth/jwt/userinfo', 'prod'],
 };
 
 export const dataModelsQueryKeys = {

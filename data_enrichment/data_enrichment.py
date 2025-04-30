@@ -5,6 +5,7 @@ from typing import List, Optional
 
 class DataEnrichment:
     def __init__(self):
+        print("Initializing DataEnrichment...")
         self.translator = Translator()
         self.paraphraser = Paraphraser()
 
@@ -26,6 +27,7 @@ class DataEnrichment:
             print(f"Unsupported language: {lang}")
             return []
 
+        paraphrases = self.paraphraser.generate_paraphrases(text, num_return_sequences)
         if lang == 'en':
             paraphrases = self.paraphraser.generate_paraphrases(text, num_return_sequences)
         else:

@@ -1,10 +1,10 @@
 export const userManagementEndpoints = {
-  FETCH_USERS: (): string => `/accounts/users`,
-  ADD_USER: (): string => `/accounts/add`,
-  CHECK_ACCOUNT_AVAILABILITY: (): string => `/accounts/exists`,
-  EDIT_USER: (): string => `/accounts/edit`,
-  DELETE_USER: (): string => `/accounts/delete`,
-  FETCH_USER_ROLES: (): string => `/accounts/user-role`,
+  FETCH_USERS: (): string => `/classifier/accounts/users`,
+  ADD_USER: (): string => `/classifier/accounts/add`,
+  CHECK_ACCOUNT_AVAILABILITY: (): string => `/classifier/accounts/exists`,
+  EDIT_USER: (): string => `/classifier/accounts/edit`,
+  DELETE_USER: (): string => `/classifier/accounts/delete`,
+  FETCH_USER_ROLES: (): string => `/classifier/accounts/user-role`,
 };
 
 export const integrationsEndPoints = {
@@ -49,8 +49,8 @@ export const correctedTextEndpoints = {
 };
 
 export const authEndpoints = {
-  GET_EXTENDED_COOKIE: () :string => `/auth/jwt/extend`,
-  LOGOUT: (): string => `/accounts/logout`
+  GET_EXTENDED_COOKIE: () :string => `/classifier/auth/jwt/extend`,
+  LOGOUT: (): string => `/classifier/accounts/logout`
 }
 
 export const dataModelsEndpoints = {
