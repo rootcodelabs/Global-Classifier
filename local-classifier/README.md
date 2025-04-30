@@ -1,6 +1,12 @@
+
+---
+
+**NOTE** - The entire purpose of this copy of the local classifier project is to easily re-use components from the local classifier that are needed in the global classifier. This folder will be deleted once the global classifier repository matures. If you would like to use the local classifier please use the latest version from the "dev" branch [here](https://github.com/buerokratt/Classifier)
+
+---
+
 # Classifier
 
-### NOTE - The entire purpose of this copy of the local classifier project is to easily re-use components from the local classifier that are needed in the global classifier. This folder will be deleted once the global classifier repository matures. If you would like to use the local classifier please use the latest version from the "dev" branch [here] (https://github.com/buerokratt/Classifier) 
 
 The classifier is an open-source model training platform which can be integrated with JIRA and Outlook to deploy custom classification models to classify and label incoming emails or JIRA tickets.
 
