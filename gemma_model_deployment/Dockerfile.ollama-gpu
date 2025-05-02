@@ -1,0 +1,41 @@
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base dependencies
+RUN apt-get update && \
+    apt-get install -y curl unzip ca-certificates sudo gnupg jq wget && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup CUDA keyring
+RUN mkdir -p /etc/apt/keyrings && \
+    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb && \
+    dpkg -i cuda-keyring_1.0-1_all.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libcudnn8 \
+    libcublas-12-6 \
+    libcusparse-12-6 \
+    libcufft-12-6 \
+    libcusolver-12-6 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create symlinks (optional, only if needed)
+RUN ln -s /usr/lib/x86_64-linux-gnu/libcublas.so.12 /usr/local/cuda/lib64/libcublas.so && \
+    ln -s /usr/lib/x86_64-linux-gnu/libcublasLt.so.12 /usr/local/cuda/lib64/libcublasLt.so
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Create required folders
+RUN mkdir -p /root/.ollama/models /root/config /root/scripts
+
+# Copy config and scripts
+COPY start.sh /root/start.sh
+COPY config/env.sh /root/config/env.sh
+COPY scripts/ollama-commands.sh /root/scripts/ollama-commands.sh
+
+RUN chmod +x /root/start.sh /root/config/env.sh /root/scripts/ollama-commands.sh
+
+EXPOSE 11434
+CMD ["/root/start.sh"]

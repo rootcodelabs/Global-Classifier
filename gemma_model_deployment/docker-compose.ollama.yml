@@ -1,0 +1,30 @@
+services:
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama-gpu
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_USE_GPU=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, utility, compute]
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - gemma_net
+
+volumes:
+  ollama_models:
+
+networks:
+  gemma_net:
+    driver: bridge
