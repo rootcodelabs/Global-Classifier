@@ -1,0 +1,54 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Callback endpoint for Global Classifier to indicate routing decisions"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "Unique identifier of the chat session"
+      - field: inferenceId
+        type: string
+        description: "Unique identifier of the prediction attempt"
+      - field: targetAgencies
+        type: json
+        description: "Array of agency IDs with confidence scores for routing"
+      - field: message
+        type: string
+        description: "User message"
+      - field: metadata
+        type: json
+        description: "Any additional metadata for this routing decision"
+
+extractDecisionData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    inferenceId: ${incoming.body.inferenceId}
+    targetAgencies: ${incoming.body.targetAgencies ?? []}
+    message: ${incoming.body.message}
+    metadata: ${incoming.body.metadata}
+  next: validate_decision
+
+validate_decision:
+  switch:
+    - condition: ${!chatId}
+      next: return_validation_error
+  next: log_classification
+
+return_validation_error:
+  status: 400
+  return: "Invalid classification payload. Chat ID is required."
+  next: end
+
+log_classification:
+  log: "Classification received for the chat ${chatId}: ${JSON.stringify(targetAgencies)}"
+  next: return_success
+
+return_success:
+  status: 200
+  return: "Classification received in DMR successfully"
+

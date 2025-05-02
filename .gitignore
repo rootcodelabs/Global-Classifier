@@ -409,5 +409,5 @@ model_trainer/results
 protected_configs/
 
 ./config.env
-./constants.ini
+constants.ini
 .qodo

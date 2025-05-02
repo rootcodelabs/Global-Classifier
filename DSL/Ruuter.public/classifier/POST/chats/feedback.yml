@@ -1,0 +1,100 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Endpoint to receive feedback on global classifier predictions"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "ID of the chat that was classified"
+      - field: inferenceId
+        type: string
+        description: "Unique identifier of the classification prediction"
+      - field: actualAgencyId
+        type: string
+        description: "The agency that actually handled the request"
+      - field: isPredicted
+        type: boolean
+        description: "Whether the prediction was correct or not"
+      - field: predictedAgencyIds
+        type: json
+        description: "Array of agency IDs that were predicted with confidence scores"
+      - field: feedbackNotes
+        type: string
+        description: "Optional notes on the prediction"
+      - field: metadata
+        type: json
+        description: "Additional metadata for this feedback"
+
+extractFeedbackData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    inferenceId: ${incoming.body.inferenceId}
+    actualAgencyId: ${incoming.body.actualAgencyId ?? ""}
+    isPredicted: ${incoming.body.isPredicted}
+    predictedAgencyIds: ${incoming.body.predictedAgencyIds ?? []}
+    feedbackNotes: ${incoming.body.feedback_notes ?? ""}
+    metadata: ${incoming.body.metadata}
+    timestamp: ${new Date().toISOString()}
+  next: validate_feedback
+
+validate_feedback:
+  switch:
+    - condition: ${!chatId || inferenceId === undefined}
+      next: return_validation_error
+  next: log_feedback
+
+return_validation_error:
+  status: 400
+  return: "Invalid feedback payload. chatId, inferenceId are required fields."
+  next: end
+
+log_feedback:
+  log: "Classification feedback received for chat ${chatId}"
+  next: store_feedback
+
+store_feedback:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/store-classification-feedback"
+    body:
+      chatId: ${chatId}
+      inferenceId: ${inferenceId}
+      actualAgencyId: ${actualAgencyId}
+      isPredicted: ${isPredicted}
+      predictedAgencyIds: ${JSON.stringify(predictedAgencyIds)}
+      feedback_notes: ${feedbackNotes}
+      feedback_timestamp: ${timestamp}
+      metadata: ${JSON.stringify(metadata)}
+  result: store_result
+  error: handle_storage_error
+  next: check_storage_result
+
+check_storage_result:
+  switch:
+    - condition: ${200 <= store_result.response.statusCodeValue && store_result.response.statusCodeValue < 300}
+      next: process_feedback_for_model
+  next: return_storage_error
+
+process_feedback_for_model:
+  log: "Feedback stored successfully and will be used for model improvement"
+  next: return_success
+
+handle_storage_error:
+  log: "Error storing feedback: ${store_result.error}"
+  next: return_storage_error
+
+return_storage_error:
+  status: 500
+  return: "Failed to store feedback. Please try again later."
+  next: end
+
+return_success:
+  status: 200
+  return: "Feedback received and processed successfully"
+  next: end
+
