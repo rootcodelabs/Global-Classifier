@@ -1,0 +1,9 @@
+{{#with (mergeLabelData labels existing_labels) as |merged|}}
+{
+    "labels": [
+        {{#each merged.labels}}
+            "{{this}}"{{#unless @last}},{{/unless}}
+        {{/each}}
+    ]
+}
+{{/with}}

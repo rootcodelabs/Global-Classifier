@@ -1,0 +1,111 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'OVERVIEW'"
+  method: get
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    params:
+      - field: page
+        type: number
+        description: "Parameter 'page'"
+      - field: pageSize
+        type: number
+        description: "Parameter field 'pageSize'"
+      - field: sortType
+        type: string
+        description: "Parameter field 'sortType'"
+      - field: majorVersion
+        type: string
+        description: "Parameter field 'majorVersion'"
+      - field: minorVersion
+        type: string
+        description: "Parameter field 'minorVersion'"
+      - field: patchVersion
+        type: string
+        description: "Parameter field 'patchVersion'"
+      - field: groupName
+        type: string
+        description: "Parameter field 'groupName'"
+      - field: validationStatus
+        type: string
+        description: "Parameter field 'validationStatus'"
+      - field: sortBy
+        type: string
+        description: "Parameter field 'sortBy'"
+
+extract_data:
+  assign:
+    page: ${Number(incoming.params.page)}
+    page_size: ${Number(incoming.params.pageSize)}
+    major_version: ${Number(incoming.params.majorVersion)}
+    minor_version: ${Number(incoming.params.minorVersion)}
+    patch_version: ${Number(incoming.params.patchVersion)}
+    group_name: ${incoming.params.groupName}
+    validation_status: ${incoming.params.validationStatus}
+    sort_type: ${incoming.params.sortType}
+    sort_by: ${incoming.params.sortBy}
+  next: check_sort_by
+
+check_sort_by:
+  switch:
+    - condition: ${sort_by === 'name' || sort_by === 'created_timestamp' || sort_by === 'last_updated_timestamp'}
+      next: get_dataset_meta_data_overview
+  next: set_sort_by
+
+set_sort_by:
+  assign:
+    sort_by: 'name'
+  next: get_dataset_meta_data_overview
+
+get_dataset_meta_data_overview:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-paginated-dataset-group-metadata"
+    body:
+      page: ${page}
+      page_size: ${page_size}
+      sorting: ${sort_type}
+      major_version: ${major_version}
+      minor_version: ${minor_version}
+      patch_version: ${patch_version}
+      group_name: ${group_name}
+      validation_status: ${validation_status}
+      sort_by: ${sort_by}
+  result: res_dataset
+  next: check_status
+
+check_status:
+  switch:
+    - condition: ${200 <= res_dataset.response.statusCodeValue && res_dataset.response.statusCodeValue < 300}
+      next: assign_success_response
+  next: assign_fail_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      operationSuccessful: true,
+      data: '${res_dataset.response.body}'
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      operationSuccessful: false,
+      data: '${[]}'
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end
+

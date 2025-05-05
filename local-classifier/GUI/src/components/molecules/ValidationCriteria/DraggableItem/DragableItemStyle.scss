@@ -1,0 +1,15 @@
+.dragabbleCardContainer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+
+  @media (max-width: 1280px) {
+    flex-direction: column;
+  }
+}
+
+.dragabbleButtonWrapper {
+  display: flex;
+  gap: 10px;
+  justify-content: end;
+}

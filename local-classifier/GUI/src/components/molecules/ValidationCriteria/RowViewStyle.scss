@@ -1,0 +1,26 @@
+.rowViewContentWrapper {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 25px;
+
+  @media (max-width: 1280px) {
+    flex-direction: column;
+  }
+}
+
+.rowViewButtonWrapper {
+  display: flex;
+  justify-content: end;
+  gap: 10px;
+}
+
+.rowViewButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m--16 {
+  margin: -16px;
+}
