@@ -1,18 +1,15 @@
-import json
 import os
-import logging
+import json
+import sys
+from loguru import logger
 import datetime
 from typing import Dict, List, Any, Optional
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("agency_parser.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger("AgencyParser")
+
+# remove the default stderr handler
+logger.remove()
+# add stout handler
+logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
 class AgencyDataParser:
     """
@@ -234,19 +231,19 @@ class AgencyDataParser:
 
 def main():
     # Define the data directories, input_dir is where the agencies JSON files are located and output_dir is where the output files will be saved
-    #input_dir = "data/Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory with JSON files
-    #output_dir = "data/output_Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory for output text files
+    input_dir = "data/Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory with JSON files
+    output_dir = "data/output_Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet"  # Directory for output text files
     #input_dir = "data/ID.ee"
     #output_dir = "data/output_ID.ee"
-    input_dir = "data/Politsei-_ja_Piirivalveamet"
-    output_dir = "data/output_Politsei-_ja_Piirivalveamet"
+    #input_dir = "data/Politsei-_ja_Piirivalveamet"
+    #output_dir = "data/output_Politsei-_ja_Piirivalveamet"
     parser = AgencyDataParser(input_dir, output_dir)
     
     processed_count = parser.process_directory()
     
-    print(f"Processed {processed_count} agency files.")
-    print(f"Output files saved to {output_dir}")
-    print("Check logs for details.")
+    logger.info(f"Processed {processed_count} agency files.")
+    logger.info(f"Output files saved to {output_dir}")
+    logger.info("Check logs for details.")
 
 
 if __name__ == "__main__":
