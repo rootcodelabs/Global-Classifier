@@ -1,0 +1,8 @@
+.vscode/
+.idea/
+# Node modules
+node_modules/
+
+#Common .ignore files
+*.DS_Store
+*.log
