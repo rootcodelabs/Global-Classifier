@@ -1,0 +1,1 @@
+SELECT * FROM integration_status

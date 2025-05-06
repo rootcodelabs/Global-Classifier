@@ -1,0 +1,19 @@
+@import 'src/styles/tools/color';
+
+.container-wrapper {
+    width: 450px;
+    margin-top: 10px;
+}
+
+.link {
+    display: flex;
+    align-items: center;
+}
+
+.underlined-link {
+    display: flex;
+    align-items: center;
+    color: get-color(sapphire-blue-10);
+    text-decoration: underline;
+    cursor: pointer;
+}

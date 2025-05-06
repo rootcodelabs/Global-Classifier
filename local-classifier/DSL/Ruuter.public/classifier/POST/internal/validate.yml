@@ -1,0 +1,118 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'VALIDATE'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "Body field 'modelId'"
+
+extract_request:
+  assign:
+    model_id: ${incoming.body.modelId}
+  next: get_token_info
+
+get_token_info:
+  call: http.get
+  args:
+    url: "[#CLASSIFIER_RUUTER_PUBLIC_INTERNAL]/internal/outlook/token"
+  result: res
+  next: check_token_status
+
+check_token_status:
+  switch:
+    - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
+      next: assign_access_token
+  next: assign_fail_response
+
+assign_access_token:
+  assign:
+    access_token: ${res.response.body.response.access_token}
+  next: get_dataset_group_id_by_model_id
+
+get_dataset_group_id_by_model_id:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-data-model-dataset-group-by-id"
+    body:
+      id: ${model_id}
+  result: res_model
+  next: check_data_model_status
+
+check_data_model_status:
+  switch:
+    - condition: ${200 <= res_model.response.statusCodeValue && res_model.response.statusCodeValue < 300}
+      next: check_data_model_exist
+  next: assign_fail_response
+
+check_data_model_exist:
+  switch:
+    - condition: ${res_model.response.body.length>0}
+      next: assign_dataset_group_id
+  next: assign_fail_response
+
+assign_dataset_group_id:
+  assign:
+    dg_id: ${res_model.response.body[0].connectedDgId}
+  next: get_dataset_group_class_hierarchy
+
+get_dataset_group_class_hierarchy:
+  call: http.post
+  args:
+    url: "[#CLASSIFIER_RESQL]/get-dataset-group-class-hierarchy"
+    body:
+      id: ${dg_id}
+  result: res_dataset
+  next: check_dataset_group_status
+
+check_dataset_group_status:
+  switch:
+    - condition: ${200 <= res_dataset.response.statusCodeValue && res_dataset.response.statusCodeValue < 300}
+      next: check_dataset_group_exist
+  next: assign_fail_response
+
+check_dataset_group_exist:
+  switch:
+    - condition: ${res_dataset.response.body.length>0}
+      next: assign_dataset_class_hierarchy
+  next: assign_fail_response
+
+assign_dataset_class_hierarchy:
+  assign:
+    class_hierarchy: ${JSON.parse(res_dataset.response.body[0].classHierarchy.value)}
+  next: assign_success_response
+
+assign_success_response:
+  assign:
+    format_res: {
+      modelId: '${model_id}',
+      outlook_access_token: '${access_token}',
+      class_hierarchy: '${class_hierarchy}',
+      operationSuccessful: true,
+    }
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    format_res: {
+      modelId: '${model_id}',
+      outlook_access_token: '',
+      class_hierarchy: '',
+      operationSuccessful: false,
+    }
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${format_res}
+  next: end
+
+return_bad_request:
+  status: 400
+  return: ${format_res}
+  next: end
