@@ -5,7 +5,7 @@ declaration:
   method: post
   accepts: json
   returns: json
-  namespace: classifier
+  namespace: global-classifier
   allowlist:
     body:
       - field: chatId
@@ -60,7 +60,7 @@ log_feedback:
 store_feedback:
   call: http.post
   args:
-    url: "[#CLASSIFIER_RESQL]/store-classification-feedback"
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/store-classification-feedback"
     body:
       chatId: ${chatId}
       inferenceId: ${inferenceId}

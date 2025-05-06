@@ -5,7 +5,7 @@ declaration:
   method: post
   accepts: json
   returns: json
-  namespace: classifier
+  namespace: global-classifier
   allowlist:
     body:
       - field: chatId
@@ -56,16 +56,15 @@ process_classification_result:
   switch:
     - condition: ${classifier_result.response.body.suggestedBot != null}
       next: return_suggestion
-  next: return_cannot_handle
+  # next: return_cannot_handle
 
+# return_cannot_handle:
+#   status: 400
+#   return: ${classifier_result.response.body}
+#   next: end
 
 return_suggestion:
   status: 200
-  return: ${classifier_result.response.body}
-  next: end
-
-return_cannot_handle:
-  status: 400
   return: ${classifier_result.response.body}
   next: end
 
