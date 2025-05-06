@@ -1,0 +1,23 @@
+name: Global Classifier Development
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Stop and remove existing containers
+        run: |
+          docker compose down
+
+      - name: Build & up Docker container 
+        run: |
+          docker compose up --build -d
+
