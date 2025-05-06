@@ -17,28 +17,12 @@ declaration:
       - field: actualAgencyId
         type: string
         description: "The agency that actually handled the request"
-      - field: isPredicted
-        type: boolean
-        description: "Whether the prediction was correct or not"
-      - field: predictedAgencyIds
-        type: json
-        description: "Array of agency IDs that were predicted with confidence scores"
-      - field: feedbackNotes
-        type: string
-        description: "Optional notes on the prediction"
-      - field: metadata
-        type: json
-        description: "Additional metadata for this feedback"
 
 extractFeedbackData:
   assign:
     chatId: ${incoming.body.chatId}
     inferenceId: ${incoming.body.inferenceId}
     actualAgencyId: ${incoming.body.actualAgencyId ?? ""}
-    isPredicted: ${incoming.body.isPredicted}
-    predictedAgencyIds: ${incoming.body.predictedAgencyIds ?? []}
-    feedbackNotes: ${incoming.body.feedback_notes ?? ""}
-    metadata: ${incoming.body.metadata}
     timestamp: ${new Date().toISOString()}
   next: validate_feedback
 
@@ -65,11 +49,6 @@ store_feedback:
       chatId: ${chatId}
       inferenceId: ${inferenceId}
       actualAgencyId: ${actualAgencyId}
-      isPredicted: ${isPredicted}
-      predictedAgencyIds: ${JSON.stringify(predictedAgencyIds)}
-      feedback_notes: ${feedbackNotes}
-      feedback_timestamp: ${timestamp}
-      metadata: ${JSON.stringify(metadata)}
   result: store_result
   error: handle_storage_error
   next: check_storage_result

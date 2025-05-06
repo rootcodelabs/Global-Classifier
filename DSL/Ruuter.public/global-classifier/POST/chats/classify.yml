@@ -17,20 +17,12 @@ declaration:
       - field: targetAgencies
         type: json
         description: "Array of agency IDs with confidence scores for routing"
-      - field: message
-        type: string
-        description: "User message"
-      - field: metadata
-        type: json
-        description: "Any additional metadata for this routing decision"
 
 extractDecisionData:
   assign:
     chatId: ${incoming.body.chatId}
     inferenceId: ${incoming.body.inferenceId}
     targetAgencies: ${incoming.body.targetAgencies ?? []}
-    message: ${incoming.body.message}
-    metadata: ${incoming.body.metadata}
   next: validate_decision
 
 validate_decision:
@@ -46,9 +38,36 @@ return_validation_error:
 
 log_classification:
   log: "Classification received for the chat ${chatId}: ${JSON.stringify(targetAgencies)}"
-  next: return_success
+  next: store_classification_data
 
+store_classification_data:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/store-classification"
+    body:
+      chatId: ${chatId}
+      inferenceId: ${inferenceId}
+      targetAgencies: ${JSON.stringify(targetAgencies)}
+  result: store_result
+  error: handle_storage_error
+  next: check_storage_result
+
+check_storage_result:
+  switch:
+    - condition: ${200 <= store_result.response.statusCodeValue && store_result.response.statusCodeValue < 300}
+      next: return_success
+  next: handle_storage_error
+
+handle_storage_error:
+  log: "Error storing classification data: ${store_result.error}"
+  next: return_storage_error
+
+return_storage_error:
+  status: 500
+  return: "Failed to store classification data. Please try again later."
+  next: end
+  
 return_success:
   status: 200
-  return: "Classification received in DMR successfully"
-
+  return: "Classification received and stored successfully"
+  next: end

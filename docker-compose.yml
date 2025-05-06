@@ -95,14 +95,14 @@ services:
       bykstack:
         ipv4_address: 172.25.0.6
 
-  authentication-layer:
-    container_name: authentication-layer
-    image: authentication-layer
-    ports:
-      - 3004:3004
-    networks:
-      bykstack:
-        ipv4_address: 172.25.0.8
+  # authentication-layer:
+  #   container_name: authentication-layer
+  #   image: authentication-layer
+  #   ports:
+  #     - 3004:3004
+  #   networks:
+  #     bykstack:
+  #       ipv4_address: 172.25.0.8
 
   resql:
     container_name: resql

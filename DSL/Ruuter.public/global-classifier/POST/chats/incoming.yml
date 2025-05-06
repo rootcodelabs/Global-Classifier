@@ -14,23 +14,23 @@ declaration:
       - field: message
         type: string
         description: "The user message content to classify"
-      - field: botId
+      - field: authorId
         type: string
         description: "Buerokrat chat bot ID"
-      - field: previousMessages
+      - field: conversationHistory
         type: json
         description: "Previous messages in the conversation for context"
-      - field: metadata
-        type: json
-        description: "Additional metadata that might help with classification"
+      - field: url
+        type: string
+        description: "Additional url that might help with classification"
 
 extractRequestData:
   assign:
     chatId: ${incoming.body.chatId}
     message: ${incoming.body.message ?? ""}
-    botId: ${incoming.body.botId ?? ""}
-    previousMessages: ${incoming.body.previousMessages ?? []}
-    metadata: ${incoming.body.metadata}
+    authorId: ${incoming.body.authorId ?? ""}
+    conversationHistory: ${incoming.body.conversationHistory ?? []}
+    url: ${incoming.body.url}
   next: log_classification_request
 
 log_classification_request:
@@ -44,9 +44,9 @@ forward_to_classifier_service:
     body:
       chatId: ${chatId}
       message: ${message}
-      botId: ${botId}
-      previousMessages: ${previousMessages}
-      metadata: ${metadata}
+      authorId: ${authorId}
+      conversationHistory: ${conversationHistory}
+      url: ${url}
       timestamp: ${new Date().toISOString()}
   result: classifier_result
   error: return_error
@@ -56,12 +56,6 @@ process_classification_result:
   switch:
     - condition: ${classifier_result.response.body.suggestedBot != null}
       next: return_suggestion
-  # next: return_cannot_handle
-
-# return_cannot_handle:
-#   status: 400
-#   return: ${classifier_result.response.body}
-#   next: end
 
 return_suggestion:
   status: 200
