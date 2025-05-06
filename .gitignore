@@ -1,6 +1,5 @@
-<<<<<<< HEAD
+
 tim-db
-=======
 .vscode/
 .idea/
 # Node modules
@@ -9,4 +8,4 @@ node_modules/
 #Common .ignore files
 *.DS_Store
 *.log
->>>>>>> 118c8623322014524f4dd18114f760c189c2497b
+
