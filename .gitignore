@@ -2,7 +2,9 @@
 .idea/
 # Node modules
 node_modules/
+.venv/
 
 #Common .ignore files
 *.DS_Store
 *.log
+*.bkp
