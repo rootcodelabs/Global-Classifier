@@ -114,7 +114,7 @@ services:
       - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/global-classifier #For LocalDb Use
       # sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://171.22.247.13:5433/byk?sslmode=require
       - sqlms.datasources.[0].username=postgres
-      - sqlms.datasources.[0].password=rootcode
+      - sqlms.datasources.[0].password=dbadmin
       - logging.level.org.springframework.boot=INFO
     ports:
       - 8082:8082
@@ -129,7 +129,7 @@ services:
     image: postgres:14.1
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=rootcode
+      - POSTGRES_PASSWORD=dbadmin
       - POSTGRES_DB=global-classifier
     ports:
       - 5433:5432
