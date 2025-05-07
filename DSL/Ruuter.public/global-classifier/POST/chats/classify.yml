@@ -1,0 +1,73 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Callback endpoint for Global Classifier to indicate routing decisions"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "Unique identifier of the chat session"
+      - field: inferenceId
+        type: string
+        description: "Unique identifier of the prediction attempt"
+      - field: targetAgencies
+        type: json
+        description: "Array of agency IDs with confidence scores for routing"
+
+extractDecisionData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    inferenceId: ${incoming.body.inferenceId}
+    targetAgencies: ${incoming.body.targetAgencies ?? []}
+  next: validate_decision
+
+validate_decision:
+  switch:
+    - condition: ${!chatId}
+      next: return_validation_error
+  next: log_classification
+
+return_validation_error:
+  status: 400
+  return: "Invalid classification payload. Chat ID is required."
+  next: end
+
+log_classification:
+  log: "Classification received for the chat ${chatId}: ${JSON.stringify(targetAgencies)}"
+  next: store_classification_data
+
+store_classification_data:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/store-classification"
+    body:
+      chatId: ${chatId}
+      inferenceId: ${inferenceId}
+      targetAgencies: ${JSON.stringify(targetAgencies)}
+  result: store_result
+  error: handle_storage_error
+  next: check_storage_result
+
+check_storage_result:
+  switch:
+    - condition: ${200 <= store_result.response.statusCodeValue && store_result.response.statusCodeValue < 300}
+      next: return_success
+  next: handle_storage_error
+
+handle_storage_error:
+  log: "Error storing classification data: ${store_result.error}"
+  next: return_storage_error
+
+return_storage_error:
+  status: 500
+  return: "Failed to store classification data. Please try again later."
+  next: end
+  
+return_success:
+  status: 200
+  return: "Classification received and stored successfully"
+  next: end
