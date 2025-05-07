@@ -1,3 +1,12 @@
+tim-db
+.vscode/
+.idea/
+# Node modules
+node_modules/
+
+#Common .ignore files
+*.DS_Store
+*.log
 # MLflow generated files
 mlflow_artifacts/
 mlflow_data/
