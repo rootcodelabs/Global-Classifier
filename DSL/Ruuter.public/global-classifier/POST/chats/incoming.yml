@@ -1,0 +1,68 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Global classifier service to receive incoming chat messages and classify them."
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "Chat session identifier"
+      - field: message
+        type: string
+        description: "The user message content to classify"
+      - field: authorId
+        type: string
+        description: "Buerokrat chat bot ID"
+      - field: conversationHistory
+        type: json
+        description: "Previous messages in the conversation for context"
+      - field: url
+        type: string
+        description: "Additional url that might help with classification"
+
+extractRequestData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    message: ${incoming.body.message ?? ""}
+    authorId: ${incoming.body.authorId ?? ""}
+    conversationHistory: ${incoming.body.conversationHistory ?? []}
+    url: ${incoming.body.url}
+  next: log_classification_request
+
+log_classification_request:
+  log: "Classification request received for chat ${chatId}: ${message}"
+  next: forward_to_classifier_service
+
+forward_to_classifier_service:
+  call: http.post
+  args:
+    url: "[#CHATBOT_CLASSIFIER_SERVICE]/incoming-conversation"
+    body:
+      chatId: ${chatId}
+      message: ${message}
+      authorId: ${authorId}
+      conversationHistory: ${conversationHistory}
+      url: ${url}
+      timestamp: ${new Date().toISOString()}
+  result: classifier_result
+  error: return_error
+  next: process_classification_result
+
+process_classification_result:
+  switch:
+    - condition: ${classifier_result.response.body.suggestedBot != null}
+      next: return_suggestion
+
+return_suggestion:
+  status: 200
+  return: ${classifier_result.response.body}
+  next: end
+
+return_error:
+  status: 500
+  return: "Classification service unavailable"
+  next: end
