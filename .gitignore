@@ -7,3 +7,28 @@ node_modules/
 #Common .ignore files
 *.DS_Store
 *.log
+# MLflow generated files
+mlflow_artifacts/
+mlflow_data/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+test/logs/
+**/logs/
+*.log.*
+*.zip
