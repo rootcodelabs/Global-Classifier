@@ -1,9 +1,0 @@
-# Miks kogutakse broneeringuinfot? - Lennureisijate broneeringuinfo - Politsei- ja Piirivalveamet
-
-Miks kogutakse broneeringuinfot?
-Lennuliiklus on viimase paarikümne aastaga oluliselt kasvanud, lendamisest on saanud üks levinumaid liikumisviise. Lennureiside turvaliseks ja sujuvaks korraldamiseks koguvad lennufirmad reisijate kohta erinevaid andmeid alates reisi marsruudist kuni inimese kontaktandmeteni välja. Need andmed talletatakse broneeringuinfos, mis on lühidalt tuntud kui PNR ( ).
-Alates 2018. aastast hakkavad lennufirmad broneeringuinfot edastama politsei- ja piirivalveametile, jõustunud regulatsioon ei suurenda lennureisijate käest küsitavate andmete hulka. Edastatud andmetest tekib ühtne andmekogu nimega BRIIS ehk broneeringuinfo süsteem.
-
-Rahvusvaheline lennureisijate hulk kasvab iga aastaga, võrreldes 1980. aastaga on lennureisijate arv mitmekordistunud. Ainuüksi Tallinna lennujaama läbis 2017. aastal ligikaudu 2,64 miljonit reisija.
-Lennureiside kättesaadavust ja mugavust kasutavad ära ka rahvusvaheliselt tegutsevad kurjategijad – terrorismiga seotud isikud, narkokullerid, inimkaubitsejad, salakaubavedajad ja teised.
-Rahvusvahelistel kurjategijatel esineb reiside planeerimisel ja reisimisel teatud ühiseid käitumismustreid, mida infosüsteem läbi analüüsi tuvastab. See aitab omakorda tabada kurjategijaid ja avastada kuritegelikke võrgustikke ning tuvastada julgeolekut potentsiaalselt ohustavaid isikud. Selline andmete töötlemine, tulemuste põhjalik hindamine ning vajadusel asjakohaste meetmete rakendamine muudab Eesti ja kogu Euroopa turvalisemaks.

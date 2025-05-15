@@ -1,8 +1,0 @@
-# Mis see on? - Mobiil-ID - Politsei- ja Piirivalveamet
-
-Mis see on?
-
-- Mobiil-ID on isiku tõendamise ja digitaalse allkirjastamise lahendus mobiiltelefonile. Sellega saab teostada samu e-toiminguid nagu ID-kaardiga, kuid veelgi mugavamalt.
-- Mobiil-ID sertifikaadid kehtivad kuni 5 aastat.
-- Mobiil-ID taotlemiseks pöördu oma mobiiloperaatori poole.
-- Enne 02.07.2022 taotletud mobiil-ID saab vajadusel tühistada PPA teeninduses.

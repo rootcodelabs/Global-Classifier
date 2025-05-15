@@ -1,9 +1,0 @@
-# Isikuandmete töötlemine - Politsei- ja Piirivalveamet
-
-Järgime meile õigusaktides määratud ülesannete täitmisel isikuandmete kaitse seaduses kehtestatud põhimõtteid.
-Lähtudes isikuandmete kaitse seadusest töötleme andmeid vaid ulatuses, mis on vajalikud avalike ülesannete täitmiseks ning kodanike kiireks ja kvaliteetseks teenindamiseks. Hoiame meie kasutuses olevaid isikuandmeid volitamatu ja mittesihipärase kasutamise eest. Tagame isikuandmete kaitstuse ja õiguspärase töötlemise, ning rakendame selleks nii organisatsioonilisi, füüsilisi kui infotehnilisi turvameetmeid.
-PPA teenistujad, kes vastutavad teenistuskohustuste täitmisel isikuandmete töötlemisele kehtestatud põhimõtete järgimise eest, läbivad vastava koolituse ning PPA teostab antud põhimõtetest kinnipidamise osas järelevalvet.
-Me ei väljasta ega edasta isikuandmeid kolmandatele isikutele, välja arvatud juhul kui vastav kohustus tuleb seadusest või on selleks olemas andmesubjekti luba.
-Vastavalt isikuandmete kaitse seadusele on igaühel õigus tutvuda tema kohta kogutud isikuandmetega ning teada saada, millises ulatuses ja mis eesmärgil on teda puudutavaid isikuandmeid töödeldud. Kui andmed on muutunud või muul põhjusel ebatäpsed, on seadusest tulenevalt isikul õigus nõuda vastavate paranduste tegemist.
-Eelkirjeldatud põhimõtted kehtivad isikuandmete töötlemisele PPA-s ja ei hõlma isikuandmete töötlemist veebilehtedel, millele on PPA koduleheküljel viidatud. PPA ei vastuta kolmandate osapoolte tegevuste eest.
-PPA hoiab oma veebilehe külastajate privaatsust. Veebilehe kaudu teavitamisel järgitakse samu põhimõtteid, kui korrarikkumisest, kuriteost või muust probleemist politseile teatamisel. Teatamise tulemusel teataja nime ei avaldata, välja arvatud seadusega lubatud juhtudel.

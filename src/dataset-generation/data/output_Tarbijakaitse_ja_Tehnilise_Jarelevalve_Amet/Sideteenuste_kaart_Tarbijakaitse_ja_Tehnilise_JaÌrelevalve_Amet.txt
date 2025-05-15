@@ -1,7 +1,0 @@
-# Sideteenuste kaart | Tarbijakaitse ja Tehnilise Järelevalve Amet
-
-Sidekaabliga liitumisvõimaluste kaardi koostamise aluseks on võetud andmed, millega sideoperaator pakub vastava teenuse kättesaadavust tavahinnakirja alusel. Roheline punkt kaardil tähendab, et aadressiobjektil on võimalus liituda interneti teenusega (infoaknas märgitud max võimalik liitumiskiirus) ning punase punkti puhul liitumisvõimalus puudub. Filtri rakendamisel muutuvad värvid vastavalt valitud allalaadimise kiirusele – valitud kiirus või suurem on tähistatud rohelisega ning väiksem punasega.
-Lairiba toetusmeetmete kaartidel kuvatakse erinevate teotusmeetmetega rajatud internetiühendused. Täiendav teave toetusmeetmete kohta on leitav TTJA kodulehelavaneb uues vahekaardis (https://ttja.ee/ariklient/side-ja-meediateenused/sideteenused/kiire-internet) .
-Ava kaardirakendus eraldi aknasavaneb uues vahekaardis (https://xgis.maaamet.ee/xgis2/page/app/netikaart)
-Lairiba toetusmeetmedavaneb uues vahekaardis (https://ttja.ee/ariklient/side-ja-meediateenused/sideteenused/kiire-internet)
-Viimati uuendatud 09.01.2024
