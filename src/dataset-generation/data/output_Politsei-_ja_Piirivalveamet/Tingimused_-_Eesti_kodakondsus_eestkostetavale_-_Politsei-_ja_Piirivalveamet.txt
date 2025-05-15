@@ -1,9 +1,0 @@
-# Tingimused - Eesti kodakondsus eestkostetavale - Politsei- ja Piirivalveamet
-
-Tingimused
-Eestkostja saab Eesti kodakondsust taotleda eestkostetavale:
-
-- kes on vähemalt 15-aastane
-- kes omab pikaajalise elaniku elamisluba või alalist elamisõigust
-- kes on elanud enne taotluse esitamist Eestis elamisloa või elamisõiguse alusel vähemalt 8 aastat, millest 5 aastat püsivalt
-- kelle elukoht on Eesti rahvastikuregistris registreeritud.

@@ -1,9 +1,0 @@
-# Lennuloa taotlemine - Politsei- ja Piirivalveamet
-
-Ida piiri läheduses on sagenenud GNSS ja mehitamata õhusõidukite juhtimissignaalide segamised (droonide GPS-signaali kadumine, juhtpuldiga ühenduse häired või katkemine, automaatse naasmise funktsiooni tõrge jms), mis mõjutavad piiriäärsel alal droonidega lendamise ohutust. Seetõttu küsib PPA EER1 alas lennuluba taotlevatelt inimestelt lisainformatsiooni, et kontrollida, kas droonijuhil on tagavaraplaan lennuohutuse tagamiseks, juhuks kui õhusõiduki juhitavus GPS-signaalide segamise tõttu kaob.
-Alates 1. septembrist 2022 on Politsei poolt valvatavate objektide kohale kehtestatud geograafilised ala mehitamata õhusõidukite lendamise piiramiseks.
-Geograafilised alad on loetletud Vabariigi Valitsuse 25.08.2022 korralduses nr 229 (https://www.riigiteataja.ee/akt/326082022001) .
-Vaata lennuliikluse kaarti (https://utm.eans.ee/avm/#p=6.32/58.556/25.735)
-PPA poolt valvatavate objektide kohal kehtestatud geograafilises alas lendamiseks on vajalik luba. Loa väljastajaks on PPA. Loa andmine ja sellest keeldumise kord on kirjeldatud LennS § 4 lg 5 ja 6.
-Mehitamata õhusõiduki käitamise taotlus saada PPA üldisele e-posti aadressile vähemalt 5 tööpäeva enne planeeritavat lennutamist.
-Laadi alla õhusõiduki käitamise taotluse vorm (/files/dokumendid/lennuluba/ohusoiduki-kaeitamise-taotlus-2023.docx?a7e46c297e)

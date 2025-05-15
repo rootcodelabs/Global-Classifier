@@ -1,8 +1,0 @@
-# Trahvimäärad - Kiiruskaamerad - Politsei- ja Piirivalveamet
-
-Trahvimäärad
-Liiklusseaduse järgi määratakse suurima lubatud sõidukiiruse ületamise korral hoiatustrahv, mille suurus eurodes saadakse lubatud sõidukiirust ületanud kilomeetrite arvu korrutamisel arvuga 7.
-
-Hoiatustrahvi maksimaalmäär on 300 eurot.
-
-Kui sõidukiomanik või sõiduki vastutav kasutaja ei oma ega säilita sõiduki kasutamise ajal ja kuue kuu jooksul pärast teise isiku poolt mootorsõiduki kasutamise lõppemist teavet kasutaja ees- ja perekonnanime, aadressi, juhiloa numbri, sünniaja või isikukoodi kohta ning ei jaga teavet liiklusjärelevalve teostajale, karistatakse teda liiklusseaduse järgi rahatrahviga kuni 200 eurot. Kui sama teo on pannud toime juriidiline isik, karistatakse rahatrahviga kuni 390 eurot.

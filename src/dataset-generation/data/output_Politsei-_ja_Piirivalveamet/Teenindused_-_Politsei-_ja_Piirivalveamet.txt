@@ -1,6 +1,0 @@
-# Teenindused - Politsei- ja Piirivalveamet
-
-Kõige turvalisem ja kiireim viis dokumentide taotlemiseks on PPA iseteenindus (https://www.politsei.ee/et/iseteenindus) .
-Digikioskit on võimalik kasutada elavas järjekorras.
-
-(https://mobiilnepilet.politsei.ee/)

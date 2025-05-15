@@ -1,8 +1,0 @@
-# Hoiatustrahvi tasumine - Kiiruskaamerad - Politsei- ja Piirivalveamet
-
-Hoiatustrahvi tasumine
-Hoiatustrahv tuleb trahviteatel märgitud andmetega tasuda panka kolmekümne päeva jooksul trahviteate kättetoimetamisest arvates.
-Trahviteate adressaadil on võimalik trahviteatega tutvuda, kättesaamist kinnitada ning hoiatustrahvi tasuda ka portaalis https://hoiatustrahv.politsei.ee (https://hoiatustrahv.politsei.ee) .
-Igale trahviteatele on lisatud maksekorraldus ja selgituses eraldi juhised hoiatustrahvi nõuetekohaseks tasumiseks Rahandusministeeriumi arvele. Tasumisel on kohustuslik märkida õige viitenumber.
-Hoiatustrahv loetakse õigeaegselt tasutuks, kui see on maksmise tähtpäevaks laekunud trahviteates märgitud pangakontole konkreetsel trahviteatel näidatud viitenumbriga. Kui mootorsõiduki eest vastutav isik ei ole trahviteadet vaidlustanud, kuid samas on jätnud hoiatustrahvi tähtaegselt tasumata või ei ole hoiatustrahv nõuetekohaselt laekunud valesti teostatud ülekande tõttu, esitab kohtuväline menetleja trahviteate kohtutäiturile sundtäitmiseks.
-Maksekorralduse täitmisel tuleb enne ülekande teostamist alati veenduda, et kõik vajalikud andmed on õiged ja korrektselt kirjas, et hoiatustrahv laekuks õiges summas ja trahviteates märgitud viitenumbriga nõuetekohaselt Rahandusministeeriumi arvele. Kui mootorsõiduki eest vastutav isik on hoiatustrahvi tasunud või see on pööratud täitmisele, ei või kedagi sama teo eest väärteokorras karistada.

@@ -1,6 +1,0 @@
-# ID-kaardi sertifikaatide tühistamine - Politsei- ja Piirivalveamet
-
-Kui sa ei soovi kasutada e-teenuseid ega anda ID-kaardiga digiallkirja, on sul võimalik dokumendi sertifikaadid tühistada. Isikut tõendava dokumendina kehtib kaart oma kehtivusaja lõpuni ning saad seda jätkuvalt kasutada kliendikaardina.
-Kui sa hiljem soovid siiski e-teenuseid kasutada ja digiallkirja anda, tuleb taotleda uus dokument.
-Sertifikaatide tühistamiseks pöördu PPA teenindusse ja võta kaasa oma isikut tõendav dokument.
-Vaata teenindusi (/et/asukohad/teenindused)

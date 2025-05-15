@@ -1,7 +1,0 @@
-# Kirjalik hoiatamismenetlus - Kiiruskaamerad - Politsei- ja Piirivalveamet
-
-Kirjalik hoiatamismenetlus
-Seadus annab kohtuvälisele menetlejale õiguse mootorsõidukiga toime pandud liiklusväärtegude korral määrata hoiatustrahv mootorsõiduki eest vastutavale isikule.
-Erisusena saab seda kohaldada ka riigi, kohaliku omavalitsuse ja avalik-õigusliku juriidilise isiku suhtes. Antud menetlus kuulub kohaldamisele: kui väärteomenetluse ajendiks on automaatse liiklusjärelevalveseadmega edastatud teave liiklusnõuete rikkumise kohta, mille alusel on visuaalselt tuvastatav mootorsõiduki registreerimismärk ning rikkumise tuvastamise aeg ja koht; kui teo avastanud järelevalvet teostaval ametnikul ei olnud võimalik kohe tuvastada mootorsõiduki juhti ning rikkumine jäädvustati fotol, filmil või muul teabesalvestisel, millelt on visuaalselt tuvastatav mootorsõiduki registreerimismärk ning rikkumise tuvastamise aeg ja koht.
-Hoiatustrahv määratakse isikule, kes oli mootorsõiduki eest vastutav isik väärteo toimepanemise ajal.
-Juhul, kui mootorsõiduki eest vastutav isik teatab kohtuvälisele menetlejale sõidukit kasutanud isiku andmed, tühistatakse hoiatustrahv ning saadetakse trahviteade tegelikult sõidukit kasutanud isikule. Kirjaliku hoiatamismenetluse kohaldamisega kaasnev hoiatustrahv ei too endaga kaasa karistusõiguslikku tagajärge, kuna see pole süüteo eest kohaldatav karistus, seda ei kanta karistusregistrisse ning sellele ei või tugineda süüteo korduvuse arvestamisel ega muude süüteo eest ette nähtud õigusjärelmite kohaldamisel.
