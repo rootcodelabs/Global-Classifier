@@ -1,7 +1,0 @@
-# Broneeringuinfo süsteem BRIIS - Lennureisijate broneeringuinfo - Politsei- ja Piirivalveamet
-
-Broneeringuinfo süsteem BRIIS
-BRIIS on Politsei ja Piirivalveameti hallatav broneeringuinfo süsteem, mis on ühenduses nii Eesti kui rahvusvaheliste siseturvalisuse andmebaasidega. Koostöö eri andmebaasidega aitab tuvastada täiendavaid seoseid raske kuritegevuse või terrorismikahtluste puhul.
-Broneeringuinfo süsteemid võtavad 2018. aastal kasutusele kõik Euroopa Liidu liikmesriigid. Lisaks on oma broneeringuinfo süsteem kasutusel näiteks USA-s, Kanadas, Austraalias, Uus-Meremaal ja Mehhikos.
-Riikides, kus broneeringuinfo on õiguskaitselistel eesmärkidel juba kasutusel, on õnnestunud selle abil tabada mitmeid terrorismis kahtlustatavaid isikuid, narkokaubitsejaid, inimkaubitsejaid ja salakaubavedajaid.
-Infosüsteemi BRIIS arendamist ja rakendamist rahastatakse Euroopa Liidu Sisejulgeolekufondi ja siseministeeriumi vahenditest

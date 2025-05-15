@@ -1,6 +1,0 @@
-# Menetlustähtaeg - E-residendi digi-ID - Politsei- ja Piirivalveamet
-
-Menetlustähtaeg
-E-residendi digi-ID väljaandmise või sellest keeldumise otsus tehakse 30 kalendripäeva jooksul alates taotluse esitamisest.
-Digi-ID jõudmiseni valitud väljastuskohta kulub 2-5 nädalat alates otsuse tegemisest v.a juhul, kui väljastuskohaks on valitud mobiilne väljastuspunkt (https://www.politsei.ee/et/juhend/e-residendi-digi-id/valjastuskohad) . Sellisel juhul teavitatakse võimalikest e-residendi digi-ID väljastamise kuupäevadest eraldi.
-Loe lisateavet mobiilsete väljastuspunktide kohta. (https://www.politsei.ee/et/juhend/e-residendi-digi-id/valjastuskohad)

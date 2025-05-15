@@ -7,6 +7,7 @@ node_modules/
 #Common .ignore files
 *.DS_Store
 *.log
+
 # MLflow generated files
 mlflow_artifacts/
 mlflow_data/
@@ -32,3 +33,4 @@ test/logs/
 **/logs/
 *.log.*
 *.zip
+

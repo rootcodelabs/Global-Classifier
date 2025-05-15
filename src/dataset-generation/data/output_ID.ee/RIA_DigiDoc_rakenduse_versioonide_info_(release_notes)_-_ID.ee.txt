@@ -1,6 +1,0 @@
-# RIA DigiDoc rakenduse versioonide info (release notes) - ID.ee
-
-Kõige värskem versioon mobiilirakendusest on alati kättesaadav App Store (https://itunes.apple.com/ee/app/ria-digidoc/id1216104448?mt=8) ning Google Play (https://play.google.com/store/apps/details?id=ee.ria. DigiDoc) kaudu. RIA DigiDoc äpi turvalisuse, töökindluse ja kasutusmugavuse tagamiseks luba oma nutiseadmes automaatsed uuendused: nii püsib mobiilirakendus värskena!
-
-Kõige värskem versioon RIA DigiDoc mobiilirakendusest on alati kättesaadav AppStore ning Google Play kaudu.
-Aitäh tagasiside eest!

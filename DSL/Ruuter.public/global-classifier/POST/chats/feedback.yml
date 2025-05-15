@@ -11,9 +11,6 @@ declaration:
       - field: chatId
         type: string
         description: "ID of the chat that was classified"
-      - field: inferenceId
-        type: string
-        description: "Unique identifier of the classification prediction"
       - field: actualAgencyId
         type: string
         description: "The agency that actually handled the request"
@@ -21,25 +18,46 @@ declaration:
 extractFeedbackData:
   assign:
     chatId: ${incoming.body.chatId}
-    inferenceId: ${incoming.body.inferenceId}
     actualAgencyId: ${incoming.body.actualAgencyId ?? ""}
-    timestamp: ${new Date().toISOString()}
   next: validate_feedback
 
 validate_feedback:
   switch:
-    - condition: ${!chatId || inferenceId === undefined}
+    - condition: ${!chatId}
       next: return_validation_error
+  next: get_inference_id
+
+get_inference_id:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-inference-id"
+    body:
+      chatId: ${chatId}
+  result: inference_result
   next: log_feedback
+  error: handle_inference_error
+
+handle_inference_error:
+  log: "Error retrieving inference_id: ${inference_result.error}"
+  next: return_inference_error
+
 
 return_validation_error:
   status: 400
-  return: "Invalid feedback payload. chatId, inferenceId are required fields."
+  return: "Invalid feedback payload. chatId is required."
   next: end
 
 log_feedback:
-  log: "Classification feedback received for chat ${chatId}"
+  log: "Classification feedback received for chat ${chatId} with inference ID ${inference_result.response.body[0].inferenceId}"
+  assign:
+    inferenceId: ${inference_result.response.body[0].inferenceId}
   next: store_feedback
+  error: return_inference_error
+
+return_inference_error:
+  status: 404
+  return: "Could not find classification result for the provided chat ID."
+  next: end
 
 store_feedback:
   call: http.post
@@ -49,6 +67,7 @@ store_feedback:
       chatId: ${chatId}
       inferenceId: ${inferenceId}
       actualAgencyId: ${actualAgencyId}
+      feedbackTimestamp: ${new Date().toISOString()}
   result: store_result
   error: handle_storage_error
   next: check_storage_result
@@ -76,4 +95,3 @@ return_success:
   status: 200
   return: "Feedback received and processed successfully"
   next: end
-

@@ -1,9 +1,0 @@
-# MyID portaal - ID.ee
-
-Portaal MyID pakub teavet Mobiil-ID, ID-kaardi, Digi-ID ja Smart-ID kontode, sertifikaatide ning tehingute kohta, mis on väljastatud SK ID Solutions AS (https://www.skidsolutions.eu/) ehk SK poolt.
-Lisateavet MyID portaali ja selle kasutamise kohta leiate portaali tingimustest (https://www.skidsolutions.eu/upload/files/MYID_T%26C_ET_CURRENT.pdf) kui ka KKK (https://myid.skidsolutions.eu/ee/faq) .
-Pidage meeles, et MyID portaal on praegu beetaversioonis, mis tähendab, et esitatud teave võib olla ebatäpne ja/ või puudulik. Kui vajate MyID portaalist teavet ametlikuks kasutamiseks, pöörduge palun aadressile info@skidsolutions.eu (mailto:info@skidsolutions.eu) .
-Tere tulemast MyID portaali. (https://myid.skidsolutions.eu/ee)
-
-Portaal MyID pakub teavet Mobiil-ID, ID-kaardi, Digi-ID ja Smart-ID kontode, sertifikaatide ning tehingute kohta, mis on väljastatud SK ID Solutions AS ehk SK poolt.
-Aitäh tagasiside eest!

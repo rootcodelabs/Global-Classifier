@@ -1,8 +1,0 @@
-# ID-kaardi PIN-koodid: uue koodiümbriku taotlemine - ID.ee
-
-Uue koodiümbriku taotlemiseks tuleb sul pöörduda Politsei- ja Piirivalveameti teenindusse (https://www.politsei.ee/et/asukohad/teenindused) või Eesti Vabariigi välisesindusse (https://www.politsei.ee/et/dokumente-vaeljastavad-eesti-vabariigi-vaelisesindused) . Kindlasti ära unusta, et kaasa tuleks võtta ka isikut tõendav dokument!
-Võimalusel valida mobiilne pilet (https://mobiilnepilet.politsei.ee/) enne teeninduse külastamist.
-Koodiümbriku riigilõivu määrad on leitavad Politsei- ja Piirivalveameti kodulehelt (https://www.politsei.ee/et/juhend/riigiloivude-maeaerad/) . Kindlasti soovitame automaatselt väljastatud PIN-koodid kohe ära vahetada – selliste vastu, mida sul on lihtne meeles pidada ilma, et sa need üles kirjutama peaksid! PIN-koode saad ise muuta (https://www.id.ee/artikkel/pin-koodide-ja-puk-koodi-muutmine) DigiDoc4 rakenduse kaudu: see käib lihtsalt ja võtab vaid minuti. Hoia oma PIN- ja PUK-koode turvaliselt!
-Kui ID-kaardi PIN-koodid lähevad kaduma olles ja Eestisse tulek ei ole võimalik, saad uue koodiümbriku Eesti Vabariigi välisesindusest (https://www.politsei.ee/et/dokumente-vaeljastavad-eesti-vabariigi-vaelisesindused) .
-Juhul, kui oled oma ID-kaardi, digi-ID või muu digitaalse dokumendi PIN- ja PUK-koodid ära unustanud, saad Politsei- ja Piirivalveametist uue koodiümbriku taotleda.
-Aitäh tagasiside eest!
