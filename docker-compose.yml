@@ -17,8 +17,7 @@ services:
     ports:
       - 8086:8086
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.2
+      - bykstack-gc
     cpus: "0.5"
     mem_limit: "512M"
 
@@ -40,8 +39,7 @@ services:
     ports:
       - 8088:8088
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.3
+      - bykstack-gc
     cpus: "0.5"
     mem_limit: "512M"
 
@@ -58,8 +56,7 @@ services:
   #   ports:
   #     - 3000:3000
   #   networks:
-  #     bykstack:
-  #       ipv4_address: 172.25.0.4
+  #     - bykstack-gc
 
   tim:
     container_name: tim
@@ -72,8 +69,7 @@ services:
     ports:
       - 8085:8085
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.5
+      - bykstack-gc
     extra_hosts:
       - "host.docker.internal:host-gateway"
     cpus: "0.5"
@@ -92,8 +88,7 @@ services:
     ports:
       - 9876:5432
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.6
+      - bykstack-gc
 
   # authentication-layer:
   #   container_name: authentication-layer
@@ -101,8 +96,7 @@ services:
   #   ports:
   #     - 3004:3004
   #   networks:
-  #     bykstack:
-  #       ipv4_address: 172.25.0.8
+  #     - bykstack-gc
 
   resql:
     container_name: resql
@@ -112,7 +106,7 @@ services:
     environment:
       - sqlms.datasources.[0].name=byk
       - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/global-classifier #For LocalDb Use
-      # sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://171.22.247.13:5433/byk?sslmode=require
+      # sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://171.22.247.13:5435/byk?sslmode=require
       - sqlms.datasources.[0].username=postgres
       - sqlms.datasources.[0].password=dbadmin
       - logging.level.org.springframework.boot=INFO
@@ -121,8 +115,7 @@ services:
     volumes:
       - ./DSL/Resql:/DSL
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.9
+      - bykstack-gc
 
   users_db:
     container_name: users_db
@@ -132,13 +125,12 @@ services:
       - POSTGRES_PASSWORD=dbadmin
       - POSTGRES_DB=global-classifier
     ports:
-      - 5433:5432
+      - 5435:5432
     volumes:
       - ~/buerokratt_classifier/db_files:/var/lib/postgresql/data
 
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.10
+      - bykstack-gc
     restart: always
 
   init:
@@ -148,8 +140,7 @@ services:
       - shared-volume:/shared
       - ./model_trainer:/app/model_trainer
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.12
+      - bykstack-gc
 
   classifier-service:
     container_name: classifier-service
@@ -158,8 +149,7 @@ services:
     ports:
       - "8090:8090"
     networks:
-      bykstack:
-        ipv4_address: 172.25.0.27
+      - bykstack-gc
     volumes:
       - ./src/classifier-service:/app
     environment:
@@ -171,10 +161,10 @@ volumes:
   opensearch-data:
 
 networks:
-  bykstack:
-    name: bykstack
+  bykstack-gc:
+    name: bykstack-gc
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.25.0.0/27
-          gateway: 172.25.0.1
+    # ipam:
+    #   config:
+    #     - subnet: 172.25.0.0/27
+    #       gateway: 172.25.0.1

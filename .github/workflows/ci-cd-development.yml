@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, development]
 
     steps:
       - name: Checkout code
@@ -16,8 +16,6 @@ jobs:
       - name: Stop and remove existing containers
         run: |
           docker compose down
-
       - name: Build & up Docker container 
         run: |
           docker compose up --build -d
-

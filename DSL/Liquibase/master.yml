@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: changelog/global-classifier-script-v1-classification-results.sql
+  - include:
+      file: changelog/global-classifier-script-v2-classification-feedback.sql
