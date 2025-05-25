@@ -93,7 +93,7 @@ The project follows a three-tier branching workflow to streamline development, t
 
 1. Fork the repository and clone it locally.  
 2. Create a new feature/fix branch based off `wip`.  
-3. Make your changes, run Ruff linting and formatting, commit your changes, and ensure all checks pass.  
+3. Make your changes, run Ruff linting and formatting, commit your changes, and ensure all checks pass.
 4. Push your branch to the remote and open a Pull Request targeting `wip`.  
 5. After review approval, maintainers merge your changes into `testing`.  
 6. Automated tests and QA are executed on `testing`.  

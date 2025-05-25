@@ -1,7 +1,0 @@
-# Iseteenindus - Relvaluba füüsilisele isikule - Politsei- ja Piirivalveamet
-
-Iseteenindus
-Relvadega seotud lubasid saad taotleda iseteenindusest (https://relvataotlus.politsei.ee/#/login) . Teenindussaalis taotlemiseks tuleb alates 3. jaanuarist 2022 eelnevalt broneerida aeg (https://broneering.politsei.ee) .
-Alates 26. veebruarist 2019 väljastatakse relvaload ja soetamisload ainult digitaalselt.
-Füüsilisele isikule on avatud iseteenindus (https://relvataotlus.politsei.ee) aadressil relvataotlus.politsei.ee (https://relvataotlus.politsei.ee) , kus saad esitada taotluse, tasuda pangalingi kaudu riigilõivu ja jälgida oma iseteeninduses esitatud taotluse liikumist menetlusetappides.
-Soovitame iseteenindust kasutada Google Chrome'i veebilehitsejaga.

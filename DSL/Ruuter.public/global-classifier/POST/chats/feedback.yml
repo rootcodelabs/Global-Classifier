@@ -1,0 +1,97 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Endpoint to receive feedback on global classifier predictions"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "ID of the chat that was classified"
+      - field: actualAgencyId
+        type: string
+        description: "The agency that actually handled the request"
+
+extractFeedbackData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    actualAgencyId: ${incoming.body.actualAgencyId ?? ""}
+  next: validate_feedback
+
+validate_feedback:
+  switch:
+    - condition: ${!chatId}
+      next: return_validation_error
+  next: get_inference_id
+
+get_inference_id:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-inference-id"
+    body:
+      chatId: ${chatId}
+  result: inference_result
+  next: log_feedback
+  error: handle_inference_error
+
+handle_inference_error:
+  log: "Error retrieving inference_id: ${inference_result.error}"
+  next: return_inference_error
+
+
+return_validation_error:
+  status: 400
+  return: "Invalid feedback payload. chatId is required."
+  next: end
+
+log_feedback:
+  log: "Classification feedback received for chat ${chatId} with inference ID ${inference_result.response.body[0].inferenceId}"
+  assign:
+    inferenceId: ${inference_result.response.body[0].inferenceId}
+  next: store_feedback
+  error: return_inference_error
+
+return_inference_error:
+  status: 404
+  return: "Could not find classification result for the provided chat ID."
+  next: end
+
+store_feedback:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/store-classification-feedback"
+    body:
+      chatId: ${chatId}
+      inferenceId: ${inferenceId}
+      actualAgencyId: ${actualAgencyId}
+      feedbackTimestamp: ${new Date().toISOString()}
+  result: store_result
+  error: handle_storage_error
+  next: check_storage_result
+
+check_storage_result:
+  switch:
+    - condition: ${200 <= store_result.response.statusCodeValue && store_result.response.statusCodeValue < 300}
+      next: process_feedback_for_model
+  next: return_storage_error
+
+process_feedback_for_model:
+  log: "Feedback stored successfully and will be used for model improvement"
+  next: return_success
+
+handle_storage_error:
+  log: "Error storing feedback: ${store_result.error}"
+  next: return_storage_error
+
+return_storage_error:
+  status: 500
+  return: "Failed to store feedback. Please try again later."
+  next: end
+
+return_success:
+  status: 200
+  return: "Feedback received and processed successfully"
+  next: end
