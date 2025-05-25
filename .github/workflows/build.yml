@@ -12,6 +12,9 @@ jobs:
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
+
+    # Only run this job if SONAR_TOKEN is available
+    if: ${{ secrets.SONAR_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,3 +27,7 @@ jobs:
             args:
                 -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
                 -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+    
+    name: Skip Notice
+        if: secrets.SONAR_TOKEN == ''
+        run: echo "::notice::SonarQube skipped - token not available"
