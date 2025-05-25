@@ -1,7 +1,25 @@
 # Global Classifier
 
 ## Setup and Installation
-TODO - Exact setup process will be updated here when the initial builds are ready to deploy
+This project is setup using the `uv` package manager. To run the project, you have to install `uv` and then run the below commands.
+
+```bash
+uv venv
+uv sync
+```
+
+Before installing any package you need to make sure to activate the environment, you can do this by running
+
+Mac OS / Linux:
+```bash
+source .venv/bin/activate
+``` 
+
+Windows:
+
+```bash
+.venv/Scripts/activate
+``` 
 
 
 ## Contributing

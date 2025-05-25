@@ -26,4 +26,4 @@ jobs:
         run: ruff check --output-format=github .
 
       - name: Run Format Check
-        run: ruff check --check diff .
+        run: ruff format --check --diff .
