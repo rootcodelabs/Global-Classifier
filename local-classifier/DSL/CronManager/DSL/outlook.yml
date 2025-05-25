@@ -1,9 +1,0 @@
-token_refresh:
-  trigger: "0 0 0 ? * 7#1"
-  type: exec
-  command: "../app/scripts/outlook_refresh_token.sh"
-
-subscription_refresh:
-  trigger: "0 0 0 * * ?"
-  type: exec
-  command: "../app/scripts/outlook_subscription_refresh.sh"

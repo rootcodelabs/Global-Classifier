@@ -1,2 +1,0 @@
-SELECT base_models, deployment_platforms, maturity_labels
-FROM model_configurations;

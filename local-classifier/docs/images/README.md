@@ -1,1 +1,0 @@
-All images used in markdown files under this directory

@@ -1,9 +1,0 @@
-version: '3.9'
-services:
-  outlook-consent-app:
-    container_name: outlook-consent-app
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - 3003:3003

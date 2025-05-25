@@ -1,5 +1,0 @@
-dataset_deletion:
-  trigger: off
-  type: exec
-  command: "../app/scripts/dataset_deletion_exec.sh"
-  allowedEnvs: ["cookie","dgId"]

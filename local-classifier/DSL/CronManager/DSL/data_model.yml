@@ -1,5 +1,0 @@
-model_trainer:
-  trigger: off
-  type: exec
-  command: "../app/scripts/python_train_script_starter.sh"
-  allowedEnvs: ['cookie', 'modelId', 'newModelId','updateType','previousDeploymentEnv']

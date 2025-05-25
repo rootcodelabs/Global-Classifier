@@ -1,4 +1,0 @@
-delete_completed_sessions:
-  trigger: "0 0 0 * * ?"
-  type: exec
-  command: "../app/scripts/delete_completed_dataset_progress_sessions.sh"
