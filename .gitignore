@@ -9,3 +9,8 @@ node_modules/
 *.log
 *.bkp
 *.dtmp
+
+# Python cache files
+__pycache__/
+.ruff_cache/
+.pytest_cache/
