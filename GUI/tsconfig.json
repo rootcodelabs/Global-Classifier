@@ -22,11 +22,15 @@
     "baseUrl": "src",
     "types": [
       "vite/client",
-      "node"
+      "node",
+      "jest", "@testing-library/jest-dom"
     ]
   },
   "include": [
-    "src"
+    "src",
+    "src/**/*",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ],
   "references": [
     {
