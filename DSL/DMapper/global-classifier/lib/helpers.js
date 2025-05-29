@@ -76,7 +76,7 @@ export function base64Decrypt(cipher, isObject) {
     }
 
     try {
-        const decodedContent = !isObject ? atob(cipher) : JSON.parse(atob(cipher));
+        const decodedContent = !isObject ? Buffer.from(cipher, 'base64').toString('utf-8') : JSON.parse(Buffer.from(cipher, 'base64').toString('utf-8'));
         const cleanedContent = decodedContent.replace(/\r/g, '');
         return JSON.stringify({
             error: false,
