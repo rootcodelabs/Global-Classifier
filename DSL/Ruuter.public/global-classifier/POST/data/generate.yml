@@ -75,8 +75,6 @@ execute_cron_manager:
         signedUrls: ${encoded_urls}
         datasetId: ${dataset_id}
   result: cron_res
-  timeout: 30000
-  limit: 1024
   error: handle_cron_error
   next: validate_cron_response
 

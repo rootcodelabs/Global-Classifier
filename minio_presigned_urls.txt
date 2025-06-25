@@ -1,0 +1,10 @@
+http://minio:9000/ckb/agencies/Politsei-_ja_Piirivalveamet/Politsei-_ja_Piirivalveamet.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250624T091734Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=94db13ede49dd83ec7007477084e784eef7affebe55581f69e8ee0c923b6bdd1|||http://minio:9000/ckb/agencies/ID.ee/ID.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250624T091734Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=3cd531c069dfe1a03df04e7d4cdab185d7aadbfedfc729db28be73e0a35c60fd
+
+Individual URLs:
+==================================================
+URL 1:
+http://minio:9000/ckb/agencies/Politsei-_ja_Piirivalveamet/Politsei-_ja_Piirivalveamet.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250624T091734Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=94db13ede49dd83ec7007477084e784eef7affebe55581f69e8ee0c923b6bdd1
+
+URL 2:
+http://minio:9000/ckb/agencies/ID.ee/ID.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250624%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250624T091734Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=3cd531c069dfe1a03df04e7d4cdab185d7aadbfedfc729db28be73e0a35c60fd
+

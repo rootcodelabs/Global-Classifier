@@ -58,22 +58,22 @@ services:
     networks:
       - bykstack
 
-  tim:
-    container_name: tim
-    image: tim
-    depends_on:
-      - tim-postgresql
-    environment:
-      - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
-      - KEY_PASS=ppjjpp
-    ports:
-      - 8085:8085
-    networks:
-      - bykstack
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    cpus: "0.5"
-    mem_limit: "512M"
+  # tim:
+  #   container_name: tim
+  #   image: tim
+  #   depends_on:
+  #     - tim-postgresql
+  #   environment:
+  #     - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
+  #     - KEY_PASS=ppjjpp
+  #   ports:
+  #     - 8085:8085
+  #   networks:
+  #     - bykstack
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   cpus: "0.5"
+  #   mem_limit: "512M"
 
   tim-postgresql:
     container_name: tim-postgresql
@@ -90,13 +90,13 @@ services:
     networks:
       - bykstack
 
-  authentication-layer:
-    container_name: authentication-layer
-    image: authentication-layer
-    ports:
-      - 3004:3004
-    networks:
-      - bykstack
+  # authentication-layer:
+  #   container_name: authentication-layer
+  #   image: authentication-layer
+  #   ports:
+  #     - 3004:3004
+  #   networks:
+  #     - bykstack
 
   resql:
     container_name: resql
@@ -144,12 +144,13 @@ services:
 
   cron-manager:
     container_name: cron-manager
-    image: cron-manager:latest
+    image: cron-manager-python:latest
     user: "root"
     volumes:
       - ./DSL/CronManager/DSL:/DSL
       - ./DSL/CronManager/script:/app/scripts
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./DSL/DatasetGenerator/temp_chunks:/app/temp_chunks
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
       - cron_data:/app/data
@@ -183,20 +184,20 @@ services:
     ports:
       - "11434:11434"
     environment:
-      # - NVIDIA_VISIBLE_DEVICES=all
-      # - OLLAMA_USE_GPU=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_USE_GPU=1
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - dataset_gen_ollama_models:/root/.ollama
-      - ./src/dataset-generation/ollama-entrypoint.sh:/ollama-entrypoint.sh
+      - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
     entrypoint: ["bash", "/ollama-entrypoint.sh"]
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - bykstack
 
@@ -267,6 +268,7 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./DSL/DatasetGenerator/temp_chunks:/app/temp_chunks
     env_file:
       - config.env
     ports:
@@ -275,22 +277,33 @@ services:
     networks:
       - bykstack
 
-  s3-dataset-processor:
-    container_name: s3-dataset-processor
-    build: ./src/s3_dataset_processor
+  dataset-file-handler:
+    container_name: dataset-file-handler
+    build:
+      context: ./src/dataset_file_hanlder
+      dockerfile: Dockerfile
     ports:
-      - "8001:8001"
+      - "8003:8000"
     volumes:
-      - cron_data:/app/data  # Same volume as cron-manager
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./DSL/DatasetGenerator/temp_chunks:/app/temp_chunks
+      - ./src/dataset_file_hanlder:/app/src
+      - cron_data:/app/data
     environment:
-      - PORT=8001
+      - PORT=8000
+      - PYTHONPATH=/app/src
+      - LOG_LEVEL=INFO
     networks:
       - bykstack
+    depends_on:
+      - gc-s3-ferry
+      - resql
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
         
   # gui:
   #   container_name: gui

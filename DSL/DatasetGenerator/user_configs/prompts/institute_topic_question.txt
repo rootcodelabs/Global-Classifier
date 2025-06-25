@@ -1,23 +1,47 @@
 ${system_prompt}
 
-Generate a natural and contextually accurate question only in ${language_name} based on the following file content.
+Generate a realistic user question in ${language_name} that someone would naturally ask a chatbot about the following topic. The question should clearly relate to the agency's services and demonstrate clear intent.
 
-File: ${file_name}
-Content:
-"""
-${file_content}
-"""
-Difficulty: ${difficulty:-medium}
-Style: ${style:-clear and concise}
+*Topic Information:*
+Topic: ${file_name}
+Content: """${file_content}"""
 
-Instructions:
-- The question must reflect genuine curiosity a learner might have after reading the file content.
-- It should be directly based on the information presented — no assumptions or off-topic queries.
-- Use clear, natural phrasing, as if a student is asking a teacher for clarification.
+*Generation Parameters:*
+- Difficulty Level: ${difficulty}
+- Query Style: ${style}
+- Language: ${language_name}
 
-Format the output as a single JSON object:
-{"question": "Your question here?"}
+*Question Requirements:*
 
-IMPORTANT: Return ONLY the raw JSON object with no markdown formatting, code block markers, or any other text.
+*Natural User Language:*
+- Use conversational, everyday language that real users employ
+- Include common ways people phrase questions to chatbots
+- Mix formal and informal expressions naturally
+- Vary question length and structure
 
-Additional Instructions: ${additional_instructions:-Ensure the question is relevant, precise, and clearly rooted in the file content in ${language_name}.}
+*Question Types:*
+- Information requests about services and procedures
+- Help-seeking for specific problems or processes  
+- Procedural questions about steps and requirements
+- Problem-solving queries about issues or complications
+
+*Content Accuracy:*
+- Base questions strictly on the provided topic content
+- Focus on services, information, or processes the agency handles
+- Ensure questions are within the agency's scope of expertise
+- Avoid topics outside the institute's domain
+
+*Output Format:*
+Format the output as a single JSON object
+
+IMPORTANT: Return ONLY a single JSON object with a 'question' field. Do not return an array or code block., each with a "question" field. Example:
+  {{"question": "What is ...?"}}
+
+*Critical Requirements:*
+- No markdown formatting, code blocks, or explanatory text
+- Use natural ${language_name} grammar and expressions
+- Ensure valid JSON syntax
+- Generate only questions appropriate for this specific agency
+
+*Additional Instructions*
+Create questions that real users would ask when seeking help or information from this agency through a chatbot interface.

@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 pydantic
-python-multipart
+loguru
 requests
-boto3
+python-multipart
+aiofiles

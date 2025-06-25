@@ -1,0 +1,5 @@
+fetch_single_chunk:
+  trigger: off
+  type: exec
+  command: "../app/scripts/fetch_single_chunk.sh"
+  allowedEnvs: ['datasetId', 'pageNum']

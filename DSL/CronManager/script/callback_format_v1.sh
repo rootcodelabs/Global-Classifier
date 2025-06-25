@@ -12,17 +12,6 @@ fi
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
-# Debug: Check Python environment
-log "🔍 Python version: $(python3 --version)"
-log "🔍 Python path: $(which python3)"
-
-# Install required packages
-log "🔍 Installing required Python packages..."
-python3 -m pip install --quiet --no-cache-dir requests pydantic || {
-    log "❌ Failed to install packages"
-    exit 1
-}
-log "✅ Required packages installed"
 
 log "Dataset generation callback processing started"
 log "File path: $filePath"
@@ -32,39 +21,29 @@ log "Encoded results length: ${#results} characters"
 dataset_id=$(echo "$filePath" | grep -o '/[^/]*\.json$' | sed 's|/\([^/]*\)\.json$|\1|' || echo "unknown")
 log "Extracted dataset ID: $dataset_id"
 
-# Direct Python script path for processing generation callback (inside container)
-CALLBACK_SCRIPT="/app/src/s3_dataset_processor/dataset_generation_callback_processor.py"
+# API endpoint for processing generation callback
+API_URL="http://s3-dataset-processor:8001/process-generation-callback"
 
-log "🔍 Calling direct Python script to process generation callback..."
+log "🔍 Calling S3 Dataset Processor API to process generation callback..."
 
-# Create temporary file for response
-temp_response="/tmp/callback_response.json"
+# Call the API to process generation callback (background processing)
+response=$(curl -s -o /tmp/callback_response_body.txt -w "%{http_code}" -X POST "$API_URL" \
+  -H "Content-Type: application/json" \
+  -d "{\"file_path\":\"$filePath\", \"results\":\"$results\"}")
 
-# Call the direct Python script instead of API endpoint
-python3 "$CALLBACK_SCRIPT" \
-  --file-path "$filePath" \
-  --encoded-results "$results" \
-  --output-json "$temp_response"
+http_code="$response"
+response_body=$(cat /tmp/callback_response_body.txt)
 
-exit_code=$?
-log "🔍 Python script exit code: $exit_code"
+log "🔍 HTTP Status Code: $http_code"
+log "🔍 Response Body: $response_body"
 
-if [ -f "$temp_response" ]; then
-    log "📄 Contents of output JSON:"
-    cat "$temp_response"
-else
-    log "⚠️ No output JSON file was generated."
-fi
-
-# Check if script execution was successful
-if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
-    log "✅ Python script execution successful"
-    
-    response_body=$(cat "$temp_response")
-    log "🔍 Response: $response_body"
+# Check if API call was successful (should get 200 immediately)
+if [ "$http_code" = "200" ] && [ -n "$response_body" ]; then
+    log "✅ Callback processing request accepted successfully"
     
     # Parse the response to get status information
     if command -v jq >/dev/null 2>&1; then
+        # Use jq if available
         status=$(echo "$response_body" | jq -r '.status // "unknown"')
         message=$(echo "$response_body" | jq -r '.message // "unknown"')
         
@@ -86,32 +65,37 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
         log "  - Dataset ID: $dataset_id"
     fi
     
-    # Check if callback processing was completed
-    if [ "$status" = "completed" ]; then
-        log "✅ Dataset generation callback processed successfully"
-        log "🔄 Callback payload has been sent to status update endpoint"
+    # Check if callback processing was accepted
+    if [ "$status" = "accepted" ]; then
+        log "✅ Dataset generation callback submitted for background processing"
+        log "🔄 Background task will create the following payload structure:"
         log "   - agencies: [{agencyId: X, syncStatus: Synced_with_CKB/Sync_with_CKB_Failed}, ...]"
         log "   - datasetId: $dataset_id"
         log "   - generationStatus: Generation_Success/Generation_Failed"
+        
+        log "📋 Note: Actual callback processing is happening in the background"
+        log "📋 Check the S3 processor service logs for detailed processing results"
         
     else
         log "⚠️ Unexpected status received: $status"
         log "⚠️ Message: $message"
     fi
     
-    # Cleanup temp file
-    rm -f "$temp_response"
-    
 else
-    log "❌ Python script execution failed with exit code: $exit_code"
-    if [ -f "$temp_response" ]; then
-        log "Error response: $(cat $temp_response)"
-        rm -f "$temp_response"
-    fi
+    log "❌ Callback processing request failed"
+    log "HTTP Status: $http_code"
+    log "Response: $response_body"
+    
+    # Clean up temp files
+    rm -f /tmp/callback_response_body.txt
     exit 1
 fi
 
+# Clean up temp files
+rm -f /tmp/callback_response_body.txt
+
 log "✅ Dataset generation callback processing completed successfully"
 log "📋 Summary: Dataset ID: $dataset_id, Request Status: $status"
+log "📋 Background processing will generate the final callback payload"
 
 exit 0

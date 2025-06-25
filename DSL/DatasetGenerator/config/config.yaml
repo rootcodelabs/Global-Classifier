@@ -33,13 +33,24 @@ dataset_generation:
   prompt_template_name: "institute_topic_question"
   traversal_strategy: "recursive"
   output_format: "json"
-  num_samples: 10
+  num_samples: 5
   post_processing: "aggregation"  # Options: "zip", "aggregation"
   # Aggregation-specific configuration (only used when post_processing = "aggregation")
   aggregation:
     output_filename: "12"
     merge_strategy: "combine_arrays"
     include_metadata: true
+    field_mapping:
+      enabled: true
+      payload_to_output:
+        agency_name: agency_name
+        agency_id: agency_id
+      defaults:
+        id: auto_increment
+      content_fields:
+        - question
+
+# Language and style settings for dataset generation
   parameters:
     language: "et"
     temperature: 0.7
@@ -47,6 +58,7 @@ dataset_generation:
     language_name: "Estonian"
     difficulty: "medium"
     style: "clear and concise"
+    system_prompt: "You are a helpful assistant for generating synthetic questions for given contexts."
   filter: {}
     
 # Processing settings
@@ -71,3 +83,27 @@ callback:
   url: "http://ruuter-public:8086/global-classifier/data/callback"
   max_retries: 3
   timeout: 30
+
+# Relevance Score Analysis
+relevance_score:
+  enabled: true
+  embedding_model: "paraphrase-multilingual-mpnet-base-v2"
+  segment_weight: 0.6
+  query_weight: 0.3
+  term_weight: 0.1
+  threshold_good: 0.7
+  threshold_acceptable: 0.5
+  min_df: 1
+  max_df: 0.9
+  ngram_range: (1, 2)
+
+# Information Coverage Analysis
+information_coverage:
+  enabled: true
+  similarity_threshold: 0.5
+
+# Model settings
+models:
+  embedding_model: "paraphrase-multilingual-mpnet-base-v2"
+  qualitative_model: "google/gemma-2-2b-it"
+  use_4bit_quantization: true

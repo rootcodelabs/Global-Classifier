@@ -1,0 +1,69 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Test endpoint to check if CronManager waits for Python script completion"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+log_request_1:
+  log: "🐍 [PYTHON COMPLETION TEST] Starting CronManager Python completion test"
+  next: log_request_2
+
+log_request_2:
+  log: "🐍 [PYTHON COMPLETION TEST] This test checks if we get response AFTER Python script completes"
+  next: call_cron_manager
+
+call_cron_manager:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/test_pipeline/test_job"
+    query:
+      testParam: "python-completion-test"
+      delaySeconds: "8"
+  timeout: 60000
+  result: cron_response
+  next: log_response_1
+
+log_response_1:
+  log: "🐍 [PYTHON COMPLETION TEST] CronManager response received - Status: ${cron_response.response.statusCodeValue}"
+  next: log_response_2
+
+log_response_2:
+  log: "🐍 [PYTHON COMPLETION TEST] Response body: ${cron_response.response.body}"
+  next: log_response_3
+
+log_response_3:
+  log: "🐍 [PYTHON COMPLETION TEST] If this appears after 8+ seconds, CronManager waits for completion"
+  next: log_response_4
+
+log_response_4:
+  log: "🐍 [PYTHON COMPLETION TEST] If this appears immediately (~1s), CronManager runs in background"
+  next: parse_python_response
+
+# log_response_5:
+#   log: ${cron_response.response.body}
+#   next: parse_python_response
+
+parse_python_response:
+  assign:
+    python_output: ${cron_response.response.body}
+    response_status: ${cron_response.response.statusCodeValue}
+    test_result:
+      testType: "Python Script Completion Test"
+      message: "Test completed - check timing and response content"
+      cronManagerResponse:
+        statusCode: ${response_status}
+        body: ${python_output}
+      testParameters:
+        delaySeconds: 8
+        testParam: "python-completion-test"
+        timeout: 60000
+      timing:
+        description: "If response contains Python script results with timing info, CronManager waited for completion"
+        expectation: "Response should contain start_time, end_time, and duration from Python script"
+  next: return_result
+
+return_result:
+  return: ${test_result}

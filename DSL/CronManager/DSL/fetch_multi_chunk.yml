@@ -1,0 +1,5 @@
+multi_chunk:
+  trigger: off
+  type: exec
+  command: "../app/scripts/fetch_multi_chunk.sh"
+  allowedEnvs: ['datasetId', 'chunkIds']
