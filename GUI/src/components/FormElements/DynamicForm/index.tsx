@@ -1,78 +1,103 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import FormInput from '../FormInput';
+import FormSelect from '../FormSelect';
 import Button from 'components/Button';
 import Track from 'components/Track';
 import { useTranslation } from 'react-i18next';
+import { SelectedRowPayload } from 'types/datasets';
+
+type ClientOption = { label: string; value: string; clientId: number | string };
 
 type DynamicFormProps = {
-  formData: { [key: string]: string | number };
-  onSubmit: (data: any) => void;
+  formData: {id:string |number, question: string; clientName: string; clientId?: number | string };
+  clientOptions: ClientOption[];
+  onSubmit: (data: SelectedRowPayload) => void;
   setPatchUpdateModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const DynamicForm: React.FC<DynamicFormProps> = ({
   formData,
+  clientOptions,
   onSubmit,
   setPatchUpdateModalOpen,
 }) => {
-  const { register, handleSubmit, getValues, watch } = useForm({
+  const { control, handleSubmit, watch, getValues } = useForm({
     defaultValues: formData,
   });
-
   const [isChanged, setIsChanged] = useState(false);
-
-  const allValues = watch();
   const { t } = useTranslation();
 
-  const checkIfChanged = () => {
-    const currentValues = getValues();
-    const isDifferent = Object.keys(formData).some(
-      (key) => currentValues[key] !== formData[key]
-    );
-    setIsChanged(isDifferent);
-  };
+  const allValues = watch();
+const [selectedClientId, setSelectedClientId] = useState(formData.clientId ?? '');
 
   useEffect(() => {
-    checkIfChanged();
-  }, [allValues]);
-
-  const renderInput = (key: string) => {
-    const isRowID = key.toLowerCase() === 'rowid';
-    const inputType = isRowID ? 'number' : 'text';
-
-    return (
-      <div style={{ display: isRowID ? 'none' : 'block' }}>
-        <label>{key}</label>
-        <FormInput
-          label=""
-          {...register(key)}
-          type={inputType}
-          placeholder={key}
-          defaultValue={isRowID ? (formData[key] as number) : formData[key]}
-        />
-      </div>
+    const currentValues = getValues();
+    setIsChanged(
+      currentValues.question !== formData.question ||
+      currentValues.clientId !== formData.clientId
     );
-  };
+  }, [allValues, formData, getValues]);
 
-  const handleFormSubmit = (data: any) => {
-    onSubmit(data);
-  };
+ const handleFormSubmit = (data: any) => {
+  // Find the selected client option
+  const selectedClient = clientOptions.find(opt => opt.value === data.clientId);
+  onSubmit({
+    id: formData.id, // Always return the id from formData
+    question: data.question,
+    clientId: selectedClient?.value ?? "0",
+    clientName: selectedClient?.label ?? data.clientName,
+  });
+};
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>
-      {Object.keys(formData).map((key) => (
-        <div key={key}>
-          <div style={{ marginBottom: '15px' }}>{renderInput(key)}</div>
-        </div>
-      ))}
+      <div style={{ marginBottom: '15px' }}>
+        <label>{t('datasets.detailedView.question')}</label>
+        <Controller
+          name="question"
+          control={control}
+          render={({ field }) => (
+            <FormInput
+              label=""
+              {...field}
+              type="text"
+            />
+          )}
+        />
+      </div>
+      <div style={{ marginBottom: '15px' }}>
+        <label>{t('datasets.detailedView.clientName')}</label>
+        <Controller
+          name="clientId"
+          control={control}
+          render={({ field }) => (
+            <FormSelect
+              label=""
+              options={clientOptions.map(opt => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              {...field}
+              onSelectionChange={(selected) => { 
+                              const value = typeof selected?.value === 'object'
+                                ? (selected?.value.id ?? '')
+                                : (selected?.value ?? '');
+                              setSelectedClientId(value);               
+                              field.onChange(value);
+                            }}
+              defaultValue={selectedClientId}
+            />
+          )}
+        />
+      </div>
       <Track className="dialog__footer" gap={16} justify="end">
         <div className="flex-grid">
           <Button
             appearance="secondary"
             onClick={() => setPatchUpdateModalOpen(false)}
           >
-            Cancel
+            {t('global.cancel')}
           </Button>
           <Button type="submit" disabled={!isChanged}>
             {t('global.save')}

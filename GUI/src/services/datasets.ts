@@ -16,3 +16,28 @@ export async function getDatasetsOverview(
   });
   return data?.response ?? [];
 }
+
+export async function getDatasetMetadata(
+  datasetId: number |string) {
+  const { data } = await apiDev.get(datasetsEndpoints.GET_METADATA(), {
+    params: {
+      datasetId
+    },
+  });
+  return data?.response?.[0] ?? [];
+}
+
+export async function getDatasetData(
+  datasetId: number |string,
+  agencyId?: number |string,
+  pageNum?: number,
+) {
+  const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
+    params: {
+      datasetId,
+      agencyId,
+      pageNum : pageNum ?? 1,
+    },
+  });
+  return data?.response ?? [];
+}

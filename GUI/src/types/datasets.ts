@@ -45,9 +45,7 @@ export type FilterData = {
 };
 
 
-export type SelectedRowPayload = {
-  rowId: number;
-} & Record<string, string>;
+export type SelectedRowPayload = {id:string |number, question: string; clientName: string; clientId?: number | string }
 
 export type ValidationProgressData = {
   id: string;

@@ -29,10 +29,10 @@ import {
 import clsx from 'clsx';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
 import { Icon, Track } from 'components';
 import Filter from './Filter';
 import './DataTable.scss';
+import DropdownFilter from './DropdownFilter';
 
 type DataTableProps = {
   data: any;
@@ -52,6 +52,9 @@ type DataTableProps = {
   disableHead?: boolean;
   pagesCount?: number;
   meta?: TableMeta<any>;
+  dropdownFilters?: DropdownFilterConfig[];
+  onSelect?: (value: string | number) => void | undefined// Callback for dropdown filter selection
+
 };
 
 type ColumnMeta = {
@@ -61,6 +64,11 @@ type ColumnMeta = {
 }
 
 type CustomColumnDef = ColumnDef<any> & ColumnMeta;
+
+type DropdownFilterConfig = {
+  columnId: string;
+  options: { label: string; value: string | number }[];
+};
 
 declare module '@tanstack/table-core' {
   interface FilterFns {
@@ -108,6 +116,8 @@ const DataTable: FC<DataTableProps> = (
     disableHead,
     pagesCount,
     meta,
+    dropdownFilters,
+    onSelect
   },
 ) => {
   const id = useId();
@@ -153,11 +163,11 @@ const DataTable: FC<DataTableProps> = (
       <table className='data-table'>
         {!disableHead && (
           <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} style={{ width: header.column.columnDef.meta?.size }}>
-                  {header.isPlaceholder ? null : (
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} style={{ width: header.column.columnDef.meta?.size }}>
+                    {header.isPlaceholder ? null : (
                       <Track gap={8}>
                         {sortable && header.column.getCanSort() && (
                           <button onClick={header.column.getToggleSortingHandler()}>
@@ -165,31 +175,47 @@ const DataTable: FC<DataTableProps> = (
                               asc: <Icon icon={<MdExpandMore fontSize={20} />} size='medium' />,
                               desc: <Icon icon={<MdExpandLess fontSize={20} />} size='medium' />,
                             }[header.column.getIsSorted() as string] ?? (
-                              <Icon icon={<MdUnfoldMore fontSize={22} />} size='medium' />
-                            )}
+                                <Icon icon={<MdUnfoldMore fontSize={22} />} size='medium' />
+                              )}
                           </button>
                         )}
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {filterable && header.column.getCanFilter() && (
-                          <Filter column={header.column} table={table} />
+                          (() => {
+                            const dropdownConfig = dropdownFilters?.find(
+                              (df) => df.columnId === header.column.id
+                            );
+                            
+                            if (dropdownConfig) {
+                              return (
+                                <DropdownFilter
+                                  column={header.column}
+                                  table={table}
+                                  options={dropdownConfig.options}
+                                  onSelect={onSelect ?? (() => { })}
+                                />
+                              );
+                            }
+                            return <Filter column={header.column} table={table} />;
+                          })()
                         )}
                       </Track>
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
           </thead>
         )}
         <tbody>
-        {tableBodyPrefix}
-        {table.getRowModel().rows.map((row) => (
-          <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
-            {row.getVisibleCells().map((cell) => (
-              <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-            ))}
-          </tr>
-        ))}
+          {tableBodyPrefix}
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
       {pagination && (
@@ -210,14 +236,14 @@ const DataTable: FC<DataTableProps> = (
                       key={`${id}-${index}`}
                       className={clsx({ 'active': table.getState().pagination.pageIndex === index })}
                     >
-                      <Link
-                        to={`?page=${index + 1}`}
+                      <a
+                        // to={`?page=${index + 1}`}
                         onClick={() => table.setPageIndex(index)}
                         aria-label={t('global.gotoPage') + index}
                         aria-current={table.getState().pagination.pageIndex === index}
                       >
                         {index + 1}
-                      </Link>
+                      </a>
                     </li>
                   ))}
                 </ul>

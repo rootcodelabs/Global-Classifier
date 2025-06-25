@@ -41,3 +41,8 @@ export const fetchAgencies = async (
   });
   return data;
 }
+
+export const fetchAllAgencies = async () => {
+    const { data } = await apiDev.get(integratedAgenciesEndPoints.GET_ALL_AGENCIES());
+    return data?.response ?? [];
+  };

@@ -108,6 +108,18 @@
     }
   }
 
+  &__dropdown_filter {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    padding: get-spacing(paldiski);
+    background-color: get-color(white);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+    border-radius: 0 0 4px 4px;
+    border: 1px solid get-color(black-coral-2);
+    width: "fit-content";
+  }
+
   &__pagination-wrapper {
     margin-top: 10px;
     display: flex;

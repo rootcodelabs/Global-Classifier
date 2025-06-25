@@ -10,15 +10,20 @@ export const userManagementEndpoints = {
 export const integratedAgenciesEndPoints = {
   GET_INTEGRATED_AGENCIES: (): string =>
     `/global-classifier/agencies/list`,
+  GET_ALL_AGENCIES: (): string =>
+    `/global-classifier/agencies/all`,
 };
 
 export const datasetsEndpoints = {
   GET_OVERVIEW: (): string => '/global-classifier/datasets/list',
-  
+  GET_METADATA: (): string => `/global-classifier/datasets/metadata`,
+  GET_DATASETS_DATA: (): string => '/global-classifier/datasets/overview',
+
+
+
   GET_DATASET_FILTERS: (): string =>
     '/global-classifier/datasetgroup/overview/filters',
   GET_DATASETS: (): string => `/global-classifier/datasetgroup/group/data`,
-  GET_METADATA: (): string => `/global-classifier/datasetgroup/group/metadata`,
   EXPORT_DATASETS: (): string => `/datasetgroup/data/download`,
   DATASET_GROUP_MINOR_UPDATE: (): string =>
     `/global-classifier/datasetgroup/update/minor`,
