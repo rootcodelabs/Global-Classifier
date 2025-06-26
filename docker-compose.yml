@@ -58,22 +58,22 @@ services:
     networks:
       - bykstack
 
-  # tim:
-  #   container_name: tim
-  #   image: tim
-  #   depends_on:
-  #     - tim-postgresql
-  #   environment:
-  #     - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
-  #     - KEY_PASS=ppjjpp
-  #   ports:
-  #     - 8085:8085
-  #   networks:
-  #     - bykstack
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
-  #   cpus: "0.5"
-  #   mem_limit: "512M"
+  tim:
+    container_name: tim
+    image: tim
+    depends_on:
+      - tim-postgresql
+    environment:
+      - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
+      - KEY_PASS=ppjjpp
+    ports:
+      - 8085:8085
+    networks:
+      - bykstack
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    cpus: "0.5"
+    mem_limit: "512M"
 
   tim-postgresql:
     container_name: tim-postgresql
@@ -90,13 +90,13 @@ services:
     networks:
       - bykstack
 
-  # authentication-layer:
-  #   container_name: authentication-layer
-  #   image: authentication-layer
-  #   ports:
-  #     - 3004:3004
-  #   networks:
-  #     - bykstack
+  authentication-layer:
+    container_name: authentication-layer
+    image: authentication-layer
+    ports:
+      - 3004:3004
+    networks:
+      - bykstack
 
   resql:
     container_name: resql
@@ -184,20 +184,20 @@ services:
     ports:
       - "11434:11434"
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - OLLAMA_USE_GPU=1
+      # - NVIDIA_VISIBLE_DEVICES=all
+      # - OLLAMA_USE_GPU=1
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - dataset_gen_ollama_models:/root/.ollama
       - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
     entrypoint: ["bash", "/ollama-entrypoint.sh"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
     networks:
       - bykstack
 
@@ -251,8 +251,8 @@ services:
     env_file:
       - sidecar.env
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
     command: server /data --console-address ":9001"
     volumes:
@@ -271,11 +271,19 @@ services:
       - ./DSL/DatasetGenerator/temp_chunks:/app/temp_chunks
     env_file:
       - config.env
+    environment:
+      - S3_ACCESS_KEY_ID=minioadmin
+      - S3_SECRET_ACCESS_KEY=minioadmin
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_REGION=us-east-1
+      - S3_DATA_BUCKET_NAME=global-classifier
     ports:
       - "3006:3000"
     user: "root"
     networks:
       - bykstack
+    depends_on:
+      - minio
 
   dataset-file-handler:
     container_name: dataset-file-handler

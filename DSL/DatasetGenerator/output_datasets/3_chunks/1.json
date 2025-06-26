@@ -1,0 +1,41 @@
+{
+  "chunk_info": {
+    "original_dataset": "3",
+    "chunk_number": 1,
+    "total_chunks": 4,
+    "items_in_chunk": 5,
+    "chunk_range": "1-5"
+  },
+  "data": [
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "1",
+      "question": "Mis teevad digiallkirjastamine ID-kaardi, mobiil-ID, Smart-ID ja e-Templiga - ID ning kuidas see läheb?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "2",
+      "question": "Mikseritõrje – Korruptsiooniga seotatud kohtulahendid?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "3",
+      "question": "Kuidas minu eluotsakonna muudamine?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "4",
+      "question": "Mida teeme, kui ma olen vikas ja kuidas seda korruda?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "5",
+      "question": "Mobiil-ID:ga digiallkirjastamine – mis võimalused on ja kuidas seda kasutada?"
+    }
+  ]
+}

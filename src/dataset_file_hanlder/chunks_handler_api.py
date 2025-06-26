@@ -36,9 +36,9 @@ async def download_chunk(request: ChunkDownloadRequest):
         Chunk data or error information
     """
     try:
-        logger.info(f"Chunk download request - Dataset: {request.dataset_id}, Page: {request.page_num}")
+        logger.info(f"Chunk download request - Dataset: {request.datasetId}, Page: {request.pageNum}")
         
-        result = chunk_service.download_chunk_from_s3(request.dataset_id, request.page_num)
+        result = chunk_service.download_chunk_from_s3(request.datasetId, request.pageNum)
         
         if not result["success"]:
             raise HTTPException(status_code=400, detail=result)
@@ -64,12 +64,12 @@ async def download_multiple_chunks(request: MultiChunkDownloadRequest):
         Aggregated chunk data or error information
     """
     try:
-        logger.info(f"Multi-chunk download request - Dataset: {request.dataset_id}, Chunks: {request.chunk_ids}")
+        logger.info(f"Multi-chunk download request - Dataset: {request.datasetId}, Chunks: {request.chunkIds}")
         
-        if not request.chunk_ids:
+        if not request.chunkIds:
             raise HTTPException(status_code=400, detail="No chunk IDs provided")
         
-        result = multi_chunk_service.download_multiple_chunks(request.dataset_id, request.chunk_ids)
+        result = multi_chunk_service.download_multiple_chunks(request.datasetId, request.chunkIds)
         
         if not result["success"]:
             raise HTTPException(status_code=400, detail=result)

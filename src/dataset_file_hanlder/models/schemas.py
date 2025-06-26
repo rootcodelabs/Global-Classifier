@@ -37,14 +37,14 @@ class DownloadResponse(BaseModel):
 
 class ChunkDownloadRequest(BaseModel):
     """Request model for downloading a single chunk."""
-    dataset_id: str
-    page_num: int
+    datasetId: str
+    pageNum: int
 
 
 class MultiChunkDownloadRequest(BaseModel):
     """Request model for downloading multiple chunks."""
-    dataset_id: str
-    chunk_ids: List[int]
+    datasetId: str
+    chunkIds: List[int]
 
 
 class ChunkDownloadResponse(BaseModel):

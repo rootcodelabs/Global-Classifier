@@ -18,6 +18,7 @@ import { getDatasetData, getDatasetMetadata } from 'services/datasets';
 import { useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
+import NoDataView from 'components/molecules/NoDataView';
 
 const ViewDataset = () => {
   const { t } = useTranslation();
@@ -206,7 +207,7 @@ const ViewDataset = () => {
                   {t('datasets.detailedView.connectedModels') ?? ''} : N/A
                 </p>
                 <p>
-                  {t('datasets.detailedView.noOfItems') ?? ''} : {dataset?.length ?? 0}
+                  {t('datasets.detailedView.noOfItems') ?? ''} : {20}
                 </p>
               </div>
               <div>
@@ -222,7 +223,7 @@ const ViewDataset = () => {
       )}
       <div className="mb-20">
         {isLoading && <SkeletonTable rowCount={5} />}
-        {!isLoading && updatedDataset && updatedDataset.length > 0 && (
+        {!isLoading && updatedDataset && updatedDataset?.length > 0 && (
           <DataTable
             data={updatedDataset}
             columns={dataColumns as ColumnDef<string, string>[]}
@@ -244,7 +245,8 @@ const ViewDataset = () => {
               setPagination({
                 pageIndex: 0,
                 pageSize: 5,
-              })
+              });
+              setUpdatedDataset([]);
             }}
             setPagination={(state: PaginationState) => {
               if (
@@ -254,10 +256,15 @@ const ViewDataset = () => {
                 return;
               setPagination(state);
             }}
-            pagesCount={10}
+            pagesCount={4}
             isClientSide={false}
           />
         )}
+        {
+          updatedDataset?.length === 0 && (
+           <NoDataView text='No data available'/>
+          )
+        }
         <div className="button-container">
           <Button
             appearance={ButtonAppearanceTypes.ERROR}

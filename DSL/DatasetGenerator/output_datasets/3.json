@@ -1,0 +1,130 @@
+{
+  "aggregated_data": [
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "1",
+      "question": "Mis teevad digiallkirjastamine ID-kaardi, mobiil-ID, Smart-ID ja e-Templiga - ID ning kuidas see läheb?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "2",
+      "question": "Mikseritõrje – Korruptsiooniga seotatud kohtulahendid?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "3",
+      "question": "Kuidas minu eluotsakonna muudamine?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "4",
+      "question": "Mida teeme, kui ma olen vikas ja kuidas seda korruda?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "5",
+      "question": "Mobiil-ID:ga digiallkirjastamine – mis võimalused on ja kuidas seda kasutada?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "6",
+      "question": "Mobiil-ID:ga digiallkirjastamine kuidas toimis? Ja mida peada, kui probleemil on?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "7",
+      "question": "Mida teimate, kuidas toimivat Korruptsiooniga seotud kohtulahendid Politsei ja Piirivalveametist?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "8",
+      "question": "Mida teete, kui ma saisin süüetri teostatud kriminaalasest kohtulahendust?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "9",
+      "question": "Kas saudaksin siseda sisse algune e-teenuse?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "10",
+      "question": "Как мне оформить визу для посещения страны?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "11",
+      "question": "Mida teen, olen huvituviseta, et õpida, aga aga ma ei ole teadlane."
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "12",
+      "question": "Mida teete, et pääsime süümetadata?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "13",
+      "question": "Mobiil-ID ja Smart-ID digiallkirjastamine küsimategamine, mis on nii lihtne määrata?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "14",
+      "question": "Mida ma pe ma saidama saada, et sisenduda riigiportaali e-teenusesse?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "15",
+      "question": "Как получить свидетельство о регистрации по месту жительства?"
+    },
+    {
+      "agency_name": "Politsei-_ja_Piirivalveamet",
+      "agency_id": "5234",
+      "id": "16",
+      "question": "Як я можу отримати інформацію про необхідні документи для отримання візи?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "17",
+      "question": "Mida siis ma sisenud pean? Autoauthentimine riiklikes e-teenustes."
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "18",
+      "question": "Mobiil-IDga digiallkirjastamine ja Smart-IDga digiallkirjastamine - mida need on ja mis saaksid seda kasutada?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "19",
+      "question": "Mida siis ma sisesta pean, et selle e-teenuse kasutajana toimida?"
+    },
+    {
+      "agency_name": "ID",
+      "agency_id": "1234",
+      "id": "20",
+      "question": "Mida pe ma siis sisesta, et saan e-teenuse kasutada?"
+    }
+  ],
+  "total_items": 20,
+  "metadata": {
+    "aggregation_timestamp": "2025-06-25 06:08:11",
+    "merge_strategy": "combine_arrays",
+    "source_count": 4
+  }
+}
