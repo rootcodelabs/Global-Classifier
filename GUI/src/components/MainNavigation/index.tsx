@@ -1,7 +1,7 @@
 import { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
-import { MdKeyboardArrowDown } from 'react-icons/md';
+import { MdCorporateFare, MdFileCopy, MdKeyboardArrowDown, MdOutlineDataset, MdSupervisorAccount } from 'react-icons/md';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Icon } from 'components';
@@ -11,10 +11,6 @@ import apiDev from 'services/api-dev';
 import { userManagementEndpoints } from 'utils/endpoints';
 import { integratedAgenciesQueryKeys } from 'utils/queryKeys';
 import { ROLES } from 'enums/roles';
-import UserIcon from 'assets/UserIcon';
-import DatabaseIcon from 'assets/DatabaseIcon';
-import DataModelsIcon from 'assets/DataModelsIcon';
-import IncomingTextsIcon from 'assets/IncomingTextsIcon';
 
 const MainNavigation: FC = () => {
   const { t } = useTranslation();
@@ -25,25 +21,25 @@ const MainNavigation: FC = () => {
       id: 'userManagement',
       label: t('menu.userManagement'),
       path: '/user-management',
-      icon: <UserIcon />,
+      icon: <MdSupervisorAccount />,
     },
     {
       id: 'agencies',
       label: t('menu.agencies'),
       path: '/integrated-agencies',
-      icon: <DatabaseIcon />
+      icon: <MdCorporateFare />
     },
     {
       id: 'dataSets',
       label: t('menu.dataSets'),
       path: '/datasets',
-      icon: <DataModelsIcon />,
+      icon: <MdFileCopy/>,
     },
     {
-      id: 'correctedTexts',
-      label: t('menu.correctedTexts'),
-      path: '/corrected-texts',
-      icon: <IncomingTextsIcon />,
+      id: 'dataModels',
+      label: t('menu.dataModels'),
+      path: '/data-models',
+      icon: <MdOutlineDataset />,
     }
   ];
 

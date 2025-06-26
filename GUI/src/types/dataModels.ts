@@ -53,21 +53,18 @@ export type FilterData = {
 };
 
 export type DataModelResponse = {
-  id: number;
+  modelId: number | string;
   modelName: string;
-  connectedDgName: string;
-  majorVersion: number;
-  minorVersion: number;
+  major: number;
+  minor: number;
   latest: boolean;
-  dgVersion: string;
-  lastTrainedTimestamp: string;
+  datasetVersion?: string;
+  dataModelName: string;
+  lastTrained: string;
   trainingStatus: string;
-  deploymentEnv: string;
-  maturityLabel: string;
+  deploymentEnvironment: string;
+  modelStatus: string;
   trainingResults?: string | null;
-  connectedDgMajorVersion?: number;
-  connectedDgMinorVersion?: number;
-  connectedDgPatchVersion?: number;
 };
 
 export type TrainingResults ={
@@ -80,12 +77,10 @@ export type TrainingResults ={
 
 export type DataModelsFilters = {
   modelName: string;
-  version: string;
-  platform: string;
-  datasetGroup: number;
+  modelStatus: string;
   trainingStatus: string;
-  maturity: string;
-  sort: 'created_timestamp desc' | 'created_timestamp asc' | 'name asc' | 'name desc';
+  deploymentEnvironment: string;
+  sort: 'createdAt desc' | 'createdAt asc' | 'modelName asc' | 'modelName desc';
 };
 
 export type ErrorsType = {

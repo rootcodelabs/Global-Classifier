@@ -62,31 +62,23 @@ export const authQueryKeys = {
 
 export const dataModelsQueryKeys = {
   DATA_MODEL_FILTERS: (): string[] => ['datamodels/filters'],
+  DATA_MODEL_DEPLOYMENT_ENVIRONMENTS: (): string[] => ['datamodels/deployment-environments'],
+
   DATA_MODELS_OVERVIEW: function (
     pageIndex?: number,
-    modelName?: string,
-    versionMajor?: number,
-    versionMinor?: number,
-    platform?: string,
-    datasetGroup?: number,
+    modelStatus?:string,
     trainingStatus?:string,
     maturity?:string,
     sort?:string,
-    isProduction?:boolean
 
   ) {
     return [
-      'datamodels/overview',
+      'datamodels/list',
       pageIndex,
-      modelName,
-      versionMajor,
-      versionMinor,
-      platform,
-      datasetGroup,
+      modelStatus,
       trainingStatus,
       maturity,
-      sort,
-      isProduction
+      sort
     ].filter((val) => val !== undefined);
   },
   GET_META_DATA: function (modelId?: number) {

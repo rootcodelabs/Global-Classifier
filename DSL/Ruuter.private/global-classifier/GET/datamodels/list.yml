@@ -1,0 +1,60 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get all data models from the data_models table with sorting and filtering"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: trainingStatus
+        type: string
+        description: "Filter by training status"
+      - field: modelStatus
+        type: string
+        description: "Filter by model status"
+      - field: deploymentEnvironment
+        type: string
+        description: "Filter by deploymentEnvironment (optional, if your table supports it)"
+      - field: sortBy
+        type: string
+        description: "Sort by createdAt, lastTrained, or modelName"
+      - field: sortType
+        type: string
+        description: "Sort direction (asc, desc)"
+      - field: page
+        type: number
+        description: "Page number for pagination"
+      - field: pageSize
+        type: number
+        description: "Page size for pagination"
+
+extractRequestData:
+  assign:
+    trainingStatus: ${incoming.params.trainingStatus || 'all'}
+    modelStatus: ${incoming.params.modelStatus || 'all'}
+    deploymentEnvironment: ${incoming.params.deploymentEnvironment || 'all'}
+    sortBy: ${incoming.params.sortBy || 'createdAt'}
+    sortType: ${incoming.params.sortType || 'desc'}
+    page: ${Number(incoming.params.page) || 1}
+    pageSize: ${Number(incoming.params.pageSize) || 10}
+
+getAllDataModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-data-models"
+    body:
+      training_status: ${trainingStatus}
+      model_status: ${modelStatus}
+      deployment_environment: ${deploymentEnvironment}
+      sort_by: ${sortBy}
+      sort_type: ${sortType}
+      page: ${page}
+      page_size: ${pageSize}
+  result: data_models_res
+  next: return_result
+
+return_result:
+  return: ${data_models_res.response.body}
+  next: end

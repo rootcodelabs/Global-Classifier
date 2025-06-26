@@ -1,15 +1,14 @@
 export enum TrainingStatus {
-  NOT_TRAINED = 'not trained',
-  TRAINING_INPROGRESS = 'training in-progress',
+  NOT_TRAINED = 'not_trained',
+  TRAINING_INPROGRESS = 'training_in_progress',
   TRAINED = 'trained',
-  RETRAINING_NEEDED = 'retraining needed',
-  UNTRAINABLE = 'untrainable',
+  RETRAINING_NEEDED = 'retraining_needed',
+  FAILED = 'training_failed',
 }
 
 export enum Maturity {
-  PRODUCTION = 'production ready',
-  STAGING = 'staging',
-  DEVELOPMENT = 'development',
+  PRODUCTION = 'production',
+  UNDEPLOYED = 'undeployed',
   TESTING = 'testing',
 }
 

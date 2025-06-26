@@ -336,28 +336,27 @@
     "filters": {
       "modelName": "Model Name",
       "version": "Version",
-      "platform": "Platform",
+      "modelStatus": "Model Status",
       "datasetGroup": "Dataset Group",
       "trainingStatus": "Training Status",
-      "maturity": "Maturity",
+      "maturity": "Deployment Environment",
       "sort": "Sort by name (A - Z)"
     },
     "trainingStatus": {
       "retrainingNeeded": "Retraining Needed",
       "trained": "Trained",
       "trainingInProgress": "Training In Progress",
-      "untrainable": "Untrainable",
+      "trainingFailed": "Training Failed",
       "notTrained": "Not Trained"
     },
     "maturity": {
-      "development": "Development",
       "production": "Production",
-      "staging": "Staging",
+      "undeployed": "Undeployed",
       "testing": "Testing"
     },
     "dataModelCard": {
-      "datasetGroup": "Dataset Group",
-      "dgVersion": "Dataset Group Version",
+      "dataset": "Dataset",
+      "datasetVersion": "Dataset Version",
       "lastTrained": "Last Trained"
     },
     "trainingResults": {

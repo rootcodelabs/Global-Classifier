@@ -1,0 +1,2 @@
+SELECT base_models, deployment_environments
+FROM model_configurations;
