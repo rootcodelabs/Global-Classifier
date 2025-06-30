@@ -228,7 +228,6 @@ const ViewDataset = () => {
             data={updatedDataset}
             columns={dataColumns as ColumnDef<string, string>[]}
             pagination={pagination}
-            filterable
             dropdownFilters={[
               {
                 columnId: 'clientName',

@@ -202,7 +202,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
 
             }}
           >
-            {t('datasetGroups.datasetCard.settings') ?? ''}
+            {t('datasets.datasetCard.settings') ?? ''}
           </Button>
         </div>
       </div>

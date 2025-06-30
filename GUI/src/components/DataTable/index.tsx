@@ -27,7 +27,6 @@ import {
   MdOutlineWest,
 } from 'react-icons/md';
 import clsx from 'clsx';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Icon, Track } from 'components';
 import Filter from './Filter';
@@ -180,7 +179,7 @@ const DataTable: FC<DataTableProps> = (
                           </button>
                         )}
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {filterable && header.column.getCanFilter() && (
+                        {dropdownFilters && header.column.getCanFilter() && (
                           (() => {
                             const dropdownConfig = dropdownFilters?.find(
                               (df) => df.columnId === header.column.id
@@ -196,9 +195,11 @@ const DataTable: FC<DataTableProps> = (
                                 />
                               );
                             }
-                            return <Filter column={header.column} table={table} />;
+                           
                           })()
                         )}
+                        {filterable && header.column.getCanFilter() && (
+                          <Filter column={header.column} table={table} />)}
                       </Track>
                     )}
                   </th>
