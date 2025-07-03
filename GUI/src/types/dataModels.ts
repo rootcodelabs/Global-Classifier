@@ -3,7 +3,6 @@ export type DataModel = {
   modelName: string;
   dgName?: string;
   datasetId: string | number;
-  platform: string;
   baseModels: string[];
   deploymentEnvironment: string;
   version?: string;

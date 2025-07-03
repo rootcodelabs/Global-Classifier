@@ -1,4 +1,5 @@
 tim-db
+global-classifier-db
 .vscode/
 .idea/
 # Node modules
@@ -42,3 +43,5 @@ test/logs/
 __pycache__/
 .ruff_cache/
 .pytest_cache/
+
+venv

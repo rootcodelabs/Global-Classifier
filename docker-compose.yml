@@ -25,7 +25,7 @@ services:
     container_name: ruuter-private
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
       - application.httpCodesAllowList=200,201,202,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -127,7 +127,7 @@ services:
     ports:
       - 5435:5432
     volumes:
-      - ~/buerokratt_classifier/db_files:/var/lib/postgresql/data
+      - ./global-classifier-db/db_files:/var/lib/postgresql/data
 
     networks:
       - bykstack
@@ -144,7 +144,7 @@ services:
 
   cron-manager:
     container_name: cron-manager
-    image: cron-manager:latest
+    image: cron-manager-python:latest
     user: "root"
     volumes:
       - ./DSL/CronManager/DSL:/DSL
@@ -177,19 +177,19 @@ services:
   #   restart: always
 
   # Dataset Generator services
-  # dataset-gen-ollama:
-  #   image: synthesisai/dataset-generator-ollama:latest
-  #   container_name: dataset-gen-ollama
-  #   ports:
-  #     - "11434:11434"
-  #   environment:
-  #     # - NVIDIA_VISIBLE_DEVICES=all
-  #     # - OLLAMA_USE_GPU=1
-  #     - OLLAMA_HOST=0.0.0.0
-  #   volumes:
-  #     - dataset_gen_ollama_models:/root/.ollama
-  #     - ./src/dataset-generation/ollama-entrypoint.sh:/ollama-entrypoint.sh
-  #   entrypoint: ["bash", "/ollama-entrypoint.sh"]
+  dataset-gen-ollama:
+    image: synthesisai/dataset-generator-ollama:latest
+    container_name: dataset-gen-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      # - NVIDIA_VISIBLE_DEVICES=all
+      # - OLLAMA_USE_GPU=1
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - dataset_gen_ollama_models:/root/.ollama
+      - ./src/dataset-generation/ollama-entrypoint.sh:/ollama-entrypoint.sh
+    entrypoint: ["bash", "/ollama-entrypoint.sh"]
     # deploy:
     #   resources:
     #     reservations:
@@ -197,51 +197,51 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
-    # networks:
-    #   - bykstack
+    networks:
+      - bykstack
 
-  # dataset-gen-service:
-  #   image: synthesisai/dataset-generator:latest
-  #   container_name: dataset-gen-service
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - PROVIDER_API_URL=http://dataset-gen-ollama:11434
-  #     - SERVICE_DEBUG=false
-  #     - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/config:/app/config
-  #     - ./DSL/DatasetGenerator/templates:/app/templates
-  #     - ./DSL/DatasetGenerator/user_configs:/app/user_configs
-  #     - cron_data:/app/data
-  #     - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
-  #     - ./DSL/DatasetGenerator/logs:/app/logs
-  #   depends_on:
-  #     - dataset-gen-ollama
-  #     - dataset-gen-mlflow
-  #   networks:
-  #     - bykstack
+  dataset-gen-service:
+    image: synthesisai/dataset-generator:latest
+    container_name: dataset-gen-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PROVIDER_API_URL=http://dataset-gen-ollama:11434
+      - SERVICE_DEBUG=false
+      - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
+    volumes:
+      - ./DSL/DatasetGenerator/config:/app/config
+      - ./DSL/DatasetGenerator/templates:/app/templates
+      - ./DSL/DatasetGenerator/user_configs:/app/user_configs
+      - cron_data:/app/data
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./DSL/DatasetGenerator/logs:/app/logs
+    depends_on:
+      - dataset-gen-ollama
+      - dataset-gen-mlflow
+    networks:
+      - bykstack
 
-  # dataset-gen-mlflow:
-  #   image: synthesisai/dataset-generator-mlflow:latest
-  #   container_name: dataset-gen-mlflow
-  #   ports:
-  #     - "5000:5000"
-  #   env_file:
-  #     - sidecar.env
-  #   environment:
-  #   - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
-  #   - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
-  #   - MLFLOW_HOST=${MLFLOW_HOST}
-  #   - MLFLOW_PORT=${MLFLOW_PORT}
-  #   - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
-  #   - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
-  #   - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
-  #     - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
-  #   networks:
-  #     - bykstack
+  dataset-gen-mlflow:
+    image: synthesisai/dataset-generator-mlflow:latest
+    container_name: dataset-gen-mlflow
+    ports:
+      - "5000:5000"
+    env_file:
+      - sidecar.env
+    environment:
+    - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+    - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+    - MLFLOW_HOST=${MLFLOW_HOST}
+    - MLFLOW_PORT=${MLFLOW_PORT}
+    - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
+    - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+    - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
+    volumes:
+      - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
+      - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
+    networks:
+      - bykstack
 
   
   minio:
@@ -275,9 +275,9 @@ services:
     networks:
       - bykstack
 
-  s3-dataset-processor:
-    container_name: s3-dataset-processor
-    build: ./src/s3_dataset_processor
+  dataset-file-handler:
+    container_name: dataset-file-handler
+    build: ./src/dataset_file_handler
     ports:
       - "8001:8001"
     volumes:
