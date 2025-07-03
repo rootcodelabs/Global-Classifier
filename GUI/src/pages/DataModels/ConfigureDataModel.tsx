@@ -4,12 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Dialog } from 'components';
 import { useDialog } from 'hooks/useDialog';
 import BackArrowButton from 'assets/BackArrowButton';
-import {
-  deleteDataModel,
-  getMetadata,
-  retrainDataModel,
-  updateDataModel,
-} from 'services/data-models';
+
 import DataModelForm from 'components/molecules/DataModelForm';
 import { getChangedAttributes } from 'utils/dataModelsUtils';
 import { Platform, UpdateType } from 'enums/dataModelsEnums';
@@ -36,18 +31,16 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
   const [initialData, setInitialData] = useState<Partial<DataModel>>({
     modelName: '',
     datasetId: 0,
-    deploymentEnvironment: '',
     baseModels: [],
-    maturity: '',
+    deploymentEnvironment: '',
     version: '',
   });
   const [dataModel, setDataModel] = useState<DataModel>({
     modelId: 0,
     modelName: '',
-    dgId: 0,
-    platform: '',
+    datasetId: 0,
     baseModels: [],
-    maturity: '',
+    deploymentEnvironment: '',
     version: '',
   });
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,34 +48,7 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
   const [modalTitle, setModalTitle] = useState<string>('');
   const [modalDiscription, setModalDiscription] = useState<string>('');
   const modalFunciton = useRef(() => { });
-  const { isLoading } = useQuery(
-    dataModelsQueryKeys.GET_META_DATA(id),
-    () => getMetadata(id),
-    {
-      enabled,
-      onSuccess: (data) => {
-        setDataModel({
-          modelId: data?.modelId || 0,
-          modelName: data?.modelName || '',
-          dgId: data?.connectedDgId || 0,
-          platform: data?.deploymentEnv || '',
-          baseModels: data?.baseModels || [],
-          maturity: data?.maturityLabel || '',
-          version: `V${data?.majorVersion}.${data?.minorVersion}`,
-        });
-        setInitialData({
-          modelName: data?.modelName || '',
-          dgId: data?.connectedDgId || 0,
-          platform: data?.deploymentEnv || '',
-          baseModels: data?.baseModels || [],
-          maturity: data?.maturityLabel || '',
-          version: `V${data?.majorVersion}.${data?.minorVersion}`,
-        });
-        setEnabled(false);
-      },
-    }
-  );
-
+ 
   const handleDataModelAttributesChange = (
     name: keyof DataModel,
     value: any
@@ -96,136 +62,27 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
   const handleSave = () => {
     const payload = getChangedAttributes(initialData, dataModel);
     let updateType: string | undefined;
-    if (payload.dgId) {
+    if (payload.datasetId) {
       updateType = UpdateType.MAJOR;
-    } else if (payload.baseModels || payload.platform) {
+    } else if (payload.baseModels) {
       updateType = UpdateType.MINOR;
-    } else if (payload.maturity) {
-      updateType = UpdateType.MATURITY_LABEL;
-    }
+    } 
 
     const updatedPayload = {
       modelId: dataModel.modelId,
-      connectedDgId: payload.dgId,
-      deploymentEnv: payload.platform,
+      connectedDgId: payload.datasetId,
+      deploymentEnv: payload.deploymentEnvironment,
       baseModels: payload.baseModels,
-      maturityLabel: payload.maturity,
       updateType: updateType,
     };
 
-    if (updateType) {
-      if (availableProdModels?.includes(dataModel.platform)) {
-        openModal(
-          t('dataModels.createDataModel.replaceDesc'),
-          t('dataModels.createDataModel.replaceTitle'),
-          () => updateDataModelMutation.mutate(updatedPayload),
-          'replace'
-        );
-      } else {
-        updateDataModelMutation.mutate(updatedPayload);
-      }
-    }
+    
   };
-
-  const updateDataModelMutation = useMutation({
-    mutationFn: (data: UpdatedDataModelPayload) => updateDataModel(data),
-    onSuccess: async () => {
-      open({
-        title: t('dataModels.configureDataModel.saveChangesTitile'),
-        content: <p>{t('dataModels.configureDataModel.saveChangesDesc')}</p>,
-        footer: (
-          <div className="flex-grid">
-            <Button
-              appearance={ButtonAppearanceTypes.SECONDARY}
-              onClick={() => {
-                navigate(0);
-                close();
-              }}
-            >
-              {t('global.cancel')}
-            </Button>{' '}
-            <Button
-              onClick={() => {
-                navigate(0);
-                close();
-              }}
-            >
-              {t('dataModels.createDataModel.viewAll')}
-            </Button>
-          </div>
-        ),
-      });
-    },
-    onError: () => {
-      open({
-        title: t('dataModels.configureDataModel.updateErrorTitile'),
-        content: <p>{t('dataModels.configureDataModel.updateErrorDesc')}</p>,
-      });
-    },
-  });
 
   const handleDelete = () => {
-    if (
-      dataModel.platform === Platform.JIRA ||
-      dataModel.platform === Platform.OUTLOOK
-    ) {
-      open({
-        title: t('dataModels.configureDataModel.deleteErrorTitle'),
-        content: <p>{t('dataModels.configureDataModel.deleteErrorDesc')}</p>,
-        footer: (
-          <div className="flex-grid">
-            <Button
-              appearance={ButtonAppearanceTypes.SECONDARY}
-              onClick={close}
-            >
-              {t('global.cancel')}
-            </Button>
-          </div>
-        ),
-      });
-    } else {
-      openModal(
-        t('dataModels.configureDataModel.deleteConfirmationDesc'),
-        t('dataModels.configureDataModel.deleteConfirmation'),
-        () => deleteDataModelMutation.mutate(dataModel.modelId),
-        'delete'
-      );
-
-    }
+    
   };
 
-  const deleteDataModelMutation = useMutation({
-    mutationFn: (modelId: number) => deleteDataModel(modelId),
-    onSuccess: async (response) => {
-      close();
-      navigate(0);
-    },
-    onError: () => {
-      open({
-        title: t('dataModels.configureDataModel.deleteModalErrorTitle'),
-        content: (
-          <p>{t('dataModels.configureDataModel.deleteModalErrorDesc')}</p>
-        ),
-      });
-    },
-  });
-
-  const retrainDataModelMutation = useMutation({
-    mutationFn: (modelId: number) => retrainDataModel(modelId),
-    onSuccess: async () => {
-      close();
-      navigate(0);
-      setModalOpen(false)
-    },
-    onError: () => {
-      open({
-        title: t('dataModels.configureDataModel.retrainDataModalErrorTitle'),
-        content: (
-          <p>{t('dataModels.configureDataModel.retrainDataModalErrorDesc')}</p>
-        ),
-      });
-    },
-  });
 
   const openModal = (
     content: string,
@@ -259,7 +116,6 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
               <p>{t('dataModels.configureDataModel.retrainCard')}</p>
               <Button
                 onClick={() => {
-                  retrainDataModelMutation.mutate(dataModel.modelId);
                 }}
               >
                 {t('dataModels.configureDataModel.retrain')}
@@ -268,7 +124,7 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
           </div>
         </Card>
 
-        {isLoading ? (
+        {false ? (
           <CircularSpinner />
         ) : (
           <DataModelForm
@@ -283,28 +139,22 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
       >
         <Button
           appearance="error"
-          disabled={deleteDataModelMutation.isLoading}
-          showLoadingIcon={deleteDataModelMutation.isLoading}
+          // disabled={deleteDataModelMutation.isLoading}
+          // showLoadingIcon={deleteDataModelMutation.isLoading}
           onClick={() => handleDelete()}
         >
           {t('dataModels.configureDataModel.deleteModal')}
         </Button>
         <Button
-          disabled={!dataModel.dgId || dataModel.dgId === 0}
-          onClick={() =>
-            openModal(
-              t('dataModels.configureDataModel.confirmRetrainDesc'),
-              t('dataModels.configureDataModel.retrain'),
-              () => retrainDataModelMutation.mutate(dataModel.modelId),
-              'retrain'
-            )
+          disabled={!dataModel.datasetId || dataModel.datasetId === 0}
+          onClick={() => {}
           }
         >
           {t('dataModels.configureDataModel.retrain')}
         </Button>
         <Button
-          disabled={updateDataModelMutation.isLoading}
-          showLoadingIcon={updateDataModelMutation.isLoading}
+          // disabled={updateDataModelMutation.isLoading}
+          // showLoadingIcon={updateDataModelMutation.isLoading}
           onClick={handleSave}
         >
           {t('dataModels.configureDataModel.save')}
@@ -325,16 +175,16 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
             </Button>
             {modalType === 'retrain' ? (
               <Button
-                disabled={retrainDataModelMutation.isLoading || !dataModel.dgId || dataModel.dgId === 0}
-                showLoadingIcon={retrainDataModelMutation.isLoading}
+                // disabled={retrainDataModelMutation.isLoading || !dataModel.datasetId || dataModel.datasetId === 0}
+                // showLoadingIcon={retrainDataModelMutation.isLoading}
                 onClick={() => modalFunciton.current()}
               >
                 {t('dataModels.configureDataModel.retrain')}
               </Button>
             ) : modalType === 'delete' ? (
               <Button
-                disabled={deleteDataModelMutation.isLoading}
-                showLoadingIcon={deleteDataModelMutation.isLoading}
+                // disabled={deleteDataModelMutation.isLoading}
+                // showLoadingIcon={deleteDataModelMutation.isLoading}
                 onClick={() => modalFunciton.current()}
                 appearance={ButtonAppearanceTypes.ERROR}
               >
@@ -342,8 +192,8 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
               </Button>
             ) : (
               <Button
-                disabled={updateDataModelMutation.isLoading}
-                showLoadingIcon={updateDataModelMutation.isLoading}
+                // disabled={updateDataModelMutation.isLoading}
+                // showLoadingIcon={updateDataModelMutation.isLoading}
                 onClick={() => modalFunciton.current()}
               >
                 {t('global.proceed')}

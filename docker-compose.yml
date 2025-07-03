@@ -25,7 +25,7 @@ services:
     container_name: ruuter-private
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
       - application.httpCodesAllowList=200,201,202,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -127,7 +127,7 @@ services:
     ports:
       - 5435:5432
     volumes:
-      - ~/buerokratt_classifier/db_files:/var/lib/postgresql/data
+      - ./global-classifier-db/db_files:/var/lib/postgresql/data
 
     networks:
       - bykstack
@@ -144,7 +144,7 @@ services:
 
   cron-manager:
     container_name: cron-manager
-    image: cron-manager:latest
+    image: cron-manager-python:latest
     user: "root"
     volumes:
       - ./DSL/CronManager/DSL:/DSL
