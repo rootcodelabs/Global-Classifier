@@ -42,3 +42,7 @@ test/logs/
 __pycache__/
 .ruff_cache/
 .pytest_cache/
+
+models
+data
+output_datasets/
