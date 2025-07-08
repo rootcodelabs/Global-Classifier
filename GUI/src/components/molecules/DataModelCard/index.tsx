@@ -8,6 +8,7 @@ import Card from 'components/Card';
 import { useTranslation } from 'react-i18next';
 import { TrainingResults } from 'types/dataModels';
 import { formatDate } from 'utils/commonUtilts';
+import { useNavigate } from 'react-router-dom';
 
 type DataModelCardProps = {
   modelId: number | string;
@@ -38,7 +39,12 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
   const { open, close } = useDialog();
   const { t } = useTranslation();
   const resultsJsonData: TrainingResults = JSON.parse(results ?? '{}');
+const navigate = useNavigate();
 
+const configureDataModel = () => {
+  navigate(`/configure-datamodel?datamodelId=${modelId}`);
+
+};
   const renderTrainingStatus = (status: string | undefined) => {
     if (status === TrainingStatus.RETRAINING_NEEDED) {
       return (
@@ -52,10 +58,10 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
           {t('dataModels.trainingStatus.trained') ?? ''}
         </Label>
       );
-    } else if (status === TrainingStatus.TRAINING_INPROGRESS) {
+    } else if (status === TrainingStatus.TRAINING_INPROGRESS || status === TrainingStatus.INITIATING_TRAINING) {
       return (
         <Label type="info">
-          {t('dataModels.trainingStatus.trainingInProgress') ?? ''}
+          {t('dataModels.trainingStatus.initiatingTraining') ?? ''}
         </Label>
       );
     } else if (status === TrainingStatus.FAILED) {
@@ -112,6 +118,9 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
         <div className="flex">
           {renderTrainingStatus(trainingStatus)}
           <Label type="info">{modelStatus}</Label>
+          {isLatest && <Label type="success">
+            {t('global.latest') ?? ''}
+          </Label>}
           {renderMaturityLabel(maturity)}
         </div>
 
@@ -198,9 +207,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
           <Button
             appearance="primary"
             size="s"
-            onClick={() => {
-
-            }}
+            onClick={configureDataModel}
           >
             {t('datasets.datasetCard.settings') ?? ''}
           </Button>

@@ -186,8 +186,8 @@ const DataModels: FC = () => {
                             modelId={model?.modelId}
                             dataModelName={model?.modelName}
                             version={`V${model?.major}.${model?.minor}`}
-                            // isLatest={model.latest}
-                            datasetVersion={model?.datasetVersion}
+                            isLatest={model.latest}
+                            datasetVersion={`V${model?.connectedDsMajorVersion}.${model?.connectedDsMinorVersion}`}
                             lastTrained={model?.lastTrained}
                             trainingStatus={model.trainingStatus}
                             modelStatus={model?.modelStatus}

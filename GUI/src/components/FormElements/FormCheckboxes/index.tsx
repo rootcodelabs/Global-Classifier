@@ -38,7 +38,7 @@ const FormCheckboxes: FC<FormCheckboxesType> = ({
 
     const newValues = checked
       ? [...internalSelectedValues, value] 
-      : internalSelectedValues.filter((v: string) => v !== value); 
+      : internalSelectedValues?.filter((v: string) => v !== value); 
 
     setInternalSelectedValues(newValues);
 
@@ -61,7 +61,7 @@ const FormCheckboxes: FC<FormCheckboxesType> = ({
                   id={`${id}-${item.value}`}
                   value={item.value}
                   onChange={handleValuesChange}
-                  checked={internalSelectedValues.includes(item.value)} 
+                  checked={internalSelectedValues?.includes(item.value)} 
                 />
                 <label htmlFor={`${id}-${item.value}`}>{item.label}</label>
               </div>

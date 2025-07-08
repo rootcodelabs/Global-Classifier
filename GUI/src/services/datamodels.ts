@@ -26,3 +26,46 @@ export async function getDeploymentEnvironments() {
   const { data } = await apiDev.get(dataModelsEndpoints.GET_DEPLOYMENT_ENVIRONMENTS());
   return data?.response?? [];
 }
+
+export async function getDataModelMetadata(
+  modelId: number | string,
+) {
+  const { data } = await apiDev.get(dataModelsEndpoints.GET_MODEL_METADATA(), {
+    params: {
+      modelId
+    },
+  });
+  return data?.response?.[0]?? [];
+}
+
+export async function createDataModel(payload: {
+  modelName: string;
+  deploymentEnv: string;
+  baseModels: string[];
+  connectedDsId: string | number;
+  connectedDsMajorVersion: string | number;
+  connectedDsMinorVersion: string | number;
+}) {
+  const { data } = await apiDev.post(dataModelsEndpoints.CREATE_MODEL(), payload);
+  return data?.response ?? {};
+}
+
+export async function configureDataModel(payload: {
+  modelGroupKey: string;
+  modelName: string;
+  deploymentEnv: string;
+  baseModels: string[];
+  connectedDsId: string | number;
+  connectedDsMajorVersion: string | number;
+  connectedDsMinorVersion: string | number;
+  updateType: string;
+}, ) {
+  let endpoint ="";
+  if (payload.updateType === 'major') {
+    endpoint = dataModelsEndpoints.CREATE_MAJOR_VERSION();
+  } else if (payload.updateType === 'minor') {
+    endpoint = dataModelsEndpoints.CREATE_MINOR_VERSION();
+  } 
+  const { data } = await apiDev.post(endpoint, payload);
+  return data?.response ?? {};
+}

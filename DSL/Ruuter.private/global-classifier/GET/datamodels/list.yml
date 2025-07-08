@@ -47,7 +47,7 @@ getAllDataModels:
     body:
       training_status: ${trainingStatus}
       model_status: ${modelStatus}
-      deployment_environment: ${deploymentEnvironment}
+      deployment_env: ${deploymentEnvironment}
       sort_by: ${sortBy}
       sort_type: ${sortType}
       page: ${page}

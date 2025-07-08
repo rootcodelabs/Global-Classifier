@@ -57,7 +57,8 @@ export type DataModelResponse = {
   major: number;
   minor: number;
   latest: boolean;
-  datasetVersion?: string;
+  connectedDsMajorVersion?: string;
+  connectedDsMinorVersion?: string;
   dataModelName: string;
   lastTrained: string;
   trainingStatus: string;

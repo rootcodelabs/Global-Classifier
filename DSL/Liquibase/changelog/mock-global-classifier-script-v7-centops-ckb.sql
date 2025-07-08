@@ -15,10 +15,10 @@ CREATE TABLE public.mock_ckb (
 );
 
 INSERT INTO public.mock_centops (agency_id, agency_name, created_at) VALUES
-    ('1', 'ID Department', NOW()),
-    ('2', 'Tax Department', NOW());
+    ('1', 'ID.ee', NOW()),
+    ('2', 'Politsei-_ja_Piirivalveamet', NOW());
 
 INSERT INTO public.mock_ckb (agency_id, agency_data_hash, data_url, created_at) VALUES
-    ('1', 'hash_dummy_1', 'https://example.com/signed-url-1', NOW()),
-    ('2', 'hash_dummy_2', 'https://example.com/signed-url-2', NOW());
+    ('1', 'id_hash', 'http://minio:9000/ckb/agencies/ID.ee/ID.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250704%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250704T044232Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=58fbc63dba44a5fc0a55cad67b24665bf22a9bf20ebd98484e5ca9895db76c24', NOW()),
+    ('2', 'Politsei_hash', 'http://minio:9000/ckb/agencies/Politsei-_ja_Piirivalveamet/Politsei-_ja_Piirivalveamet.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20250704%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250704T044232Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=ab69f524ae6a0ba1e64ccaba0b355b4944f6216117d589e6f987b3f4679b0e06', NOW());
 

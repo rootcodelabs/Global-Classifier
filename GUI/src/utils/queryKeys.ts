@@ -81,7 +81,7 @@ export const dataModelsQueryKeys = {
       sort
     ].filter((val) => val !== undefined);
   },
-  GET_META_DATA: function (modelId?: number) {
+  GET_META_DATA: function (modelId?: number | string) {
     return ['datamodels/metadata', `${modelId}`].filter(
       (val) => val !== undefined
     );

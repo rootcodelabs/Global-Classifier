@@ -1,0 +1,131 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Create a new data model record in data_models and update connected dataset"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  # Input Validation Schema
+  allowlist:
+    body:
+      - field: modelName
+        type: string
+        description: "Name of the model (required)"
+      - field: deploymentEnv
+        type: string
+        description: "Deployment environment: production, testing, undeployed (required)"
+      - field: baseModels
+        type: array
+        description: "Array of base models: ['distil-bert', 'bert', 'roberta'] (required)"
+      - field: connectedDsId
+        type: number
+        description: "Connected dataset ID (required)"
+      - field: connectedDsMajorVersion
+        type: number
+        description: "Connected dataset major version (required)"
+      - field: connectedDsMinorVersion
+        type: number
+        description: "Connected dataset minor version (required)"
+  next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    modelName: ${incoming.body.modelName}
+    deploymentEnv: ${incoming.body.deploymentEnv}
+    baseModels: ${incoming.body.baseModels}
+    connectedDsId: ${incoming.body.connectedDsId}
+    connectedDsMajorVersion: ${incoming.body.connectedDsMajorVersion}
+    connectedDsMinorVersion: ${incoming.body.connectedDsMinorVersion}
+  next: validateRequiredFields
+    
+# Required Field Validation
+validateRequiredFields:
+  switch:
+    - condition: ${modelName === null || modelName === undefined || modelName === "" || deploymentEnv === null || deploymentEnv === undefined || deploymentEnv === "" || baseModels === null || baseModels === undefined || connectedDsId === null || connectedDsId === undefined}
+      next: return_missing_required_fields
+    - condition: ${connectedDsMajorVersion === null || connectedDsMajorVersion === undefined || connectedDsMinorVersion === null || connectedDsMinorVersion === undefined}
+      next: return_missing_required_fields
+    - condition: ${!baseModels || baseModels.length === 0}
+      next: return_missing_required_fields
+  next: validateEnumValues
+
+# Enum Value Validation
+validateEnumValues:
+  switch:
+    - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
+      next: return_invalid_deployment_env
+    - condition: ${!baseModels.every(model => ["distil-bert", "roberta", "bert"].includes(model))}
+      next: return_invalid_base_model
+  next: insertModelMetadata
+
+# Insert Model Metadata
+insertModelMetadata:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-data-models"
+    body:
+      modelName: ${modelName}
+      deploymentEnv: ${deploymentEnv}
+      baseModels: ${JSON.stringify(baseModels)} 
+      connectedDsId: ${connectedDsId}
+      connectedDsMajorVersion: ${connectedDsMajorVersion}
+      connectedDsMinorVersion: ${connectedDsMinorVersion}
+  result: insert_model_res
+  next: checkInsertResult
+
+# Check Insert Result
+checkInsertResult:
+  switch:
+    - condition: ${!insert_model_res || !insert_model_res.response.body || insert_model_res.response.body.length === 0}
+      next: return_insert_failed
+  next: updateDatasetConnectedModels
+
+# Update Dataset Connected Models
+updateDatasetConnectedModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datasets-connected-models"
+    body:
+      modelId: ${insert_model_res.response.body[0].modelId}
+      datasetId: ${connectedDsId}
+  result: update_dataset_res
+  next: checkUpdateResult
+
+# Check Update Result
+checkUpdateResult:
+  switch:
+    - condition: ${!update_dataset_res || !update_dataset_res.response.body || update_dataset_res.response.body.length === 0}
+      next: return_update_failed
+  next: return_success
+
+return_success:
+  return: "Data model created successfully"
+  status: 200
+  next: end
+
+return_missing_required_fields:
+  return: "error: missing required fields (modelName, deploymentEnv, baseModels as array, connectedDsId, connectedDsMajorVersion, connectedDsMinorVersion)"
+  status: 400
+  next: end
+
+return_invalid_deployment_env:
+  return: "error: invalid deploymentEnv. Must be one of: production, testing, undeployed"
+  status: 400
+  next: end
+
+return_invalid_base_model:
+  return: "error: invalid baseModels. Each model must be one of: distil-bert, bert, roberta"
+  status: 400
+  next: end
+
+return_insert_failed:
+  return: "error: failed to create model metadata record"
+  status: 500
+  next: end
+
+return_update_failed:
+  return: "error: model created but failed to update dataset connected_models"
+  status: 500
+  next: end
