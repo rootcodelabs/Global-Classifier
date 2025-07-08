@@ -175,7 +175,7 @@ const DataModels: FC = () => {
                 </div>
 
               </div>
-             {prodDataModel?.length !==0 &&  <div className="m-30-0">
+             {prodDataModel != null &&  <div className="m-30-0">
                 <p>Deployed Model</p>
                 <div className="grid-container m-30-0">
                   <DataModelCard
