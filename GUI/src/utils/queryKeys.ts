@@ -63,6 +63,7 @@ export const authQueryKeys = {
 
 export const dataModelsQueryKeys = {
   DATA_MODEL_FILTERS: (): string[] => ['datamodels/filters'],
+  GET_PROD_DATA_MODEL: (): string[] => ['datamodels/production-model'],
   DATA_MODEL_DEPLOYMENT_ENVIRONMENTS: (): string[] => ['datamodels/deployment-environments'],
   DATA_MODELS_OVERVIEW: function (
     pageIndex?: number,

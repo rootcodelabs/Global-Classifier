@@ -62,7 +62,7 @@ export type DataModelResponse = {
   dataModelName: string;
   lastTrained: string;
   trainingStatus: string;
-  deploymentEnvironment: string;
+  deploymentEnv: string;
   modelStatus: string;
   trainingResults?: string | null;
 };

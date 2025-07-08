@@ -58,6 +58,28 @@ validateEnumValues:
       next: return_invalid_deployment_env
     - condition: ${!baseModels.every(model => ["distil-bert", "roberta", "bert"].includes(model))}
       next: return_invalid_base_model
+  next: checkProductionDeployment
+
+# Check if Production Deployment
+checkProductionDeployment:
+  switch:
+    - condition: ${deploymentEnv === "production"}
+      next: updateExistingProductionModels
+  next: insertModelMetadata
+
+# Update Existing Production Models to Undeployed
+updateExistingProductionModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datamodel-deployment-env"
+  result: update_production_res
+  next: checkProductionUpdateResult
+
+# Check Production Update Result
+checkProductionUpdateResult:
+  switch:
+    - condition: ${!update_production_res || !update_production_res.response || !update_production_res.response.body}
+      next: return_production_update_failed
   next: insertModelMetadata
 
 # Insert Model Metadata
@@ -118,6 +140,11 @@ return_invalid_deployment_env:
 return_invalid_base_model:
   return: "error: invalid baseModels. Each model must be one of: distil-bert, bert, roberta"
   status: 400
+  next: end
+
+return_production_update_failed:
+  return: "error: failed to update existing production models to undeployed before creating new production model"
+  status: 500
   next: end
 
 return_insert_failed:

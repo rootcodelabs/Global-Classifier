@@ -19,7 +19,7 @@ type DataModelCardProps = {
   lastTrained?: string;
   trainingStatus?: string;
   modelStatus?: string;
-  maturity?: string;
+  deploymentEnv?: string;
   results?: string | null;
 };
 
@@ -32,7 +32,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
   lastTrained,
   trainingStatus,
   modelStatus,
-  maturity,
+  deploymentEnv,
   results,
 
 }) => {
@@ -115,13 +115,13 @@ const configureDataModel = () => {
             {lastTrained && formatDate(new Date(lastTrained), 'D.M.yy-H:m')}
           </p>
         </div>
-        <div className="flex">
+        <div className="flex" style={{flexWrap: 'wrap',gap: '5px'}}>
           {renderTrainingStatus(trainingStatus)}
           <Label type="info">{modelStatus}</Label>
           {isLatest && <Label type="success">
             {t('global.latest') ?? ''}
           </Label>}
-          {renderMaturityLabel(maturity)}
+          {renderMaturityLabel(deploymentEnv)}
         </div>
 
         <div className="label-row flex-grid mt-3">

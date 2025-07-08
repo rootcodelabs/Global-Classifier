@@ -55,6 +55,11 @@ getAllDataModels:
   result: data_models_res
   next: return_result
 
+assign_result:
+  assign:
+    dataModels: ${data_models_res.response.body}
+  next: return_result
+
 return_result:
   return: ${data_models_res.response.body}
   next: end

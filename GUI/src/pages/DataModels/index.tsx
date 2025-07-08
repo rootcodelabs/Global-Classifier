@@ -16,7 +16,7 @@ import {
 import { dataModelsQueryKeys } from 'utils/queryKeys';
 import NoDataView from 'components/molecules/NoDataView';
 import './DataModels.scss';
-import { getDataModelsOverview, getDeploymentEnvironments } from 'services/datamodels';
+import { getDataModelsOverview, getDeploymentEnvironments, getProductionDataModel } from 'services/datamodels';
 import { fi } from 'date-fns/locale';
 import { modelStatuses, trainingStatuses } from 'config/dataModelsConfig';
 
@@ -41,7 +41,12 @@ const DataModels: FC = () => {
     queryFn: () => getDataModelsOverview(pageIndex, filters.modelStatus, filters.trainingStatus, filters.deploymentEnvironment, filters.sort),
   });
 
-   const { data: deploymentEnvironmentsData } = useQuery({
+   const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
+    queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
+    queryFn: () => getProductionDataModel(),
+  });
+
+  const { data: deploymentEnvironmentsData } = useQuery({
     queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
     queryFn: () => getDeploymentEnvironments(),
   });
@@ -60,10 +65,10 @@ const DataModels: FC = () => {
 
   return (
     <div>
-        <div className="container">
-          {!isModelDataLoading ? (
-            <div>
-              {/* <div className="featured-content">
+      <div className="container">
+        {!isModelDataLoading ? (
+          <div>
+            {/* <div className="featured-content">
                 <div className="title_container mt-30">
                   <div className="title">
                     {t('dataModels.productionModels')}
@@ -71,150 +76,164 @@ const DataModels: FC = () => {
                 </div>
 
               </div> */}
-              <div>
-                <div className="title_container">
-                  <div className="title">{t('dataModels.dataModels')}</div>
+            <div>
+              <div className="title_container">
+                <div className="title">{t('dataModels.dataModels')}</div>
+                <Button
+                  appearance="primary"
+                  size="m"
+                  onClick={() => navigate('/create-data-model')}
+                >
+                  {t('dataModels.createModel')}
+                </Button>
+              </div>
+              <div className="search-panel flex">
+                <div
+                  className='models-filter-div'
+                >
+
+                  <FormSelect
+                    label=""
+                    name=""
+                    placeholder={t('dataModels.filters.modelStatus') ?? ''}
+                    options={
+                      modelStatuses
+                    }
+                    onSelectionChange={(selection) =>
+                      handleFilterChange('modelStatus', selection?.value ?? '')
+                    }
+                    defaultValue={filters?.modelStatus}
+                    style={{ width: '15%' }}
+                  />
+
+                  <FormSelect
+                    label=""
+                    name=""
+                    placeholder={t('dataModels.filters.trainingStatus') ?? ''}
+                    options={
+                      trainingStatuses
+                    }
+                    onSelectionChange={(selection) =>
+                      handleFilterChange('trainingStatus', selection?.value)
+                    }
+                    defaultValue={filters?.trainingStatus}
+                    style={{ width: '15%' }}
+                  />
+                  <FormSelect
+                    label=""
+                    name=""
+                    placeholder={t('dataModels.filters.maturity') ?? ''}
+                    options={formattedArray(deploymentEnvironmentsData[0]?.deploymentEnvironments) ?? []}
+                    onSelectionChange={(selection) =>
+                      handleFilterChange('deploymentEnvironment', selection?.value)
+                    }
+                    defaultValue={filters?.deploymentEnvironment}
+                    style={{ width: '25%' }}
+                  />
+                  <FormSelect
+                    label=""
+                    name=""
+                    placeholder={t('dataModels.filters.sort') ?? ''}
+                    options={[
+                      {
+                        label: t('dataModels.sortOptions.dataModelAsc'),
+                        value: 'modelName asc',
+                      },
+                      {
+                        label: t('dataModels.sortOptions.dataModelDesc'),
+                        value: 'modelName desc',
+                      },
+                      {
+                        label: t('dataModels.sortOptions.createdDateDesc'),
+                        value: 'createdAt desc',
+                      },
+                      {
+                        label: t('dataModels.sortOptions.createdDateAsc'),
+                        value: 'createdAt asc',
+                      },
+                    ]}
+                    onSelectionChange={(selection) =>
+                      handleFilterChange('sort', selection?.value)
+                    }
+                    defaultValue={filters?.sort}
+                    style={{ width: '25%' }}
+                  />
                   <Button
-                    appearance="primary"
-                    size="m"
-                    onClick={() => navigate('/create-data-model')}
+                    onClick={() =>
+                      setFilters({
+                        modelName: 'all',
+                        modelStatus: 'all',
+                        trainingStatus: 'all',
+                        deploymentEnvironment: 'all',
+                        sort: 'createdAt desc',
+                      })
+                    }
+                    appearance={ButtonAppearanceTypes.SECONDARY}
                   >
-                    {t('dataModels.createModel')}
+                    {t('global.reset') ?? ''}
                   </Button>
                 </div>
-                <div className="search-panel flex">
-                  <div
-                    className='models-filter-div'
-                  >
 
-                    <FormSelect
-                      label=""
-                      name=""
-                      placeholder={t('dataModels.filters.modelStatus') ?? ''}
-                      options={
-                        modelStatuses
-                      }
-                      onSelectionChange={(selection) =>
-                        handleFilterChange('modelStatus', selection?.value ?? '')
-                      }
-                      defaultValue={filters?.modelStatus}
-                      style={{ width: '15%' }}
-                    />
-
-                    <FormSelect
-                      label=""
-                      name=""
-                      placeholder={t('dataModels.filters.trainingStatus') ?? ''}
-                      options={
-                       trainingStatuses
-                      }
-                      onSelectionChange={(selection) =>
-                        handleFilterChange('trainingStatus', selection?.value)
-                      }
-                      defaultValue={filters?.trainingStatus}
-                      style={{ width: '15%' }}
-                    />
-                    <FormSelect
-                      label=""
-                      name=""
-                      placeholder={t('dataModels.filters.maturity') ?? ''}
-                      options={formattedArray(deploymentEnvironmentsData[0]?.deploymentEnvironments)??[]}
-                      onSelectionChange={(selection) =>
-                        handleFilterChange('deploymentEnvironment', selection?.value)
-                      }
-                      defaultValue={filters?.deploymentEnvironment}
-                      style={{ width: '25%' }}
-                    />
-                    <FormSelect
-                      label=""
-                      name=""
-                      placeholder={t('dataModels.filters.sort') ?? ''}
-                      options={[
-                        {
-                          label: t('dataModels.sortOptions.dataModelAsc'),
-                          value: 'modelName asc',
-                        },
-                        {
-                          label: t('dataModels.sortOptions.dataModelDesc'),
-                          value: 'modelName desc',
-                        },
-                        {
-                          label: t('dataModels.sortOptions.createdDateDesc'),
-                          value: 'createdAt desc',
-                        },
-                        {
-                          label: t('dataModels.sortOptions.createdDateAsc'),
-                          value: 'createdAt asc',
-                        },
-                      ]}
-                      onSelectionChange={(selection) =>
-                        handleFilterChange('sort', selection?.value)
-                      }
-                      defaultValue={filters?.sort}
-                      style={{ width: '25%' }}
-                    />
-                    <Button
-                      onClick={() =>
-                        setFilters({
-                          modelName: 'all',
-                          modelStatus: 'all',
-                          trainingStatus: 'all',
-                          deploymentEnvironment: 'all',
-                          sort: 'createdAt desc',
-                        })
-                      }
-                      appearance={ButtonAppearanceTypes.SECONDARY}
-                    >
-                      {t('global.reset') ?? ''}
-                    </Button>
-                  </div>
-                  {/* <div
-                    className='filter-buttons'
-                  > */}
-                
-                    
-                  {/* </div> */}
-                </div>
-
-                {dataModelsData?.length > 0 ? (
-                  <div className="grid-container m-30-0">
-                    {dataModelsData?.map(
-                      (model: DataModelResponse, index: number) => {
-                        return (
-                          <DataModelCard
-                            key={model?.modelId}
-                            modelId={model?.modelId}
-                            dataModelName={model?.modelName}
-                            version={`V${model?.major}.${model?.minor}`}
-                            isLatest={model.latest}
-                            datasetVersion={`V${model?.connectedDsMajorVersion}.${model?.connectedDsMinorVersion}`}
-                            lastTrained={model?.lastTrained}
-                            trainingStatus={model.trainingStatus}
-                            modelStatus={model?.modelStatus}
-                            maturity={model?.deploymentEnvironment}
-                            // results={model?.trainingResults ?? null}
-                        
-                          />
-                        );
-                      }
-                    )}
-                  </div>
-                ) : (
-                  <NoDataView text={t('dataModels.noModels') ?? ''} />
-                )}
               </div>
-              <Pagination
-                pageCount={pageCount}
-                pageIndex={pageIndex}
-                canPreviousPage={pageIndex > 1}
-                canNextPage={pageIndex < 10}
-                onPageChange={setPageIndex}
-              />
+             {prodDataModel?.length !==0 &&  <div className="m-30-0">
+                <p>Deployed Model</p>
+                <div className="grid-container m-30-0">
+                  <DataModelCard
+                    key={prodDataModel?.modelId}
+                    modelId={prodDataModel?.modelId}
+                    dataModelName={prodDataModel?.modelName}
+                    version={`V${prodDataModel?.major}.${prodDataModel?.minor}`}
+                    isLatest={prodDataModel.latest}
+                    datasetVersion={`V${prodDataModel?.connectedDsMajorVersion}.${prodDataModel?.connectedDsMinorVersion}`}
+                    lastTrained={prodDataModel?.lastTrained}
+                    trainingStatus={prodDataModel.trainingStatus}
+                    modelStatus={prodDataModel?.modelStatus}
+                    deploymentEnv={prodDataModel?.deploymentEnv}
+                  // results={model?.trainingResults ?? null}
+
+                  /></div>
+              </div>}
+              <p>Other Data Models</p>
+
+              {dataModelsData?.length > 0 ? (
+                <div className="grid-container m-30-0">
+                  {dataModelsData?.map(
+                    (model: DataModelResponse, index: number) => {
+                      return (
+                        <DataModelCard
+                          key={model?.modelId}
+                          modelId={model?.modelId}
+                          dataModelName={model?.modelName}
+                          version={`V${model?.major}.${model?.minor}`}
+                          isLatest={model.latest}
+                          datasetVersion={`V${model?.connectedDsMajorVersion}.${model?.connectedDsMinorVersion}`}
+                          lastTrained={model?.lastTrained}
+                          trainingStatus={model.trainingStatus}
+                          modelStatus={model?.modelStatus}
+                          deploymentEnv={model?.deploymentEnv}
+                        // results={model?.trainingResults ?? null}
+
+                        />
+                      );
+                    }
+                  )}
+                </div>
+              ) : (
+                <NoDataView text={t('dataModels.noModels') ?? ''} />
+              )}
             </div>
-          ) : (
-            <CircularSpinner />
-          )}
-        </div>
+            <Pagination
+              pageCount={pageCount}
+              pageIndex={pageIndex}
+              canPreviousPage={pageIndex > 1}
+              canNextPage={pageIndex < 10}
+              onPageChange={setPageIndex}
+            />
+          </div>
+        ) : (
+          <CircularSpinner />
+        )}
+      </div>
     </div>
   );
 };

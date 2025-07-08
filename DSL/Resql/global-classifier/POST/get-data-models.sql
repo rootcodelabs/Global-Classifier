@@ -22,6 +22,7 @@ WHERE
     (:training_status = 'all' OR training_status = :training_status::training_status)
     AND (:model_status = 'all' OR model_status = :model_status::model_status)
     AND (:deployment_env = 'all' OR deployment_env = :deployment_env::deployment_environment)
+    AND deployment_env != 'production'::deployment_environment
 ORDER BY
     CASE WHEN :sort_by = 'createdAt' AND :sort_type = 'asc' THEN created_timestamp END ASC,
     CASE WHEN :sort_by = 'createdAt' AND :sort_type = 'desc' THEN created_timestamp END DESC,
