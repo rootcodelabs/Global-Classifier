@@ -1,6 +1,7 @@
 export enum TrainingStatus {
   NOT_TRAINED = 'not_trained',
   TRAINING_INPROGRESS = 'training_in_progress',
+  INITIATING_TRAINING = 'initiating_training',
   TRAINED = 'trained',
   RETRAINING_NEEDED = 'retraining_needed',
   FAILED = 'training_failed',

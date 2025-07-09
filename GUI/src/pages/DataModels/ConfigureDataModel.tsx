@@ -1,6 +1,6 @@
-import { FC, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card, Dialog } from 'components';
 import { useDialog } from 'hooks/useDialog';
 import BackArrowButton from 'assets/BackArrowButton';
@@ -14,41 +14,65 @@ import { DataModel, UpdatedDataModelPayload } from 'types/dataModels';
 import { dataModelsQueryKeys } from 'utils/queryKeys';
 import { useTranslation } from 'react-i18next';
 import './DataModels.scss';
+import { configureDataModel, getDataModelMetadata } from 'services/datamodels';
+import { use } from 'i18next';
+import { set } from 'date-fns';
 
-type ConfigureDataModelType = {
-  id: number;
-  availableProdModels?: string[];
-};
-
-const ConfigureDataModel: FC<ConfigureDataModelType> = ({
-  id,
-  availableProdModels,
-}) => {
+const ConfigureDataModel: FC = () => {
   const { t } = useTranslation();
   const { open, close } = useDialog();
   const navigate = useNavigate();
   const [enabled, setEnabled] = useState<boolean>(true);
-  const [initialData, setInitialData] = useState<Partial<DataModel>>({
-    modelName: '',
-    datasetId: 0,
-    baseModels: [],
-    deploymentEnvironment: '',
-    version: '',
-  });
-  const [dataModel, setDataModel] = useState<DataModel>({
-    modelId: 0,
-    modelName: '',
-    datasetId: 0,
-    baseModels: [],
-    deploymentEnvironment: '',
-    version: '',
-  });
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [modalTitle, setModalTitle] = useState<string>('');
   const [modalDiscription, setModalDiscription] = useState<string>('');
   const modalFunciton = useRef(() => { });
- 
+  const [searchParams] = useSearchParams();
+  const modelId = searchParams.get('datamodelId');
+  const { data: modelMetadata } = useQuery({
+    queryKey: dataModelsQueryKeys.GET_META_DATA(modelId ?? ''),
+    queryFn: () => getDataModelMetadata(modelId ?? ''),
+  });
+
+  const [initialData, setInitialData] = useState<Partial<DataModel>>({
+    modelName: modelMetadata?.modelName,
+    datasetId: modelMetadata?.connectedDsId,
+    baseModels:modelMetadata?.baseModels,
+    deploymentEnvironment: modelMetadata?.deploymentEnv,
+    version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+  });
+
+  const [dataModel, setDataModel] = useState<DataModel>({
+    modelId: modelMetadata?.modelId,
+    modelName: modelMetadata?.modelName,
+    datasetId: modelMetadata?.connectedDsId.toString(),
+    baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
+    deploymentEnvironment: modelMetadata?.deploymentEnv,
+    version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+  });
+
+  useEffect(() => {
+     setInitialData({
+      modelId: modelMetadata?.modelId,
+      modelName: modelMetadata?.modelName,
+      datasetId: modelMetadata?.connectedDsId.toString(),
+      baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
+      deploymentEnvironment: modelMetadata?.deploymentEnv,
+      version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+    });
+    setDataModel({
+      modelId: modelMetadata?.modelId,
+      modelName: modelMetadata?.modelName,
+      datasetId: modelMetadata?.connectedDsId.toString(),
+      baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
+      deploymentEnvironment: modelMetadata?.deploymentEnv,
+      version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+    });
+  }, [modelMetadata]);
+
+
   const handleDataModelAttributesChange = (
     name: keyof DataModel,
     value: any
@@ -59,28 +83,50 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
     }));
   };
 
-  const handleSave = () => {
+  const mutation = useMutation({
+      mutationFn: configureDataModel,
+      onSuccess: () => {
+        open({
+          title: t('dataModels.configureDataModel.saveChangesTitile'),
+          content: t('dataModels.configureDataModel.saveChangesDesc'),
+          footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=> {navigate('/data-models'),close()}}>View all Data Models</Button></div>)
+        });
+       
+      },
+      onError: () => {
+        open({
+           title: t('dataModels.configureDataModel.updateErrorTitile'),
+          content: t('dataModels.configureDataModel.updateErrorDesc'),
+        });
+      },
+    });
+
+  const handleSaveChanges = () => {
     const payload = getChangedAttributes(initialData, dataModel);
     let updateType: string | undefined;
     if (payload.datasetId) {
       updateType = UpdateType.MAJOR;
     } else if (payload.baseModels) {
       updateType = UpdateType.MINOR;
-    } 
+    }
 
     const updatedPayload = {
-      modelId: dataModel.modelId,
-      connectedDgId: payload.datasetId,
-      deploymentEnv: payload.deploymentEnvironment,
-      baseModels: payload.baseModels,
-      updateType: updateType,
+      modelGroupKey: modelMetadata.modelGroupKey ?? "",
+      modelName: dataModel.modelName ?? "",
+      connectedDsId: Number(dataModel.datasetId) ?? 0,
+      deploymentEnv: dataModel.deploymentEnvironment ?? "",
+      baseModels: dataModel.baseModels ?? [],
+      connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
+      connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
+      updateType: updateType ?? "",
     };
 
-    
+    mutation.mutate(updatedPayload);
+
   };
 
   const handleDelete = () => {
-    
+
   };
 
 
@@ -100,7 +146,7 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
     <div>
       <div className="container">
         <div className="flex-grid m-30-0">
-          <Link to={''} onClick={() => navigate(0)}>
+          <Link to={'/data-models'}>
             <BackArrowButton />
           </Link>
           <div className="title">
@@ -108,7 +154,7 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
           </div>
         </div>
 
-        <Card>
+        {/* <Card>
           <div
             className='metadata-card'
           >
@@ -122,13 +168,15 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
               </Button>
             </div>
           </div>
-        </Card>
+        </Card> */}
 
         {false ? (
           <CircularSpinner />
         ) : (
           <DataModelForm
-            dataModel={dataModel}
+            dataModel={
+              dataModel
+            }
             handleChange={handleDataModelAttributesChange}
             type="configure"
           />
@@ -146,8 +194,8 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
           {t('dataModels.configureDataModel.deleteModal')}
         </Button>
         <Button
-          disabled={!dataModel.datasetId || dataModel.datasetId === 0}
-          onClick={() => {}
+          // disabled={!dataModel.datasetId || dataModel.datasetId === 0}
+          onClick={handleSaveChanges
           }
         >
           {t('dataModels.configureDataModel.retrain')}
@@ -155,7 +203,7 @@ const ConfigureDataModel: FC<ConfigureDataModelType> = ({
         <Button
           // disabled={updateDataModelMutation.isLoading}
           // showLoadingIcon={updateDataModelMutation.isLoading}
-          onClick={handleSave}
+          onClick={handleSaveChanges}
         >
           {t('dataModels.configureDataModel.save')}
         </Button>

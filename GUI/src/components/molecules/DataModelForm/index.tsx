@@ -37,7 +37,7 @@ const DataModelForm: FC<DataModelFormType> = ({
   const { data: datasetVersions } = useQuery({
     queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
     queryFn: () => getAllDatasetVersions(),
-  });
+  });  
   
   return (
     <div>
@@ -98,7 +98,7 @@ const DataModelForm: FC<DataModelFormType> = ({
           <div className="grey-card flex-grid">
             <FormCheckboxes
               isStack={false}
-              items={formattedArray(deploymentEnvironmentsData?.[0]?.baseModels)??[]}
+              items={formattedArray(deploymentEnvironmentsData? JSON.parse(deploymentEnvironmentsData?.[0]?.baseModels.value):[])}
               name="baseModels"
               label=""
               onValuesChange={(values) =>
