@@ -45,3 +45,5 @@ __pycache__/
 .pytest_cache/
 
 venv
+/signed.py
+/minio_presigned_urls.txt
