@@ -29,7 +29,7 @@ export async function getDeploymentEnvironments() {
 
 export async function getProductionDataModel() {
   const { data } = await apiDev.get(dataModelsEndpoints.GET_PRODUCTION_DATA_MODEL());
-  return data?.response?.[0]?? [];
+  return data?.response?.[0] ?? null;
 }
 
 export async function getDataModelMetadata(

@@ -38,7 +38,7 @@ const FormCheckboxes: FC<FormCheckboxesType> = ({
 
     const newValues = checked
       ? [...internalSelectedValues, value] 
-      : internalSelectedValues?.filter((v: string) => v !== value); 
+      : internalSelectedValues.filter((v: string) => v !== value); 
 
     setInternalSelectedValues(newValues);
 
