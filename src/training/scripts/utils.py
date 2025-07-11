@@ -15,7 +15,7 @@ from typing import Dict, Any
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
-    roc_auc_score
+    roc_auc_score,
 )
 from scripts.constants import (
     LOG_DIRECTORY,
@@ -293,6 +293,7 @@ def preprocess_training_summary_from_dict(
         logger.error(f"Error preprocessing training summary: {str(e)}")
         raise
 
+
 def set_random_seeds(seed_val=SEED):
     random.seed(seed_val)
     np.random.seed(seed_val)
@@ -300,23 +301,24 @@ def set_random_seeds(seed_val=SEED):
     torch.cuda.manual_seed_all(seed_val)
     set_seed(seed_val)
 
+
 def evaluate(model, dataloader, device, num_labels):
     """
     Evaluate a trained model on a given dataset and return predictions, true labels, and probabilities.
-    
+
     This function performs inference on the provided dataloader to compute model predictions,
     extract true labels, and calculate class probabilities. It's used for validation during
     training and final testing to assess model performance.
-    
+
     Args:
-        model (torch.nn.Module): The trained PyTorch model to evaluate. Should be a 
+        model (torch.nn.Module): The trained PyTorch model to evaluate. Should be a
             transformers AutoModelForSequenceClassification or compatible model.
         dataloader (torch.utils.data.DataLoader): DataLoader containing the evaluation dataset.
             Expected to yield batches with 'input_ids', 'attention_mask', and 'label' keys.
         device (torch.device): The device (CPU or CUDA) where the model and data should be processed.
         num_labels (int): Number of classes in the classification task. Used for validation
             but not directly in computation.
-    
+
     Returns:
         tuple: A tuple containing three numpy arrays:
             - predictions (np.ndarray): Array of predicted class indices with shape (n_samples,).
@@ -325,16 +327,16 @@ def evaluate(model, dataloader, device, num_labels):
                 Contains the actual labels from the dataset.
             - all_probs (np.ndarray): Array of class probabilities with shape (n_samples, num_labels).
                 Contains softmax probabilities for each class for each sample.
-    
+
     Example:
         >>> # During validation
         >>> val_preds, val_labels, val_probs = evaluate(model, val_dataloader, device, num_labels)
         >>> val_metrics, _ = compute_metrics(val_preds, val_labels, val_probs, class_names)
-        >>> 
+        >>>
         >>> # During final testing
         >>> test_preds, test_labels, test_probs = evaluate(model, test_dataloader, device, num_labels)
         >>> test_metrics, test_cm = compute_metrics(test_preds, test_labels, test_probs, class_names)
-    
+
     Notes:
         - The function sets the model to evaluation mode (model.eval()) and disables gradient
           computation (torch.no_grad()) for efficient inference.
@@ -343,13 +345,13 @@ def evaluate(model, dataloader, device, num_labels):
         - The function processes data in batches to handle large datasets efficiently.
         - This function is compatible with Hugging Face transformers models and custom PyTorch models
           that return outputs with a 'logits' attribute.
-    
+
     Raises:
         RuntimeError: If the model forward pass fails (e.g., shape mismatches, CUDA errors).
         KeyError: If the expected keys ('input_ids', 'attention_mask', 'label') are missing
             from dataloader batches.
         AttributeError: If the model outputs don't have the expected 'logits' attribute.
-    
+
     See Also:
         - compute_metrics(): Used to calculate evaluation metrics from the returned arrays
         - measure_inference_time(): For measuring model inference speed
@@ -381,20 +383,20 @@ def evaluate(model, dataloader, device, num_labels):
 def measure_inference_time(model, dataloader, device, num_runs=100):
     """
     Measure the average inference time per batch for model performance benchmarking.
-    
+
     Args:
         model (torch.nn.Module): The trained model to benchmark.
         dataloader (torch.utils.data.DataLoader): DataLoader with test batches.
         device (torch.device): Device for model computation (CPU/CUDA).
         num_runs (int, optional): Number of batches to time. Defaults to 100.
-    
+
     Returns:
         float: Average inference time per batch in seconds.
-    
+
     Example:
         >>> avg_time = measure_inference_time(model, test_dataloader, device)
         >>> mlflow.log_metric("avg_inference_time_seconds", avg_time)
-    
+
     Note:
         Used for production deployment planning and model comparison.
     """

@@ -12,7 +12,7 @@ from torch.optim import AdamW
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
-    get_linear_schedule_with_warmup
+    get_linear_schedule_with_warmup,
 )
 
 from scripts.utils import (
@@ -22,7 +22,7 @@ from scripts.utils import (
     set_random_seeds,
     measure_inference_time,
     evaluate,
-    update_job_status
+    update_job_status,
 )
 
 import mlflow
@@ -41,7 +41,7 @@ from scripts.constants import (
     PROCESSED_DATASET_DIR,
     TEST_SIZE,
     VALIDATION_SIZE,
-    RANDOM_STATE
+    RANDOM_STATE,
 )
 from transformers.onnx import export
 from transformers.onnx.features import FeaturesManager
@@ -137,6 +137,7 @@ def convert_model_to_onnx(model_dir: str):
     except Exception as e:
         logger.error(f"ONNX export failed: {e}")
         return None
+
 
 def validate_processed_dataset(processed_dataset_dir: str) -> Dict[str, Any]:
     """
@@ -291,17 +292,17 @@ def load_data_from_dataset_folder(
 def train_epoch(model, dataloader, optimizer, scheduler, device):
     """
     Execute one training epoch with forward pass, backpropagation, and optimization.
-    
+
     Args:
         model (torch.nn.Module): The model to train.
         dataloader (DataLoader): Training data batches.
         optimizer (torch.optim.Optimizer): Optimizer for parameter updates.
         scheduler: Learning rate scheduler.
         device (torch.device): Device for computation (CPU/CUDA).
-    
+
     Returns:
         float: Average training loss for the epoch.
-    
+
     Note:
         Includes gradient clipping (max_norm=1.0) for training stability.
     """
@@ -332,6 +333,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device):
 
     return total_loss / len(dataloader)
 
+
 def train_single_model(
     model_type: str,
     train_texts: List[str],
@@ -348,7 +350,7 @@ def train_single_model(
 ) -> Dict[str, Any]:
     """
     Train a single transformer model for text classification with MLflow tracking.
-    
+
     Args:
         model_type (str): Model architecture (e.g., "bert", "roberta").
         train_texts, train_labels: Training data and labels.
@@ -359,10 +361,10 @@ def train_single_model(
         class_names (List[str]): Class names for logging.
         output_dir (str): Directory to save trained model.
         args: Training hyperparameters and configuration.
-    
+
     Returns:
         Dict[str, Any]: Training results with status, metrics, and model paths.
-    
+
     Note:
         Uses early stopping, MLflow tracking, and saves best model with ONNX export.
     """
@@ -549,10 +551,10 @@ def train_single_model(
 def train_multiple_models(args):
     """
     Train multiple transformer models and select the best performing one.
-    
+
     Orchestrates multi-model training pipeline with data loading, model training,
     evaluation, and best model processing including ONNX export and S3 upload.
-    
+
     Args:
         args (argparse.Namespace): Command line arguments containing:
             - model_types (str): JSON string of model types (e.g., '["bert", "roberta"]')
@@ -561,7 +563,7 @@ def train_multiple_models(args):
             - output_dir (str): Directory to save outputs
             - model_id, job_id (int): Unique identifiers
             - Training hyperparameters (num_epochs, batch_size, learning_rate, etc.)
-    
+
     Returns:
         Dict[str, Any]: Preprocessed training results containing:
             - training_summary: Overall statistics and best model info
@@ -569,12 +571,12 @@ def train_multiple_models(args):
             - model_comparison: Performance comparison across models
             - best_model_s3_path: S3 path of uploaded best model (if successful)
             - best_model_onnx_path: ONNX model path (if successful)
-    
+
     Example:
         >>> args = argparse.Namespace(model_types='["bert", "roberta"]', ...)
         >>> results = train_multiple_models(args)
         >>> print(f"Best model: {results['training_summary']['best_overall_model']}")
-    
+
     Note:
         - Downloads data from S3, trains models sequentially with MLflow tracking
         - Uses early stopping, exports best model to ONNX, uploads to S3
