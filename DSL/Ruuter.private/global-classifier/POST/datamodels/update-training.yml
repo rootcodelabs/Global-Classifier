@@ -14,6 +14,9 @@ declaration:
       - field: trainingResults
         type: object
         description: "Training results object (required)"
+      - field: modelS3Location
+        type: string
+        description: "S3 location/key of the trained model (required)"
   next: extractRequestData
 
 # Data Extraction
@@ -21,6 +24,7 @@ extractRequestData:
   assign:
     modelId: ${incoming.body.modelId}
     trainingResults: ${incoming.body.trainingResults}
+    modelS3Location: ${incoming.body.modelS3Location}
   next: validateRequiredFields
 
 # Required Field Validation
@@ -30,6 +34,8 @@ validateRequiredFields:
       next: return_missing_model_id
     - condition: ${trainingResults === null || trainingResults === undefined}
       next: return_missing_training_results
+    - condition: ${modelS3Location === null || modelS3Location === undefined || modelS3Location === ""}
+      next: return_missing_model_s3_location
   next: updateTrainingStatus
 
 # Update Training Status
@@ -40,6 +46,7 @@ updateTrainingStatus:
     body:
       modelId: ${modelId}
       trainingResults: ${JSON.stringify(trainingResults)}
+      modelS3Location: ${modelS3Location}
   result: update_result
   next: checkUpdateResult
 
@@ -66,6 +73,11 @@ return_missing_model_id:
 
 return_missing_training_results:
   return: '{"error": "Missing required field: trainingResults"}'
+  status: 400
+  next: end
+
+return_missing_model_s3_location:
+  return: '{"error": "Missing required field: modelS3Location"}'
   status: 400
   next: end
 
