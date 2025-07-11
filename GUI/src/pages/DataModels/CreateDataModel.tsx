@@ -14,6 +14,7 @@ import {
   ErrorsType,
 } from 'types/dataModels';
 import { da } from 'date-fns/locale';
+import { createDataModel } from 'services/datamodels';
 
 const CreateDataModel: FC = () => {
   const { t } = useTranslation();
@@ -62,20 +63,46 @@ const CreateDataModel: FC = () => {
     deploymentEnvironment: '',
   });
 
+  const mutation = useMutation({
+    mutationFn: createDataModel,
+    onSuccess: () => {
+      open({
+        title: t('dataModels.createDataModel.successTitle'),
+        content: t('dataModels.createDataModel.successDesc'),
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=> {navigate('/data-models'),close()}}>View all Data Models</Button></div>)
+      });
+     
+    },
+    onError: () => {
+      open({
+         title: t('dataModels.createDataModel.errorTitle'),
+        content: t('dataModels.createDataModel.errorDesc'),
+      });
+    },
+  });
+
   const handleCreate = () => {
-   console.log(dataModel);
-   
+
+    const paylod = {
+      modelName: dataModel.modelName ?? "",
+      deploymentEnv: dataModel.deploymentEnvironment ?? "",
+      baseModels: dataModel.baseModels ?? [],
+      connectedDsId: Number(dataModel.datasetId) ?? 0,
+      connectedDsMajorVersion: Number(dataModel?.version?.split('.')[0]?.[1]) ?? "",
+      connectedDsMinorVersion: Number(dataModel?.version?.split('.')[1]) ?? "",
+    }
+    mutation.mutate(paylod);
   };
-  
-const isCreateDisabled = () => {
-  return (
-    !dataModel.modelName ||
-    !dataModel.datasetId ||
-    !dataModel.baseModels ||
-    (Array.isArray(dataModel.baseModels) && dataModel.baseModels.length === 0) ||
-    !dataModel.deploymentEnvironment
-  );
-};
+
+  const isCreateDisabled = () => {
+    return (
+      !dataModel.modelName ||
+      !dataModel.datasetId ||
+      !dataModel.baseModels ||
+      (Array.isArray(dataModel.baseModels) && dataModel.baseModels.length === 0) ||
+      !dataModel.deploymentEnvironment
+    );
+  };
 
   return (
     <div>

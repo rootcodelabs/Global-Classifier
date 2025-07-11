@@ -49,3 +49,6 @@ data
 output_datasets/
 venv
 dataset_artifacts/
+venv
+/signed.py
+/minio_presigned_urls.txt

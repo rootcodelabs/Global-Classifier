@@ -69,17 +69,6 @@ checkAgenciesWithNoData:
       next: returnNoAgenciesFound
   next: checkAgencyData
 
-# extractAgencyIds:
-#   call: http.post
-#   args:
-#     url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/extract_agency_ids"
-#     headers:
-#       type: json
-#     body:
-#       agencies: ${centopsResponse.response.body.response}
-#   result: agencyIds
-#   next: checkAgencyData
-
 checkAgencyData:
   call: http.post
   args:
@@ -115,8 +104,6 @@ importAgencyData:
       agencyIds: ${availableAgencyIds.response.body.join(' ')}
   result: importResult
   next: initializeUpdateProcess
-
-# ++++
 
 initializeUpdateProcess:
   assign:
@@ -155,8 +142,6 @@ incrementUpdateCounter:
     updatedAgencies: ${updatedAgencies + 1}
   next: processNextAgency
 
-# +++++
-
 CreateDatasetVersion:
   call: http.post
   args:
@@ -169,18 +154,6 @@ forwardToFormatting:
     - condition: ${datasetResponse.response.body.response.length === 0}
       next: end
   next: initiateDataGeneration
-
-# formatDataUrlsResponse:
-#   call: http.post
-#   args:
-#     url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_data_urls"
-#     headers:
-#       type: json
-#     body:
-#       agencies: ${importResult.response.body.response}
-#       datasetId: ${datasetResponse.response.body.response[0].id}
-#   result: dataUrlsResponse
-#   next: initiateDataGeneration
 
 initiateDataGeneration:
   call: http.post
