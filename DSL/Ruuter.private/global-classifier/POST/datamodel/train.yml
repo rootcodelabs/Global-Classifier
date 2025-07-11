@@ -1,0 +1,68 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'RE-TRAIN'"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "Body field 'modelId'"
+
+extract_request_data:
+  assign:
+    model_id: ${incoming.body.modelId}
+    next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${model_id !== null}
+      next: create_training_job_in_queue
+  next: return_incorrect_request
+
+create_training_job_in_queue:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-training-job-to-queue"
+    body:
+      model_id: ${model_id}
+  result: res_model
+  next: log_result
+
+log_result:
+  log: "Training job creation response: ${res_model.response.statusCodeValue} - ${res_model.response.body}"
+  next: check_insert_result
+
+check_insert_result:
+  switch:
+    - condition: ${200 <= res_model.response.statusCodeValue && res_model.response.statusCodeValue < 300}
+      next: assign_success_response
+  next: assign_fail_response
+
+assign_success_response:
+  assign:
+    success_format_res:
+      modelId: ${model_id}
+      operationSuccessful: true
+      message: "Training job successfully queued"
+      jobId: ${res_model.response.body[0].jobId}
+  next: return_ok
+
+assign_fail_response:
+  assign:
+    fail_format_res:
+      modelId: ${model_id}
+      operationSuccessful: false
+      message: "Failed to queue training job"
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${success_format_res}
+    
+return_bad_request:
+  status: 400
+  return: ${fail_format_res}

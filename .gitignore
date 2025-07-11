@@ -48,3 +48,4 @@ models
 data
 output_datasets/
 venv
+dataset_artifacts/

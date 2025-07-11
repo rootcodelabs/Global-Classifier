@@ -19,4 +19,7 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v9-data-models.sql
   - include:
       file: changelog/global-classifier-script-v10-datasets-metadata.sql
+  - include:
+      file: changelog/global-classifier-script-v11-model-training-jobs.sql
+
       
