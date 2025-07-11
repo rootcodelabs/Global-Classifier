@@ -17,6 +17,7 @@ import './DataModels.scss';
 import { configureDataModel, getDataModelMetadata } from 'services/datamodels';
 import { use } from 'i18next';
 import { set } from 'date-fns';
+import { areArraysEqual } from 'utils/commonUtilts';
 
 const ConfigureDataModel: FC = () => {
   const { t } = useTranslation();
@@ -39,7 +40,7 @@ const ConfigureDataModel: FC = () => {
   const [initialData, setInitialData] = useState<Partial<DataModel>>({
     modelName: modelMetadata?.modelName,
     datasetId: modelMetadata?.connectedDsId,
-    baseModels:modelMetadata?.baseModels,
+    baseModels: modelMetadata?.baseModels,
     deploymentEnvironment: modelMetadata?.deploymentEnv,
     version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
   });
@@ -54,7 +55,7 @@ const ConfigureDataModel: FC = () => {
   });
 
   useEffect(() => {
-     setInitialData({
+    setInitialData({
       modelId: modelMetadata?.modelId,
       modelName: modelMetadata?.modelName,
       datasetId: modelMetadata?.connectedDsId.toString(),
@@ -83,23 +84,23 @@ const ConfigureDataModel: FC = () => {
     }));
   };
 
-  const mutation = useMutation({
-      mutationFn: configureDataModel,
-      onSuccess: () => {
-        open({
-          title: t('dataModels.configureDataModel.saveChangesTitile'),
-          content: t('dataModels.configureDataModel.saveChangesDesc'),
-          footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=> {navigate('/data-models'),close()}}>View all Data Models</Button></div>)
-        });
-       
-      },
-      onError: () => {
-        open({
-           title: t('dataModels.configureDataModel.updateErrorTitile'),
-          content: t('dataModels.configureDataModel.updateErrorDesc'),
-        });
-      },
-    });
+  const updateMutation = useMutation({
+    mutationFn: configureDataModel,
+    onSuccess: () => {
+      open({
+        title: t('dataModels.configureDataModel.saveChangesTitile'),
+        content: t('dataModels.configureDataModel.saveChangesDesc'),
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
+      });
+
+    },
+    onError: () => {
+      open({
+        title: t('dataModels.configureDataModel.updateErrorTitile'),
+        content: t('dataModels.configureDataModel.updateErrorDesc'),
+      });
+    },
+  });
 
   const handleSaveChanges = () => {
     const payload = getChangedAttributes(initialData, dataModel);
@@ -121,7 +122,7 @@ const ConfigureDataModel: FC = () => {
       updateType: updateType ?? "",
     };
 
-    mutation.mutate(updatedPayload);
+    updateMutation.mutate(updatedPayload);
 
   };
 
@@ -142,6 +143,7 @@ const ConfigureDataModel: FC = () => {
     setModalTitle(title);
     modalFunciton.current = onConfirm;
   };
+  
   return (
     <div>
       <div className="container">
@@ -194,15 +196,16 @@ const ConfigureDataModel: FC = () => {
           {t('dataModels.configureDataModel.deleteModal')}
         </Button>
         <Button
-          // disabled={!dataModel.datasetId || dataModel.datasetId === 0}
-          onClick={handleSaveChanges
-          }
+          disabled={!dataModel.datasetId || dataModel.datasetId === 0}
+          // onClick={handleSaveChanges}
+        // showLoadingIcon={updateMutation.isLoading}
+
         >
           {t('dataModels.configureDataModel.retrain')}
         </Button>
         <Button
-          // disabled={updateDataModelMutation.isLoading}
-          // showLoadingIcon={updateDataModelMutation.isLoading}
+          disabled={updateMutation.isLoading || (initialData.datasetId === dataModel.datasetId && initialData.deploymentEnvironment === dataModel.deploymentEnvironment && areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]))}
+          showLoadingIcon={updateMutation.isLoading}
           onClick={handleSaveChanges}
         >
           {t('dataModels.configureDataModel.save')}

@@ -185,6 +185,9 @@ const ViewDataset = () => {
     console.log(payload, 'minorUpdatePayload');
   };
 
+  console.log(metadata);
+  
+
   return (
     <div className="container">
       <div className="title_container">
@@ -207,7 +210,7 @@ const ViewDataset = () => {
                   {t('datasets.detailedView.version') ?? ''} : {`V${metadata?.major}.${metadata?.minor}`}
                 </p>
                 <p>
-                  {t('datasets.detailedView.connectedModels') ?? ''} : N/A
+                  {t('datasets.detailedView.connectedModels') ?? ''} : {metadata?.connectedModels?.join(', ') ?? ''}
                 </p>
                 <p>
                   {t('datasets.detailedView.noOfItems') ?? ''} : {20}

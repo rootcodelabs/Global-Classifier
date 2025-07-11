@@ -19,7 +19,7 @@ declaration:
         description: "Deployment environment: production, testing, undeployed (required)"
       - field: baseModels
         type: array
-        description: "Array of base models: ['distil-bert', 'bert', 'roberta'] (required)"
+        description: "Array of base models: ['bert', 'roberta', 'xlm'] (required)"
       - field: connectedDsId
         type: number
         description: "Connected dataset ID (required)"
@@ -59,7 +59,7 @@ validateEnumValues:
   switch:
     - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
       next: return_invalid_deployment_env
-    - condition: ${!baseModels.every(model => ["distil-bert", "roberta", "bert"].includes(model))}
+    - condition: ${!baseModels.every(model => ["bert", "roberta", "xlm"].includes(model))}
       next: return_invalid_base_model
   next: checkProductionDeployment
 
@@ -162,11 +162,29 @@ checkDatasetUpdateResult:
   switch:
     - condition: ${!updateDatasetResult || !updateDatasetResult.response || !updateDatasetResult.response.body || updateDatasetResult.response.body.length === 0}
       next: return_dataset_update_failed
-  next: returnResult
+  next: initiateTraining
 
-# Return Result
-returnResult:
-  return: "Data model minor version updated successfully"
+# Initiate Training 
+initiateTraining:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/datamodels/train"
+    body:
+      modelId: ${insertResult.response.body[0].modelId}
+  result: training_res
+  next: checkTrainingResult
+
+# Check Training Result
+checkTrainingResult:
+  switch:
+    - condition: ${!training_res || !training_res.response}
+      next: return_training_failed
+    - condition: ${training_res.response.body[0].operationSuccessful !== true}
+      next: return_training_failed
+  next: return_success
+
+return_success:
+  return: "Data model created successfully and training initiated. Model ID:${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body[0].jobId}"
   status: 200
   next: end
 
@@ -181,7 +199,7 @@ return_invalid_deployment_env:
   next: end
 
 return_invalid_base_model:
-  return: "error: invalid baseModels. Each model must be one of: distil-bert, bert, roberta"
+  return: "error: invalid baseModels. Each model must be one of: bert, roberta, xlm"
   status: 400
   next: end
 
@@ -197,5 +215,10 @@ return_insert_failed:
 
 return_dataset_update_failed:
   return: "error: model created but failed to update dataset connected_models"
+  status: 500
+  next: end
+
+return_training_failed:
+  return: "error: model created and dataset updated but failed to initiate training"
   status: 500
   next: end
