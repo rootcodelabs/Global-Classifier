@@ -8,6 +8,7 @@ import Card from 'components/Card';
 import { useTranslation } from 'react-i18next';
 import { TrainingResults } from 'types/dataModels';
 import { formatDate } from 'utils/commonUtilts';
+import { useNavigate } from 'react-router-dom';
 
 type DataModelCardProps = {
   modelId: number | string;
@@ -18,7 +19,7 @@ type DataModelCardProps = {
   lastTrained?: string;
   trainingStatus?: string;
   modelStatus?: string;
-  maturity?: string;
+  deploymentEnv?: string;
   results?: string | null;
 };
 
@@ -31,14 +32,19 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
   lastTrained,
   trainingStatus,
   modelStatus,
-  maturity,
+  deploymentEnv,
   results,
 
 }) => {
   const { open, close } = useDialog();
   const { t } = useTranslation();
   const resultsJsonData: TrainingResults = JSON.parse(results ?? '{}');
+const navigate = useNavigate();
 
+const configureDataModel = () => {
+  navigate(`/configure-datamodel?datamodelId=${modelId}`);
+
+};
   const renderTrainingStatus = (status: string | undefined) => {
     if (status === TrainingStatus.RETRAINING_NEEDED) {
       return (
@@ -52,10 +58,10 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
           {t('dataModels.trainingStatus.trained') ?? ''}
         </Label>
       );
-    } else if (status === TrainingStatus.TRAINING_INPROGRESS) {
+    } else if (status === TrainingStatus.TRAINING_INPROGRESS || status === TrainingStatus.INITIATING_TRAINING) {
       return (
         <Label type="info">
-          {t('dataModels.trainingStatus.trainingInProgress') ?? ''}
+          {t('dataModels.trainingStatus.initiatingTraining') ?? ''}
         </Label>
       );
     } else if (status === TrainingStatus.FAILED) {
@@ -109,10 +115,13 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
             {lastTrained && formatDate(new Date(lastTrained), 'D.M.yy-H:m')}
           </p>
         </div>
-        <div className="flex">
+        <div className="flex" style={{flexWrap: 'wrap',gap: '5px'}}>
           {renderTrainingStatus(trainingStatus)}
           <Label type="info">{modelStatus}</Label>
-          {renderMaturityLabel(maturity)}
+          {isLatest && <Label type="success">
+            {t('global.latest') ?? ''}
+          </Label>}
+          {renderMaturityLabel(deploymentEnv)}
         </div>
 
         <div className="label-row flex-grid mt-3">
@@ -198,9 +207,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
           <Button
             appearance="primary"
             size="s"
-            onClick={() => {
-
-            }}
+            onClick={configureDataModel}
           >
             {t('datasets.datasetCard.settings') ?? ''}
           </Button>

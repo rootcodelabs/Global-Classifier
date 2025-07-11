@@ -345,7 +345,7 @@
     "trainingStatus": {
       "retrainingNeeded": "Retraining Needed",
       "trained": "Trained",
-      "trainingInProgress": "Training In Progress",
+      "initiatingTraining": "Initiating Training",
       "trainingFailed": "Training Failed",
       "notTrained": "Not Trained"
     },

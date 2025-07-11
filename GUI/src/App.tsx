@@ -69,7 +69,7 @@ const App: FC = () => {
             <Route path="/view-dataset" element={<ViewDataset />} />
             <Route path="/data-models" element={<DataModels />} />
             <Route path="/create-data-model" element={<CreateDataModel />} />
-                        <Route path="/configure-data-model" element={<ConfigureDataModel />} />
+            <Route path="/configure-datamodel" element={<ConfigureDataModel />} />
 
           </Route>
         </Routes>
