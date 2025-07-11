@@ -188,7 +188,7 @@ services:
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - dataset_gen_ollama_models:/root/.ollama
-      - ./src/dataset-generation/ollama-entrypoint.sh:/ollama-entrypoint.sh
+      - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
     entrypoint: ["bash", "/ollama-entrypoint.sh"]
     # deploy:
     #   resources:

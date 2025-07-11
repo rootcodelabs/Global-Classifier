@@ -49,9 +49,14 @@ export const authEndpoints = {
 
 export const dataModelsEndpoints = {
   GET_OVERVIEW: (): string => '/global-classifier/datamodels/list',
+  GET_PRODUCTION_DATA_MODEL: (): string => '/global-classifier/datamodels/production-model',
+  GET_MODEL_METADATA: (): string => '/global-classifier/datamodels/metadata',
   GET_DEPLOYMENT_ENVIRONMENTS: (): string => '/global-classifier/datamodels/configs/environments',
+  CREATE_MODEL: (): string => '/global-classifier/datamodels/create',
+  CREATE_MAJOR_VERSION: (): string => '/global-classifier/datamodels/major',
+  CREATE_MINOR_VERSION: (): string => '/global-classifier/datamodels/minor',
 
-
+  
   GET_DATAMODELS_FILTERS: (): string =>
     '/global-classifier/datamodel/overview/filters',
   GET_METADATA: (): string => `/global-classifier/datamodel/metadata`,
