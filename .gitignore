@@ -43,3 +43,7 @@ test/logs/
 __pycache__/
 .ruff_cache/
 .pytest_cache/
+
+venv
+/signed.py
+/minio_presigned_urls.txt
