@@ -101,7 +101,7 @@ const CreateDataModel: FC = () => {
         open({
         title: t('dataModels.createDataModel.replaceTitle'),
         content: t('dataModels.createDataModel.replaceDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=>mutation.mutate(paylod)}>Repalce</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=>mutation.mutate(paylod)}>Replace</Button></div>)
       });
       } else {
     mutation.mutate(paylod);
