@@ -1,0 +1,54 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Delete a data model by modelId"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "ID of the data model to delete"
+
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+  next: validateModelId
+
+validateModelId:
+  switch:
+    - condition: ${modelId === null || modelId === undefined || !modelId}
+      next: return_missing_model_id
+  next: deleteDataModel
+
+deleteDataModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-data-model-by-id"
+    body:
+      model_id: ${Number(modelId)}
+  result: deleteResult
+  next: checkDeleteResult
+
+checkDeleteResult:
+  switch:
+    - condition: ${!deleteResult || !deleteResult.response || !deleteResult.response.body}
+      next: return_delete_failed
+  next: return_success
+
+return_success:
+  return: "Data model deleted successfully. Model ID: ${modelId}"
+  status: 200
+  next: end
+
+return_missing_model_id:
+  return: '{"error": "Missing required field: modelId"}'
+  status: 400
+  next: end
+
+return_delete_failed:
+  return: '{"error": "Failed to delete data model"}'
+  status: 500
+  next: end

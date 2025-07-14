@@ -390,6 +390,8 @@
       "deleteConfirmationDesc": "Confirm that you are wish to delete the following data model",
       "deleteModalErrorTitle": "Error deleting data model",
       "deleteModalErrorDesc": "There was an issue deleting the data model. Please try again. If the problem persists, contact support for assistance.",
+      "deleteModalSuccessTitle": "Model Deleted Successfully",
+      "deleteModalSuccessDesc": "You have successfully deleted the data model. The model is no longer available and all related data has been removed.",
       "retrainDataModalErrorTitle": "Error retraining data model",
       "retrainDataModalErrorDesc":"There was an issue retraining the data model. Please try again. If the problem persists, contact support for assistance." ,
       "title": "Configure Data Model",
