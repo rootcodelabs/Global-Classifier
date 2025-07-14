@@ -23,6 +23,7 @@ from scripts.utils import (
     measure_inference_time,
     evaluate,
     update_job_status,
+    update_data_model_training,
 )
 
 import mlflow
@@ -778,7 +779,7 @@ def train_multiple_models(args):
             )
         logger.info(f"{'=' * 60}")
 
-        return preprocessed_result_payload
+        return preprocessed_result_payload, s3_model_path
     except Exception as e:
         logger.error(f"❌ Critical error in train_multiple_models: {str(e)}")
         raise  # raise the exception so main() can handle it
@@ -979,7 +980,7 @@ def main():
             MODEL_CONFIG["other"] = {"name": args.model_name, "max_length": 128}
 
         # Train multiple models
-        preprocessed_result_payload = train_multiple_models(args)
+        preprocessed_result_payload, s3_model_path = train_multiple_models(args)
 
         # Check if training was successful
         if not preprocessed_result_payload or not preprocessed_result_payload.get(
@@ -999,9 +1000,23 @@ def main():
             logger.error("❌ Training failed: No models were successfully trained")
             sys.exit(1)
 
-        # ======================TO DO: training results in DB========================
         logger.info(f"Preprocessed result payload: {preprocessed_result_payload}")
-        # ===========================================================================
+        
+        model_s3_location = s3_model_path
+        
+        # Send training results to API for database storage
+        logger.info("📤 Sending training results to data model table...")
+        api_success = update_data_model_training(
+            model_id=args.model_id,
+            training_results=preprocessed_result_payload,
+            model_s3_location=model_s3_location
+        )
+        
+        if not api_success:
+            logger.warning("⚠️ Failed to send training results to API, but continuing with job completion...")
+            # Note: We don't exit here as the training was successful, just the API call failed
+        else:
+            logger.info("✅ Training results successfully sent to database")
 
         # Update job status to trained
         job_status = update_job_status(job_id=args.job_id, status="trained")

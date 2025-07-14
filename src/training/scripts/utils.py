@@ -9,6 +9,7 @@ import mlflow
 import numpy as np
 import requests
 import os
+import json
 import sys
 from loguru import logger
 from typing import Dict, Any
@@ -25,6 +26,7 @@ from scripts.constants import (
     RETENTION_PERIOD,
     LOG_FILE_HANDLER_FORMAT,
     TRAINING_JOB_STATUS_UPDATE_URL,
+    DATA_MODEL_TRAINING_UPDATE_URL,
     SEED,
 )
 
@@ -140,10 +142,10 @@ def compute_metrics(predictions, labels, probs, class_names=None):
 
     # Build metrics dictionary - FLAT structure with meaningful names
     metrics = {
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
+        "accuracy": float(accuracy),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
     }
 
     # Add per-class metrics directly to main dictionary (no nesting)
@@ -156,16 +158,16 @@ def compute_metrics(predictions, labels, probs, class_names=None):
             class_key = f"class_{i}"
 
         # Add metrics directly to main dictionary
-        metrics[f"{class_key}_precision"] = precision_per_class[i]
-        metrics[f"{class_key}_recall"] = recall_per_class[i]
-        metrics[f"{class_key}_f1"] = f1_per_class[i]
-        metrics[f"{class_key}_accuracy"] = per_class_accuracy[i]
+        metrics[f"{class_key}_precision"] = float(precision_per_class[i])
+        metrics[f"{class_key}_recall"] = float(recall_per_class[i])
+        metrics[f"{class_key}_f1"] = float(f1_per_class[i])
+        metrics[f"{class_key}_accuracy"] = float(per_class_accuracy[i])
 
     # ROC AUC for binary/multiclass
     if len(np.unique(labels)) == 2:
-        metrics["roc_auc"] = roc_auc_score(labels, probs[:, 1])
+        metrics["roc_auc"] = float(roc_auc_score(labels, probs[:, 1]))
     else:
-        metrics["roc_auc"] = roc_auc_score(labels, probs, multi_class="ovr")
+        metrics["roc_auc"] = float(roc_auc_score(labels, probs, multi_class="ovr"))
 
     return metrics, cm
 
@@ -191,6 +193,56 @@ def update_job_status(job_id: int, status: str) -> bool:
 
     except Exception as e:
         logger.error(f"Error updating job status: {str(e)}")
+        return False
+
+def update_data_model_training(model_id: int, training_results: dict, model_s3_location: str) -> bool:
+    """
+    Send training results to the API endpoint for database storage.
+    
+    Args:
+        model_id (int): The model ID
+        training_results (dict): Preprocessed training results payload
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        api_url = DATA_MODEL_TRAINING_UPDATE_URL
+        
+        payload = {
+            "modelId": model_id,
+            "trainingResults": training_results,
+            "modelS3Location": model_s3_location
+        }
+        
+        logger.info(f"Sending training results to API for model ID: {model_id}")
+        logger.debug(f"API URL: {api_url}")
+        logger.debug(f"Payload size: {len(json.dumps(payload))} characters")
+        
+        # Send POST request
+        response = requests.post(
+            api_url,
+            json=payload,
+            headers={
+                "Content-Type": "application/json"
+            }
+        )
+        
+        # Check response
+        if response.status_code == 200:
+            logger.info("✅ Training results successfully sent to API")
+            logger.debug(f"API Response: {response.text}")
+            return True
+        else:
+            logger.error(f"❌ API request failed with status code: {response.status_code}")
+            logger.error(f"Response text: {response.text}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Network error when sending training results to API: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"❌ Unexpected error when sending training results to API: {str(e)}")
         return False
 
 
@@ -417,4 +469,4 @@ def measure_inference_time(model, dataloader, device, num_runs=100):
 
             times.append(end_time - start_time)
 
-    return np.mean(times)
+    return float(np.mean(times))

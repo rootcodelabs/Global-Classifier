@@ -35,3 +35,6 @@ S3_FERRY_BASE_URL = "http://gc-s3-ferry:3000"
 TRAINING_JOB_STATUS_UPDATE_URL = (
     "http://resql:8082/global-classifier/update-training-job-status"
 )
+DATA_MODEL_TRAINING_UPDATE_URL = (
+    "http://localhost:8088/global-classifier/datamodels/update-training"
+)

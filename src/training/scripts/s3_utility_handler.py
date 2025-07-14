@@ -78,7 +78,7 @@ class S3DatasetService:
             logger.info(f"Downloading aggregated dataset for dataset ID: {dataset_id}")
 
             # Define paths
-            s3_source_path = f"{dataset_id}/aggregated_dataset.json"
+            s3_source_path = f"datasets/{dataset_id}/aggregated_dataset.json"
             local_dest_path = (
                 f"src/training/dataset_artifacts/training_datasets/{dataset_id}.json"
             )
@@ -144,7 +144,7 @@ class S3DatasetService:
             self._zip_directory(model_dir, zip_path)
 
             # Upload to S3
-            s3_dest_path = f"trained_models/{model_id}/{zip_filename}"
+            s3_dest_path = f"models/{model_id}/{zip_filename}"
 
             logger.info(f"Uploading zipped model to S3: {s3_dest_path}")
 

@@ -2,8 +2,8 @@
 # File: DSL/CronManager/script/train_script_starter.sh
 
 # API Endpoints
-CHECK_JOB_STATUS_IN_PROGRESS_SQL="http://resql:8082/global-classifier/check-training-job-status-in-progress"
-GET_FIRST_COME_TRAINING_JOB_SQL="http://resql:8082/global-classifier/get-first-come-training-job"
+CHECK_JOB_STATUS_IN_PROGRESS_SQL="http://resql:8082/global-classifier/get-training-job-status-in-progress"
+GET_FIRST_COME_TRAINING_JOB_SQL="http://resql:8082/global-classifier/get-queued-training-job"
 GET_DATA_MODEL_BY_MODEL_ID_SQL="http://resql:8082/global-classifier/get-data-model-info-by-given-model-id"
 UPDATE_JOB_STATUS="http://resql:8082/global-classifier/update-training-job-status"
 
@@ -38,23 +38,33 @@ if [ -z "$response_first_come_training_job" ]; then
     exit 0
 fi
 
-# Handle explicit "no jobs" responses from API
+# Handle explicit "no jobs" responses from API - INCLUDING EMPTY ARRAY
 if echo "$response_first_come_training_job" | grep -q '"hasQueuedJobs":false' || \
    echo "$response_first_come_training_job" | grep -q '"modelId":null' || \
    echo "$response_first_come_training_job" | grep -q '"jobId":null' || \
    [ "$response_first_come_training_job" = "{}" ] || \
-   [ "$response_first_come_training_job" = "null" ]; then
+   [ "$response_first_come_training_job" = "null" ] || \
+   [ "$response_first_come_training_job" = "[]" ]; then
     echo "ℹ️ [INFO] No queued training jobs available. Queue is empty."
     echo "✅ [DONE] Training script starter completed - no work to do"
     exit 0
 fi
 
+# Extract model_id and job_id
 model_id=$(echo "$response_first_come_training_job" | sed -E 's/.*"modelId":[[:space:]]*([0-9]+).*/\1/')
 job_id=$(echo "$response_first_come_training_job" | sed -E 's/.*"jobId":"?([0-9a-zA-Z-]+)"?.*/\1/')
 if [ -z "$model_id" ]; then
     echo "❌ [ERROR] Model ID not found in response"
+    echo "🔍 [DEBUG] Raw response: '$response_first_come_training_job'"
     exit 1
 fi
+
+if [ -z "$job_id" ] || [ "$job_id" = "$response_first_come_training_job" ]; then
+    echo "❌ [ERROR] Job ID not found or invalid in response"
+    echo "🔍 [DEBUG] Raw response: '$response_first_come_training_job'"
+    exit 1
+fi
+
 echo "📦 [MODEL] Model ID: $model_id"
 echo "📦 [JOB] Job ID: $job_id"
 
@@ -69,15 +79,23 @@ response_get_dataset_id=$(curl -s -X POST "$GET_DATA_MODEL_BY_MODEL_ID_SQL" \
     -d "{\"model_id\": $model_id}")
 echo "🔍 [DEBUG] Dataset ID response: '$response_get_dataset_id'"
 
-dataset_id=$(echo "$response_get_dataset_id" | sed -E 's/.*"datasetId":"?([0-9]+)"?.*/\1/')
-
-if [ -z "$dataset_id" ]; then
-    echo "❌ [ERROR] Dataset ID not found in response"
+# Handle empty response
+if [ -z "$response_get_dataset_id" ] || [ "$response_get_dataset_id" = "[]" ]; then
+    echo "❌ [ERROR] No dataset information found for model ID: $model_id"
     exit 1
 fi
+
+dataset_id=$(echo "$response_get_dataset_id" | sed -E 's/.*"connectedDsId":([0-9]+).*/\1/')
+
+if [ -z "$dataset_id" ] || [ "$dataset_id" = "$response_get_dataset_id" ]; then
+    echo "❌ [ERROR] Connected Dataset ID not found in response"
+    echo "🔍 [DEBUG] Raw response: '$response_get_dataset_id'"
+    exit 1
+fi
+
 echo "📦 [DATASET] Dataset ID: $dataset_id"
 
-base_models_json=$(echo "$response_get_dataset_id" | sed -E 's/.*"baseModels":(\[[^]]*\]).*/\1/')
+base_models_json=$(echo "$response_get_dataset_id" | sed -nE 's/.*"value":"(\[[^]]+\])".*/\1/p' | sed 's/\\"/"/g')
 
 if [[ "$base_models_json" == "["* ]] && [[ "$base_models_json" == *"]" ]]; then
     model_types="$base_models_json"
@@ -87,13 +105,6 @@ else
     echo "❌ [ERROR] Raw response: $response_get_dataset_id"
     echo "❌ [ERROR] Extracted base_models: $base_models_json"
     exit 1
-fi
-
-# Validate that model_types is not empty
-if [[ -z "$model_types" ]] || [[ "$model_types" == "[]" ]]; then
-    echo "❌ [ERROR] No valid base models found in response"
-    echo "❌ [ERROR] Using fallback model types"
-    model_types='["bert","roberta"]'  # Fallback
 fi
 
 # Activate existing virtualenv

@@ -62,7 +62,9 @@ assign_fail_response:
 return_ok:
   status: 200
   return: ${success_format_res}
+  next: end
     
 return_bad_request:
   status: 400
   return: ${fail_format_res}
+  next: end
