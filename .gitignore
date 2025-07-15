@@ -44,6 +44,11 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
+models
+data
+output_datasets/
+venv
+dataset_artifacts/
 venv
 /signed.py
 /minio_presigned_urls.txt

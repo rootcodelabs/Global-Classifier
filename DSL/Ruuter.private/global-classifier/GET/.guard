@@ -10,6 +10,11 @@ authenticate:
   headers:
     cookie: ${incoming.headers.cookie}
   result: authority_result
+  next: log_cookie
+
+log_cookie:
+  log: "Cookie received: ${incoming.headers.cookie}"
+  next: check_authority_result
 
 check_authority_result:
   switch:
