@@ -1,0 +1,5 @@
+[
+  {{#each connectedModels}}
+    "{{modelName}} V{{major}}.{{minor}}"{{#unless @last}},{{/unless}}
+  {{/each}}
+]
