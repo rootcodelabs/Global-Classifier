@@ -1001,19 +1001,21 @@ def main():
             sys.exit(1)
 
         logger.info(f"Preprocessed result payload: {preprocessed_result_payload}")
-        
+
         model_s3_location = s3_model_path
-        
+
         # Send training results to API for database storage
         logger.info("📤 Sending training results to data model table...")
         api_success = update_data_model_training(
             model_id=args.model_id,
             training_results=preprocessed_result_payload,
-            model_s3_location=model_s3_location
+            model_s3_location=model_s3_location,
         )
-        
+
         if not api_success:
-            logger.warning("⚠️ Failed to send training results to API, but continuing with job completion...")
+            logger.warning(
+                "⚠️ Failed to send training results to API, but continuing with job completion..."
+            )
             # Note: We don't exit here as the training was successful, just the API call failed
         else:
             logger.info("✅ Training results successfully sent to database")
