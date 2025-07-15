@@ -13,6 +13,7 @@ import json
 import sys
 from loguru import logger
 from typing import Dict, Any
+from datetime import datetime
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
@@ -195,54 +196,59 @@ def update_job_status(job_id: int, status: str) -> bool:
         logger.error(f"Error updating job status: {str(e)}")
         return False
 
-def update_data_model_training(model_id: int, training_results: dict, model_s3_location: str) -> bool:
+
+def update_data_model_training(
+    model_id: int, training_results: dict, model_s3_location: str
+) -> bool:
     """
     Send training results to the API endpoint for database storage.
-    
+
     Args:
         model_id (int): The model ID
         training_results (dict): Preprocessed training results payload
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
     try:
         api_url = DATA_MODEL_TRAINING_UPDATE_URL
-        
+
+        training_results = ensure_json_serializable(training_results)
+
         payload = {
             "modelId": model_id,
             "trainingResults": training_results,
-            "modelS3Location": model_s3_location
+            "modelS3Location": model_s3_location,
         }
-        
+
         logger.info(f"Sending training results to API for model ID: {model_id}")
         logger.debug(f"API URL: {api_url}")
-        logger.debug(f"Payload size: {len(json.dumps(payload))} characters")
-        
+        logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
+
         # Send POST request
         response = requests.post(
-            api_url,
-            json=payload,
-            headers={
-                "Content-Type": "application/json"
-            }
+            api_url, json=payload, headers={"Content-Type": "application/json"}
         )
-        
+
         # Check response
         if response.status_code == 200:
             logger.info("✅ Training results successfully sent to API")
             logger.debug(f"API Response: {response.text}")
             return True
         else:
-            logger.error(f"❌ API request failed with status code: {response.status_code}")
+            logger.error(
+                f"❌ API request failed with status code: {response.status_code}"
+            )
             logger.error(f"Response text: {response.text}")
             return False
-            
+
     except requests.exceptions.RequestException as e:
         logger.error(f"❌ Network error when sending training results to API: {str(e)}")
         return False
     except Exception as e:
-        logger.error(f"❌ Unexpected error when sending training results to API: {str(e)}")
+        logger.error(
+            f"❌ Unexpected error when sending training results to API: {str(e)}"
+        )
         return False
 
 
@@ -470,3 +476,30 @@ def measure_inference_time(model, dataloader, device, num_runs=100):
             times.append(end_time - start_time)
 
     return float(np.mean(times))
+
+
+def ensure_json_serializable(obj):
+    """
+    Recursively ensure all values in the object are JSON serializable.
+    Converts Python objects to proper JSON-compatible types.
+    """
+    if isinstance(obj, dict):
+        return {key: ensure_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [ensure_json_serializable(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return [ensure_json_serializable(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
+    else:
+        # Convert unknown types to string as fallback
+        logger.warning(f"Converting unknown type {type(obj)} to string: {obj}")
+        return str(obj)

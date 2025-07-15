@@ -118,15 +118,6 @@ def convert_model_to_onnx(model_dir: str):
         )
         onnx_config = model_onnx_config(model.config)
 
-        # # Create dummy input
-        # dummy_inputs= tokenizer(
-        #     "This is a dummy input for ONNX export",
-        #     return_tensors="pt",
-        #     padding="max_length",
-        #     truncation=True,
-        #     max_length=128,
-        # )
-
         output_path = Path(model_dir) / "model.onnx"
 
         logger.info(f"Exporting model to ONNX format at: {output_path}")
@@ -1001,19 +992,21 @@ def main():
             sys.exit(1)
 
         logger.info(f"Preprocessed result payload: {preprocessed_result_payload}")
-        
+
         model_s3_location = s3_model_path
-        
+
         # Send training results to API for database storage
         logger.info("📤 Sending training results to data model table...")
         api_success = update_data_model_training(
             model_id=args.model_id,
             training_results=preprocessed_result_payload,
-            model_s3_location=model_s3_location
+            model_s3_location=model_s3_location,
         )
-        
+
         if not api_success:
-            logger.warning("⚠️ Failed to send training results to API, but continuing with job completion...")
+            logger.warning(
+                "⚠️ Failed to send training results to API, but continuing with job completion..."
+            )
             # Note: We don't exit here as the training was successful, just the API call failed
         else:
             logger.info("✅ Training results successfully sent to database")

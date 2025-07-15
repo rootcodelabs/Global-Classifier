@@ -180,7 +180,7 @@ training_output_dir="${TRAINING_OUTPUT_DIR}/model_${model_id}"
 mkdir -p "$training_output_dir"
 
 # Set default training parameters (can be made configurable)
-max_seq_length=256
+max_seq_length=128
 num_epochs=3
 batch_size=8
 learning_rate=2e-5
