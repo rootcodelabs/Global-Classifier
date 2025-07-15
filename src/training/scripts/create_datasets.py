@@ -82,10 +82,11 @@ class ScalableDatasetProcessor:
 
     def _count_items_streaming(self) -> int:
         """Count items by streaming through the file."""
+        count = 0
         with open(self.dataset_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            # Quick estimate based on question count
-            return content.count('"question"')
+            for line in f:
+                count += line.count('"question"')
+        return count
 
     def load_data_chunked(
         self, chunk_size: int = None
