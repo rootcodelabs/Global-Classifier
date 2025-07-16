@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_load_model():
     """Test the load_model function."""
     pass
