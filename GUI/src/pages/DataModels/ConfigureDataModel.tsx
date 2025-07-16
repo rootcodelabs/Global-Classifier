@@ -246,14 +246,7 @@ const ConfigureDataModel: FC = () => {
         >
           {t('dataModels.configureDataModel.deleteModal')}
         </Button>
-        <Button
-          disabled={!dataModel.datasetId || dataModel.datasetId === 0}
-          onClick={() => { }}
-        // showLoadingIcon={updateMutation.isLoading}
-
-        >
-          {t('dataModels.configureDataModel.retrain')}
-        </Button>
+       
         <Button
           disabled={updateMutation.isLoading || (initialData.datasetId === dataModel.datasetId && initialData.deploymentEnvironment === dataModel.deploymentEnvironment && areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]))}
           showLoadingIcon={updateMutation.isLoading}

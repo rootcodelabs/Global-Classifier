@@ -32,6 +32,7 @@ body {
     transform: scale(1);
     opacity: 0;
   }
+
   100% {
     transform: scale(1.02);
     opacity: 1;
@@ -58,19 +59,19 @@ body {
   margin: 30px 0px;
 }
 
-.models-filter-div{
+.models-filter-div {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   width: 100%;
 }
 
-.filter-buttons{
+.filter-buttons {
   display: flex;
   gap: 16px;
 }
 
-.data-model-buttons{
+.data-model-buttons {
   align-items: end;
   gap: 10px;
   justify-content: end;
@@ -79,11 +80,11 @@ body {
   background-color: white;
 }
 
-.metadata-card{
+.metadata-card {
   justify-content: center;
   text-align: center;
-  background-color:#FFE8E9 ;
-  color:#D73E3E;
+  background-color: #FFE8E9;
+  color: #D73E3E;
   border-radius: .3rem;
   padding: 2rem;
   border: 1px solid #D73E3E;

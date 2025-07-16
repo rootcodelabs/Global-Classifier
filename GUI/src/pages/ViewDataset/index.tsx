@@ -184,8 +184,6 @@ const ViewDataset = () => {
     };
     console.log(payload, 'minorUpdatePayload');
   };
-
-  console.log(metadata);
   
 
   return (
