@@ -196,20 +196,20 @@ services:
     ports:
       - "11434:11434"
     environment:
-      # - NVIDIA_VISIBLE_DEVICES=all
-      # - OLLAMA_USE_GPU=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_USE_GPU=1
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - dataset_gen_ollama_models:/root/.ollama
       - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
     entrypoint: ["bash", "/ollama-entrypoint.sh"]
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - bykstack
 
@@ -241,7 +241,7 @@ services:
       dockerfile: Dockerfile
     container_name: mlflow
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env_file:
       - sidecar.env
     environment:
