@@ -2,7 +2,6 @@ import os
 import sys
 import zipfile
 from pathlib import Path
-from datetime import datetime
 
 from scripts.s3_ferry_service import S3Ferry
 
@@ -134,8 +133,7 @@ class S3DatasetService:
         try:
             logger.info(f"Preparing to upload model from: {model_dir}")
 
-            # Create zip file name with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Create zip file name
             model_id = str(model_id)
             zip_filename = f"{model_id}.zip"
             zip_path = os.path.join(self.models_dir, zip_filename)
