@@ -1,0 +1,343 @@
+
+services:
+
+# Docker compose without dataset generator services
+  ruuter-public:
+    container_name: ruuter-public
+    image: ruuter
+    environment:
+      - application.cors.allowedOrigins=http://localhost:8086,http://localhost:3001,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8000,http://localhost:8090
+      - application.httpCodesAllowList=200,201,202,204,400,401,403,500
+      - application.internalRequests.allowedIPs=127.0.0.1
+      - application.logging.displayRequestContent=true
+      - application.logging.displayResponseContent=true
+      - application.logging.printStackTrace=true
+      - application.internalRequests.disabled=true
+      - server.port=8086
+    volumes:
+      - ./DSL/Ruuter.public:/DSL
+      - ./constants.ini:/app/constants.ini
+    ports:
+      - 8086:8086
+    networks:
+      - bykstack
+    cpus: "0.5"
+    mem_limit: "512M"
+  
+  ruuter-private:
+    container_name: ruuter-private
+    image: ruuter
+    environment:
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.httpCodesAllowList=200,201,202,400,401,403,500
+      - application.internalRequests.allowedIPs=127.0.0.1
+      - application.logging.displayRequestContent=true
+      - application.logging.displayResponseContent=true
+      - application.logging.printStackTrace=true
+      - application.internalRequests.disabled=true
+      - server.port=8088
+    volumes:
+      - ./DSL/Ruuter.private:/DSL
+      - ./constants.ini:/app/constants.ini
+    ports:
+      - 8088:8088
+    networks:
+      - bykstack
+    cpus: "0.5"
+    mem_limit: "512M"
+
+  data-mapper:
+    container_name: data-mapper
+    image: data-mapper
+    environment:
+      - PORT=3000
+      - CONTENT_FOLDER=/data
+    volumes:
+      - ./DSL:/data
+      - ./DSL/DMapper/global-classifier/hbs:/workspace/app/views/global-classifier
+      - ./DSL/DMapper/global-classifier/lib:/workspace/app/lib
+    ports:
+      - 3000:3000
+    networks:
+      - bykstack
+
+  tim:
+    container_name: tim
+    image: tim
+    depends_on:
+      - tim-postgresql
+    environment:
+      - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
+      - KEY_PASS=ppjjpp
+    ports:
+      - 8085:8085
+    networks:
+      - bykstack
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    cpus: "0.5"
+    mem_limit: "512M"
+
+  tim-postgresql:
+    container_name: tim-postgresql
+    image: postgres:14.1
+    environment:
+      - POSTGRES_USER=tim
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=tim
+      # - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./tim-db:/var/lib/postgresql/data
+    ports:
+      - 9876:5432
+    networks:
+      - bykstack
+
+  authentication-layer:
+    container_name: authentication-layer
+    image: authentication-layer
+    ports:
+      - 3004:3004
+    networks:
+      - bykstack
+
+  resql:
+    container_name: resql
+    image: resql
+    depends_on:
+      - users_db
+    environment:
+      - sqlms.datasources.[0].name=byk
+      - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/global-classifier #For LocalDb Use
+      # sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://171.22.247.13:5435/byk?sslmode=require
+      - sqlms.datasources.[0].username=postgres
+      - sqlms.datasources.[0].password=dbadmin
+      - logging.level.org.springframework.boot=INFO
+    ports:
+      - 8082:8082
+    volumes:
+      - ./DSL/Resql:/DSL
+    networks:
+      - bykstack
+
+  users_db:
+    container_name: users_db
+    image: postgres:14.1
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=dbadmin
+      - POSTGRES_DB=global-classifier
+    ports:
+      - 5435:5432
+    volumes:
+      - ./global-classifier-db/db_files:/var/lib/postgresql/data
+
+    networks:
+      - bykstack
+    restart: always
+
+  init:
+    image: busybox
+    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer"]
+    volumes:
+      - shared-volume:/shared
+      - ./model_trainer:/app/model_trainer
+    networks:
+      - bykstack
+
+  cron-manager:
+    container_name: cron-manager
+    image: cron-manager-python:latest
+    user: "root"
+    volumes:
+      - ./DSL/CronManager/DSL:/DSL
+      - ./DSL/CronManager/script:/app/scripts
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
+      - ./DSL/DatasetGenerator/config:/app/config
+      - cron_data:/app/data
+    environment:
+      - server.port=9010
+    ports:
+      - 9010:8080
+    networks:
+      - bykstack
+    depends_on:
+      - init
+
+  # classifier-service:
+  #   container_name: classifier-service
+  #   build:
+  #     context: ./src/classifier-service 
+  #   ports:
+  #     - "8090:8090"
+  #   networks:
+  #     - bykstack
+  #   volumes:
+  #     - ./src/classifier-service:/app
+  #   environment:
+  #     - NODE_ENV=development
+  #   restart: always
+
+  # Dataset Generator services
+  # dataset-gen-ollama:
+  #   image: synthesisai/dataset-generator-ollama:latest
+  #   container_name: dataset-gen-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   environment:
+  #     # - NVIDIA_VISIBLE_DEVICES=all
+  #     # - OLLAMA_USE_GPU=1
+  #     - OLLAMA_HOST=0.0.0.0
+  #   volumes:
+  #     - dataset_gen_ollama_models:/root/.ollama
+  #     - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
+  #   entrypoint: ["bash", "/ollama-entrypoint.sh"]
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - driver: nvidia
+  #   #           count: 1
+  #   #           capabilities: [gpu]
+  #   networks:
+  #     - bykstack
+
+  # dataset-gen-service:
+  #   image: synthesisai/dataset-generator:latest
+  #   container_name: dataset-gen-service
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - PROVIDER_API_URL=http://dataset-gen-ollama:11434
+  #     - SERVICE_DEBUG=false
+  #     - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
+  #   volumes:
+  #     - ./DSL/DatasetGenerator/config:/app/config
+  #     - ./DSL/DatasetGenerator/templates:/app/templates
+  #     - ./DSL/DatasetGenerator/user_configs:/app/user_configs
+  #     - cron_data:/app/data
+  #     - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+  #     - ./DSL/DatasetGenerator/logs:/app/logs
+  #   depends_on:
+  #     - dataset-gen-ollama
+  #     - dataset-gen-mlflow
+  #   networks:
+  #     - bykstack
+
+  # dataset-gen-mlflow:
+  #   image: synthesisai/dataset-generator-mlflow:latest
+  #   container_name: dataset-gen-mlflow
+  #   ports:
+  #     - "5000:5000"
+  #   env_file:
+  #     - sidecar.env
+  #   environment:
+  #   - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+  #   - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+  #   - MLFLOW_HOST=${MLFLOW_HOST}
+  #   - MLFLOW_PORT=${MLFLOW_PORT}
+  #   - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
+  #   - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+  #   - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
+  #   volumes:
+  #     - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
+  #     - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
+  #   networks:
+  #     - bykstack
+
+  
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    env_file:
+      - sidecar.env
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    networks:
+      - bykstack
+
+  gc-s3-ferry:
+    image: s3-ferry:latest
+    container_name: gc-s3-ferry
+    volumes:
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+    env_file:
+      - config.env
+    ports:
+      - "3006:3000"
+    user: "root"
+    networks:
+      - bykstack
+
+  dataset-file-handler:
+    container_name: dataset-file-handler
+    build: ./src/dataset_file_handler
+    ports:
+      - "8001:8001"
+    volumes:
+      - cron_data:/app/data  # Same volume as cron-manager
+    environment:
+      - PORT=8001
+    networks:
+      - bykstack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+        
+  gui:
+    container_name: gui
+    environment:
+      - NODE_ENV=local
+      - REACT_APP_RUUTER_API_URL=http://localhost:8086
+      - REACT_APP_RUUTER_PRIVATE_API_URL=http://localhost:8088
+      - REACT_APP_EXTERNAL_API_URL=http://localhost:8000
+      - REACT_APP_CUSTOMER_SERVICE_LOGIN=http://localhost:3004/et/dev-auth
+      - REACT_APP_NOTIFICATION_NODE_URL=http://localhost:4040
+      - REACT_APP_CSP=upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' http://localhost:8086 http://localhost:8088 http://localhost:8085 http://localhost:4040 http://localhost:3001 http://localhost:8000;
+      - DEBUG_ENABLED=true
+      - CHOKIDAR_USEPOLLING=true
+      - PORT=3001
+      - REACT_APP_SERVICE_ID=conversations,settings,monitoring
+      - REACT_APP_ENABLE_HIDDEN_FEATURES=TRUE
+
+    build:
+      context: ./GUI
+      dockerfile: Dockerfile.dev
+    ports:
+      - 3003:3001
+    volumes:
+      - /app/node_modules
+      - ./GUI:/app
+    networks:
+      - bykstack
+    cpus: "0.5"
+    mem_limit: "1G"
+
+volumes:
+  shared-volume:
+    name: shared-volume
+  opensearch-data:
+    name: opensearch-data
+  dataset_gen_ollama_models:
+    name: dataset_gen_ollama_models
+  minio_data:
+    name: minio_data
+  cron_data:
+    name: cron_data
+
+networks:
+  bykstack:
+    name: bykstack
+    driver: bridge
+   

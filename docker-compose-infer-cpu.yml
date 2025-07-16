@@ -1,0 +1,52 @@
+services:
+
+  triton-production-server:
+    image: nvcr.io/nvidia/tritonserver:25.06-py3
+    container_name: triton-production-server
+    command: tritonserver --model-repository=s3://minio:9000/production-model/model-repository --model-control-mode=explicit --log-verbose=1
+    ports:
+      - "6000:8000"
+      - "6001:8001"
+      - "6002:8002"
+    volumes:
+      - cron_data:/data_models
+
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_ENDPOINT_URL=http://minio:9000
+      - AWS_REGION=eu-central-1
+    networks:
+      - bykstack
+
+  triton-test-server:
+    image: nvcr.io/nvidia/tritonserver:25.06-py3
+    container_name: triton-test-server
+    command: tritonserver --model-repository=s3://minio:9000/test-models/model-repository --model-control-mode=explicit --log-verbose=1
+    ports:
+      - "4000:8000"
+      - "4001:8001"
+      - "4002:8002"
+    volumes:
+      - cron_data:/data_models
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_ENDPOINT_URL=http://minio:9000
+      - AWS_REGION=eu-central-1
+    networks:
+      - bykstack
+
+volumes:
+  shared-volume:
+    external: true
+    name: shared-volume
+  cron_data:
+    external: true
+    name: cron_data
+
+networks:
+  bykstack:
+    name: bykstack
+    external: true
+  
