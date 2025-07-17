@@ -74,3 +74,10 @@ export async function configureDataModel(payload: {
   const { data } = await apiDev.post(endpoint, payload);
   return data?.response ?? {};
 }
+
+export async function deleteDataModel(modelId: number | string | null) {
+  const { data } = await apiDev.post(dataModelsEndpoints.DELETE_MODEL(), {
+    modelId,
+  });
+  return data?.response ?? {};
+}

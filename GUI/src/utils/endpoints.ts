@@ -55,6 +55,7 @@ export const dataModelsEndpoints = {
   CREATE_MODEL: (): string => '/global-classifier/datamodels/create',
   CREATE_MAJOR_VERSION: (): string => '/global-classifier/datamodels/major',
   CREATE_MINOR_VERSION: (): string => '/global-classifier/datamodels/minor',
+  DELETE_MODEL: (): string => '/global-classifier/datamodels/delete',
 
   
   GET_DATAMODELS_FILTERS: (): string =>
