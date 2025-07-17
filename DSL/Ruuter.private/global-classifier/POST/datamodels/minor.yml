@@ -169,9 +169,15 @@ initiateTraining:
   call: http.post
   args:
     url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/datamodels/train"
+    headers:
+      cookie: ${incoming.headers.cookie}
     body:
       modelId: ${insertResult.response.body[0].modelId}
   result: training_res
+  next: logTrainingResult
+
+logTrainingResult:
+  log: "Initiate training response: ${training_res.response}"
   next: checkTrainingResult
 
 # Check Training Result
@@ -179,12 +185,12 @@ checkTrainingResult:
   switch:
     - condition: ${!training_res || !training_res.response}
       next: return_training_failed
-    - condition: ${training_res.response.body[0].operationSuccessful !== true}
+    - condition: ${training_res.response.body.response.operationSuccessful !== true}
       next: return_training_failed
   next: return_success
 
 return_success:
-  return: "Data model created successfully and training initiated. Model ID:${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body[0].jobId}"
+  return: "Data model created successfully and training initiated. Model ID:${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body.response.jobId}"
   status: 200
   next: end
 
