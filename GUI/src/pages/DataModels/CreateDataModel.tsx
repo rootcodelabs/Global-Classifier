@@ -14,13 +14,13 @@ import {
   ErrorsType,
 } from 'types/dataModels';
 import { da } from 'date-fns/locale';
-import { createDataModel } from 'services/datamodels';
+import { createDataModel, getProductionDataModel } from 'services/datamodels';
+import { dataModelsQueryKeys } from 'utils/queryKeys';
 
 const CreateDataModel: FC = () => {
   const { t } = useTranslation();
   const { open, close } = useDialog();
   const navigate = useNavigate();
-  const [availableProdModels, setAvailableProdModels] = useState<string[]>([]);
 
   const [dataModel, setDataModel] = useState<Partial<DataModel>>({
     modelName: '',
@@ -29,6 +29,11 @@ const CreateDataModel: FC = () => {
     deploymentEnvironment: '',
     version: 'V1.0',
   });
+
+   const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
+        queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
+        queryFn: () => getProductionDataModel(),
+      });
 
   const handleDataModelAttributesChange = (name: string, value: string) => {
     setDataModel((prevFilters) => ({
@@ -91,7 +96,16 @@ const CreateDataModel: FC = () => {
       connectedDsMajorVersion: Number(dataModel?.version?.split('.')[0]?.[1]) ?? "",
       connectedDsMinorVersion: Number(dataModel?.version?.split('.')[1]) ?? "",
     }
+
+    if (prodDataModel && dataModel.deploymentEnvironment==="production") {
+        open({
+        title: t('dataModels.createDataModel.replaceTitle'),
+        content: t('dataModels.createDataModel.replaceDesc'),
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=>mutation.mutate(paylod)}>Replace</Button></div>)
+      });
+      } else {
     mutation.mutate(paylod);
+      }
   };
 
   const isCreateDisabled = () => {

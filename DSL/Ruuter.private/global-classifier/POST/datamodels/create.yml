@@ -1,7 +1,7 @@
 declaration:
   call: declare
   version: 0.1
-  description: "Create a new data model record in data_models and update connected dataset"
+  description: "Create a new data model record in data_models, update connected dataset and initiate training"
   method: post
   accepts: json
   returns: json
@@ -17,7 +17,7 @@ declaration:
         description: "Deployment environment: production, testing, undeployed (required)"
       - field: baseModels
         type: array
-        description: "Array of base models: ['distil-bert', 'bert', 'roberta'] (required)"
+        description: "Array of base models: ['bert', 'roberta', 'xlm'] (required)"
       - field: connectedDsId
         type: number
         description: "Connected dataset ID (required)"
@@ -56,30 +56,8 @@ validateEnumValues:
   switch:
     - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
       next: return_invalid_deployment_env
-    - condition: ${!baseModels.every(model => ["distil-bert", "roberta", "bert"].includes(model))}
+    - condition: ${!baseModels.every(model => ["bert", "roberta", "xlm"].includes(model))}
       next: return_invalid_base_model
-  next: checkProductionDeployment
-
-# Check if Production Deployment
-checkProductionDeployment:
-  switch:
-    - condition: ${deploymentEnv === "production"}
-      next: updateExistingProductionModels
-  next: insertModelMetadata
-
-# Update Existing Production Models to Undeployed
-updateExistingProductionModels:
-  call: http.post
-  args:
-    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datamodel-deployment-env"
-  result: update_production_res
-  next: checkProductionUpdateResult
-
-# Check Production Update Result
-checkProductionUpdateResult:
-  switch:
-    - condition: ${!update_production_res || !update_production_res.response || !update_production_res.response.body}
-      next: return_production_update_failed
   next: insertModelMetadata
 
 # Insert Model Metadata
@@ -120,10 +98,35 @@ checkUpdateResult:
   switch:
     - condition: ${!update_dataset_res || !update_dataset_res.response.body || update_dataset_res.response.body.length === 0}
       next: return_update_failed
+  next: initiateTraining
+
+# Initiate Training 
+initiateTraining:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/datamodels/train"
+    headers:
+      cookie: ${incoming.headers.cookie}
+    body:
+      modelId: ${insert_model_res.response.body[0].modelId} 
+  result: training_res
+  next: logTrainingResult
+
+logTrainingResult:
+  log: "Initiate training response: ${training_res.response}"
+  next: checkTrainingResult
+
+# Check Training Result
+checkTrainingResult:
+  switch:
+    - condition: ${!training_res || !training_res.response}
+      next: return_training_failed
+    - condition: ${training_res.response.body.response.operationSuccessful !== true}
+      next: return_training_failed
   next: return_success
 
 return_success:
-  return: "Data model created successfully"
+  return: "Data model created successfully and training initiated. Model ID:${insert_model_res.response.body[0].modelId}  Job ID: ${training_res.response.body.response.jobId}"
   status: 200
   next: end
 
@@ -138,13 +141,8 @@ return_invalid_deployment_env:
   next: end
 
 return_invalid_base_model:
-  return: "error: invalid baseModels. Each model must be one of: distil-bert, bert, roberta"
+  return: "error: invalid baseModels. Each model must be one of: bert, roberta, xlm"
   status: 400
-  next: end
-
-return_production_update_failed:
-  return: "error: failed to update existing production models to undeployed before creating new production model"
-  status: 500
   next: end
 
 return_insert_failed:
@@ -154,5 +152,10 @@ return_insert_failed:
 
 return_update_failed:
   return: "error: model created but failed to update dataset connected_models"
+  status: 500
+  next: end
+
+return_training_failed:
+  return: "error: model created and dataset updated but failed to initiate training"
   status: 500
   next: end

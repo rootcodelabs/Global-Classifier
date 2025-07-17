@@ -145,22 +145,35 @@ services:
   cron-manager:
     container_name: cron-manager
     image: cron-manager-python:latest
-    user: "root"
     volumes:
       - ./DSL/CronManager/DSL:/DSL
       - ./DSL/CronManager/script:/app/scripts
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
+      - ./src/training:/app/src/training
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
+      - ./data/processed:/app/data/processed
+      - shared-volume:/shared
       - cron_data:/app/data
+      - ./src/training/dataset_artifacts:/app/src/training/dataset_artifacts
+      - ./models:/app/models
+      - ./src/training/logs:/app/src/training/logs
+    runtime: nvidia  
     environment:
+      - NVIDIA_VISIBLE_DEVICES=all
       - server.port=9010
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONPATH=/app:/app/src/training:/app/src/training/scripts:/app/src/s3_dataset_processor:/app/src
     ports:
       - 9010:8080
     networks:
       - bykstack
     depends_on:
       - init
+      - gc-s3-ferry
+      - mlflow
+
 
   # classifier-service:
   #   container_name: classifier-service
@@ -183,20 +196,20 @@ services:
     ports:
       - "11434:11434"
     environment:
-      # - NVIDIA_VISIBLE_DEVICES=all
-      # - OLLAMA_USE_GPU=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_USE_GPU=1
       - OLLAMA_HOST=0.0.0.0
     volumes:
       - dataset_gen_ollama_models:/root/.ollama
       - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
     entrypoint: ["bash", "/ollama-entrypoint.sh"]
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - bykstack
 
@@ -218,28 +231,30 @@ services:
       - ./DSL/DatasetGenerator/logs:/app/logs
     depends_on:
       - dataset-gen-ollama
-      - dataset-gen-mlflow
+      - mlflow
     networks:
       - bykstack
 
-  dataset-gen-mlflow:
-    image: synthesisai/dataset-generator-mlflow:latest
-    container_name: dataset-gen-mlflow
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    container_name: mlflow
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env_file:
       - sidecar.env
     environment:
-    - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
-    - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
-    - MLFLOW_HOST=${MLFLOW_HOST}
-    - MLFLOW_PORT=${MLFLOW_PORT}
-    - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
-    - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
-    - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_HOST=${MLFLOW_HOST}
+      - MLFLOW_PORT=${MLFLOW_PORT}
+      - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+      - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
     volumes:
-      - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
-      - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
+      - ./mlflow/mlflow_data:/mlflow/mlflow_data
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
     networks:
       - bykstack
 
@@ -267,6 +282,8 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./src/training/dataset_artifacts:/app/src/training/dataset_artifacts
+      - ./models:/app/models
     env_file:
       - config.env
     ports:

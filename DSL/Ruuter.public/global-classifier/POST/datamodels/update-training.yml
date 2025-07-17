@@ -1,0 +1,92 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Update data model training status to trained and set training results"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "Model ID to update (required)"
+      - field: trainingResults
+        type: object
+        description: "Training results object (required)"
+      - field: modelS3Location
+        type: string
+        description: "S3 location/key of the trained model (required)"
+  next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+    trainingResults: ${incoming.body.trainingResults}
+    modelS3Location: ${incoming.body.modelS3Location}
+  next: validateRequiredFields
+
+# Required Field Validation
+validateRequiredFields:
+  switch:
+    - condition: ${modelId === null || modelId === undefined || !modelId}
+      next: return_missing_model_id
+    - condition: ${trainingResults === null || trainingResults === undefined}
+      next: return_missing_training_results
+    - condition: ${modelS3Location === null || modelS3Location === undefined || modelS3Location === ""}
+      next: return_missing_model_s3_location
+  next: updateTrainingStatus
+
+# Update Training Status
+updateTrainingStatus:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datamodels-training-status"
+    body:
+      modelId: ${modelId}
+      trainingResults: ${JSON.stringify(trainingResults)}
+      modelS3Location: ${modelS3Location}
+  result: update_result
+  next: checkUpdateResult
+
+# Check Update Result
+checkUpdateResult:
+  switch:
+    - condition: ${!update_result || !update_result.response || !update_result.response.body}
+      next: return_update_failed
+    - condition: ${update_result.response.body.length === 0}
+      next: return_model_not_found
+  next: return_success
+
+# Success Response
+return_success:
+  return: "Training status updated successfully model ID : ${update_result.response.body[0].modelId}"
+  status: 200
+  next: end
+
+# Error Responses
+return_missing_model_id:
+  return: '{"error": "Missing required field: modelId"}'
+  status: 400
+  next: end
+
+return_missing_training_results:
+  return: '{"error": "Missing required field: trainingResults"}'
+  status: 400
+  next: end
+
+return_missing_model_s3_location:
+  return: '{"error": "Missing required field: modelS3Location"}'
+  status: 400
+  next: end
+
+return_model_not_found:
+  return: '{"error": "Model not found with the provided modelId"}'
+  status: 404
+  next: end
+
+return_update_failed:
+  return: '{"error": "Failed to update training status"}'
+  status: 500
+  next: end
