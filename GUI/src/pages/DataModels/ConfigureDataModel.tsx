@@ -56,6 +56,7 @@ const ConfigureDataModel: FC = () => {
     baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
     deploymentEnvironment: modelMetadata?.deploymentEnv,
     version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+    trainingResults: modelMetadata?.trainingResults,
   });
 
   useEffect(() => {
@@ -74,6 +75,8 @@ const ConfigureDataModel: FC = () => {
       baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
       deploymentEnvironment: modelMetadata?.deploymentEnv,
       version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+      trainingResults: modelMetadata?.trainingResults,
+
     });
   }, [modelMetadata]);
 

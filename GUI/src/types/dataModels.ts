@@ -6,6 +6,7 @@ export type DataModel = {
   baseModels: string[];
   deploymentEnvironment: string;
   version?: string;
+  trainingResults?: Object | null;
 };
 
 export type TrainingProgressData = {

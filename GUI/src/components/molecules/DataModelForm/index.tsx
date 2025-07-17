@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FormCheckboxes,
@@ -14,6 +14,7 @@ import { DataModel } from 'types/dataModels';
 import { dataModelsQueryKeys, datasetQueryKeys } from 'utils/queryKeys';
 import { getDeploymentEnvironments } from 'services/datamodels';
 import { getAllDatasetVersions } from 'services/datasets';
+import ModelResults from '../TrainingResults';
 
 type DataModelFormType = {
   dataModel: any;
@@ -29,7 +30,8 @@ const DataModelForm: FC<DataModelFormType> = ({
   type,
 }) => {
   const { t } = useTranslation();
-   const { data: deploymentEnvironmentsData } = useQuery({
+  const [showTrainingResults, setShowTrainingResults] = useState(true);
+  const { data: deploymentEnvironmentsData } = useQuery({
     queryKey: datasetQueryKeys.DATASET_VERSIONS(),
     queryFn: () => getDeploymentEnvironments(),
   });
@@ -37,8 +39,10 @@ const DataModelForm: FC<DataModelFormType> = ({
   const { data: datasetVersions } = useQuery({
     queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
     queryFn: () => getAllDatasetVersions(),
-  });  
-  
+  });
+
+  const trainingResults = dataModel?.trainingResults?.value && JSON.parse(dataModel?.trainingResults?.value) || null;
+
   return (
     <div>
       {type === 'create' ? (
@@ -65,67 +69,80 @@ const DataModelForm: FC<DataModelFormType> = ({
       )}
 
       {((type === 'configure') || type === 'create')
-         ? (
-        <div>
-          <div className="title-sm">
-            {t('dataModels.dataModelForm.datasetGroup')}{' '}
-          </div>
-          <div className="grey-card" style={{
-            display: "flex",
-            flexDirection: "column"
-          }} >
-            <FormSelect
-              name="datasetId"
-              options={toLabelValueArray(datasetVersions, 'id','version')??[]}
-              label=""
-              onSelectionChange={(selection) => {
-                handleChange('datasetId', selection?.value);
-              }}
-              value={dataModel?.datasetId === null && t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
-              defaultValue={dataModel?.datasetId ? dataModel?.datasetId : t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
-              error={errors?.datasetId}
-            />
-            <div>
-              {(type === 'configure') && !dataModel.datasetId && <span style={{
-                color: "red", fontSize: "13px"
-              }}>{t('dataModels.dataModelForm.errors.datasetVersionNotExist')}</span>}
+        ? (
+          <div>
+            <div className="title-sm">
+              {t('dataModels.dataModelForm.datasetGroup')}{' '}
+            </div>
+            <div className="grey-card" style={{
+              display: "flex",
+              flexDirection: "column"
+            }} >
+              <FormSelect
+                name="datasetId"
+                options={toLabelValueArray(datasetVersions, 'id', 'version') ?? []}
+                label=""
+                onSelectionChange={(selection) => {
+                  handleChange('datasetId', selection?.value);
+                }}
+                value={dataModel?.datasetId === null && t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
+                defaultValue={dataModel?.datasetId ? dataModel?.datasetId : t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
+                error={errors?.datasetId}
+              />
+              <div>
+                {(type === 'configure') && !dataModel.datasetId && <span style={{
+                  color: "red", fontSize: "13px"
+                }}>{t('dataModels.dataModelForm.errors.datasetVersionNotExist')}</span>}
+              </div>
+            </div>
+
+            <div className="title-sm">
+              {t('dataModels.dataModelForm.baseModels')}{' '}
+            </div>
+
+            <div className="grey-card flex-grid" style={{
+              display: "flex", justifyContent: "space-between"
+            }}>
+              <FormCheckboxes
+                isStack={false}
+                items={formattedArray(deploymentEnvironmentsData ? JSON.parse(deploymentEnvironmentsData?.[0]?.baseModels.value) : [])}
+                name="baseModels"
+                label=""
+                onValuesChange={(values) =>
+                  handleChange('baseModels', values.baseModels)
+                }
+                error={errors?.baseModels}
+                selectedValues={dataModel?.baseModels}
+              />
+              {type === 'configure' && trainingResults && (
+                <a
+                  className='link'
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setShowTrainingResults((prev) => !prev)}
+                >
+                  {showTrainingResults ? "Hide Training Results" : "View Training Results"}
+                </a>
+              )}
+            </div>
+            {showTrainingResults && <ModelResults models={trainingResults?.models_performance} />}
+
+            <div className="title-sm">
+              {t('dataModels.dataModelForm.deploymentPlatform')}{' '}
+            </div>
+            <div className="grey-card">
+              <FormRadios
+                items={formattedArray(deploymentEnvironmentsData?.[0]?.deploymentEnvironments) ?? []}
+                label=""
+                name="deploymentEnvironment"
+                onChange={(value) => handleChange('deploymentEnvironment', value)}
+                error={errors?.deploymentEnvironment}
+                selectedValue={dataModel?.deploymentEnvironment}
+              />
             </div>
           </div>
-
-          <div className="title-sm">
-            {t('dataModels.dataModelForm.baseModels')}{' '}
-          </div>
-          <div className="grey-card flex-grid">
-            <FormCheckboxes
-              isStack={false}
-              items={formattedArray(deploymentEnvironmentsData? JSON.parse(deploymentEnvironmentsData?.[0]?.baseModels.value):[])}
-              name="baseModels"
-              label=""
-              onValuesChange={(values) =>
-                handleChange('baseModels', values.baseModels)
-              }
-              error={errors?.baseModels}
-              selectedValues={dataModel?.baseModels}
-            />
-          </div>
-
-          <div className="title-sm">
-            {t('dataModels.dataModelForm.deploymentPlatform')}{' '}
-          </div>
-          <div className="grey-card">
-            <FormRadios
-              items={formattedArray(deploymentEnvironmentsData?.[0]?.deploymentEnvironments)??[]}
-              label=""
-              name="deploymentEnvironment"
-              onChange={(value) => handleChange('deploymentEnvironment', value)}
-              error={errors?.deploymentEnvironment}
-              selectedValue={dataModel?.deploymentEnvironment}
-            />
-          </div>
-        </div>
-      ) : (
-        <CircularSpinner />
-      )}
+        ) : (
+          <CircularSpinner />
+        )}
     </div>
   );
 };

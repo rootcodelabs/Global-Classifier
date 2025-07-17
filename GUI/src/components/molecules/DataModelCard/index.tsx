@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { TrainingResults } from 'types/dataModels';
 import { formatDate } from 'utils/commonUtilts';
 import { useNavigate } from 'react-router-dom';
+import ModelResults from '../TrainingResults';
 
 type DataModelCardProps = {
   modelId: number | string;
@@ -20,7 +21,7 @@ type DataModelCardProps = {
   trainingStatus?: string;
   modelStatus?: string;
   deploymentEnv?: string;
-  results?: string | null;
+  results?: any | null;
 };
 
 const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
@@ -38,13 +39,13 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
 }) => {
   const { open, close } = useDialog();
   const { t } = useTranslation();
-  const resultsJsonData: TrainingResults = JSON.parse(results ?? '{}');
+  const trainingResults = results?.value && JSON.parse(results?.value) || null;
 const navigate = useNavigate();
 
 const configureDataModel = () => {
   navigate(`/configure-datamodel?datamodelId=${modelId}`);
+}
 
-};
   const renderTrainingStatus = (status: string | undefined) => {
     if (status === TrainingStatus.RETRAINING_NEEDED) {
       return (
@@ -136,68 +137,15 @@ const configureDataModel = () => {
                 ),
                 size: 'large',
                 content: (
-                  <div>
-                    <div className="flex m-20-0">
-                      {t('dataModels.trainingResults.bestPerformingModel') ??
-                        ''}
-                      -
-                    </div>
-                    <Card
-                      isHeaderLight={true}
-                      header={
-                        <div className="training-results-grid-container">
-                          <div>
-                            {' '}
-                            {t('dataModels.trainingResults.classes') ?? ''}
-                          </div>
-                          <div>
-                            {t('dataModels.trainingResults.accuracy') ?? ''}
-                          </div>
-                          <div>
-                            {t('dataModels.trainingResults.f1Score') ?? ''}
-                          </div>
-                        </div>
-                      }
-                    >
+                    <div>
                       {results ? (
-                        <div className="training-results-grid-container">
-                          <div>
-                            {resultsJsonData?.trainingResults?.classes?.map(
-                              (c: string, index: number) => {
-                                return <div key={index}>{c}</div>;
-                              }
-                            )}
-                          </div>
-                          <div>
-                            {resultsJsonData?.trainingResults?.accuracy?.map(
-                              (c: string, index: number) => {
-                                return (
-                                  <div key={index}>
-                                    {parseFloat(c)?.toFixed(2)}
-                                  </div>
-                                );
-                              }
-                            )}
-                          </div>
-                          <div>
-                            {resultsJsonData?.trainingResults?.f1_score?.map(
-                              (c: string, index: number) => {
-                                return (
-                                  <div key={index}>
-                                    {parseFloat(c)?.toFixed(2)}
-                                  </div>
-                                );
-                              }
-                            )}
-                          </div>
-                        </div>
+                       <ModelResults models={trainingResults.models_performance} />
                       ) : (
                         <div className="text-center">
                           {t('dataModels.trainingResults.noResults') ?? ''}
                         </div>
                       )}
-                    </Card>
-                  </div>
+                    </div>
                 ),
               });
             }}
