@@ -53,3 +53,48 @@
   font-weight: 600;
   color: #444;
 }
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.header-classes {
+  width: 30%;
+  font-weight: 600;
+  color: #444;
+}
+
+.header-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 7rem);
+  gap: 1rem;
+  width: 70%;
+  font-weight: 600;
+  color: #444;
+}
+
+.hr-divider {
+  border: none;
+  border-top: 1px solid #D1D1D1;
+  margin: 0;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  width: auto;
+  padding: .5rem 0rem;
+}
+
+.metric-class {
+  width: 30%;
+}
+
+.metric-values {
+  display: grid;
+  grid-template-columns: repeat(4, 7rem);
+  gap: 1rem;
+  width: 70%;
+}
