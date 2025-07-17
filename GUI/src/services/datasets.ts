@@ -24,7 +24,7 @@ export async function getDatasetMetadata(
       datasetId
     },
   });
-  return data?.response?.[0] ?? [];
+  return data?.response?.response?.[0] ?? [];
 }
 
 export async function getDatasetData(

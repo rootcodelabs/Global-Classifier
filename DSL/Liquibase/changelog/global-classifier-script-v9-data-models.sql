@@ -10,7 +10,7 @@ CREATE TYPE training_status AS ENUM ('retraining_needed', 'trained', 'training_i
 -- Create deployment environment enum
 CREATE TYPE deployment_environment AS ENUM ('undeployed', 'testing', 'production');
 
-CREATE TYPE base_models AS ENUM ('distil-bert', 'roberta', 'bert');
+CREATE TYPE base_models AS ENUM ('bert', 'roberta', 'xlm');
 
 -- changeset erangi:global-classifier-models-metadata-table
 CREATE TABLE public.data_models (
@@ -45,6 +45,6 @@ CREATE TABLE model_configurations (
 -- changeset erangi:global-classifier-model_configurations-add-data
 INSERT INTO model_configurations (base_models, deployment_environments) VALUES
 (
-    '["distil-bert", "roberta", "bert"]'::JSONB,
+    '["bert", "roberta", "xlm"]'::JSONB,
     ARRAY['undeployed', 'testing', 'production']::deployment_environment[]
 );
