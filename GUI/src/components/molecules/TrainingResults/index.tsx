@@ -30,7 +30,7 @@ const ModelResults: React.FC<ModelResultsProps> = ({ models }) => {
                 <div className="model-section" key={idx}>
                     <h5 className="model-name">{model.model_type}</h5>
 
-                    <div style={{ border: "1px solid #E6E6E6", padding: "1rem", borderRadius: "5px" }}>
+                    <div className='model-metrics-card'>
                         <div className="header-row">
                             <div className="header-classes">Classes</div>
                             <div className="header-metrics">

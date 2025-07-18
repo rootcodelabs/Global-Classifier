@@ -1,5 +1,5 @@
 .results-wrapper {
-  padding: 20px;
+  padding: 1rem;
   background-color: #fff;
 }
 
@@ -17,7 +17,7 @@
 }
 
 .model-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .model-name {
@@ -45,8 +45,10 @@
 .metric-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   font-size: 14px;
+  width: auto;
+  padding: .5rem 0rem;
 }
 
 .metric-label {
@@ -81,13 +83,6 @@
   margin: 0;
 }
 
-.metric-row {
-  display: flex;
-  justify-content: space-between;
-  width: auto;
-  padding: .5rem 0rem;
-}
-
 .metric-class {
   width: 30%;
 }
@@ -97,4 +92,10 @@
   grid-template-columns: repeat(4, 7rem);
   gap: 1rem;
   width: 70%;
+}
+
+.model-metrics-card {
+  border: 1px solid #E6E6E6;
+  padding: .5rem;
+  border-radius: 5px;
 }
