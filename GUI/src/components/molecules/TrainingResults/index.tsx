@@ -1,22 +1,5 @@
+import { ModelResultsProps } from 'types/dataModels';
 import './TrainingResults.scss';
-
-export type ClassMetrics = {
-  f1: number;
-  recall: number;
-  accuracy: number;
-  precision: number;
-};
-
-export type ModelPerformance = {
-  model_type: string;
-  class_metrics: {
-    [className: string]: ClassMetrics;
-  };
-};
-
-export type ModelResultsProps = {
-  models: ModelPerformance[];
-};
 
 const ModelResults: React.FC<ModelResultsProps> = ({ models }) => {
     return (

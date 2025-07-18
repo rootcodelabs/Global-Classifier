@@ -41,8 +41,14 @@ const DataModelForm: FC<DataModelFormType> = ({
     queryFn: () => getAllDatasetVersions(),
   });
 
-  const trainingResults = dataModel?.trainingResults?.value && JSON.parse(dataModel?.trainingResults?.value) || null;
-
+ let trainingResults = null;
+  if (dataModel?.trainingResults?.value) {
+    try {
+      trainingResults = JSON.parse(dataModel.trainingResults.value);
+    } catch (error) {
+      console.error('Failed to parse training results JSON:', error);
+    }
+  }
   return (
     <div>
       {type === 'create' ? (
@@ -124,7 +130,7 @@ const DataModelForm: FC<DataModelFormType> = ({
                 </a>
               )}
             </div>
-            {showTrainingResults && <ModelResults models={trainingResults?.models_performance} />}
+            {showTrainingResults && trainingResults && <ModelResults models={trainingResults?.models_performance} />}
 
             <div className="title-sm">
               {t('dataModels.dataModelForm.deploymentPlatform')}{' '}

@@ -4,9 +4,8 @@ import Label from 'components/Label';
 import { useDialog } from 'hooks/useDialog';
 import './DataModel.scss';
 import { Maturity, TrainingStatus } from 'enums/dataModelsEnums';
-import Card from 'components/Card';
 import { useTranslation } from 'react-i18next';
-import { TrainingResults } from 'types/dataModels';
+import { TrainingResultsResponse } from 'types/dataModels';
 import { formatDate } from 'utils/commonUtilts';
 import { useNavigate } from 'react-router-dom';
 import ModelResults from '../TrainingResults';
@@ -21,7 +20,7 @@ type DataModelCardProps = {
   trainingStatus?: string;
   modelStatus?: string;
   deploymentEnv?: string;
-  results?: any | null;
+  results?: TrainingResultsResponse | null;
 };
 
 const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
@@ -39,12 +38,20 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
 }) => {
   const { open, close } = useDialog();
   const { t } = useTranslation();
-  const trainingResults = results?.value && JSON.parse(results?.value) || null;
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
-const configureDataModel = () => {
-  navigate(`/configure-datamodel?datamodelId=${modelId}`);
-}
+  let trainingResults = null;
+  if (results?.value) {
+    try {
+      trainingResults = JSON.parse(results.value);
+    } catch (error) {
+      console.error("Failed to parse training results:", error);
+    }
+  }
+
+  const configureDataModel = () => {
+    navigate(`/configure-datamodel?datamodelId=${modelId}`);
+  }
 
   const renderTrainingStatus = (status: string | undefined) => {
     if (status === TrainingStatus.RETRAINING_NEEDED) {
@@ -116,7 +123,7 @@ const configureDataModel = () => {
             {lastTrained && formatDate(new Date(lastTrained), 'D.M.yy-H:m')}
           </p>
         </div>
-        <div className="flex" style={{flexWrap: 'wrap',gap: '5px'}}>
+        <div className="flex" style={{ flexWrap: 'wrap', gap: '5px' }}>
           {renderTrainingStatus(trainingStatus)}
           <Label type="info">{modelStatus}</Label>
           {isLatest && <Label type="success">
@@ -137,15 +144,15 @@ const configureDataModel = () => {
                 ),
                 size: 'large',
                 content: (
-                    <div>
-                      {results ? (
-                       <ModelResults models={trainingResults.models_performance} />
-                      ) : (
-                        <div className="text-center">
-                          {t('dataModels.trainingResults.noResults') ?? ''}
-                        </div>
-                      )}
-                    </div>
+                  <div>
+                    {results ? (
+                      <ModelResults models={trainingResults?.models_performance} />
+                    ) : (
+                      <div className="text-center">
+                        {t('dataModels.trainingResults.noResults') ?? ''}
+                      </div>
+                    )}
+                  </div>
                 ),
               });
             }}
