@@ -51,7 +51,8 @@
     "close":"Close",
     "proceed":"Proceed",
     "maxFileSize":"File size should not exceed 20 MB.",
-    "select": "-Select-"
+    "select": "-Select-",
+    "replace": "Replace"
   },
   "menu": {
     "userManagement": "User Management",

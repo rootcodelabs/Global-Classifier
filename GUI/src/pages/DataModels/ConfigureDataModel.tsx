@@ -288,6 +288,15 @@ const ConfigureDataModel: FC = () => {
               >
                 {t('global.delete')}
               </Button>
+            ) : modalType === 'replace' ? (
+              <Button
+                disabled={updateMutation.isLoading}
+                showLoadingIcon={updateMutation.isLoading}
+                onClick={() => modalFunciton.current()}
+                appearance={ButtonAppearanceTypes.PRIMARY}
+              >
+                {t('global.replace')}
+              </Button>
             )
               : modalType === 'warning' ? (
                 <Button
