@@ -5,6 +5,6 @@ SELECT
 FROM public.data_models dm
 WHERE dm.model_id = ANY(
     SELECT jsonb_array_elements_text(connected_models)::BIGINT
-    FROM public.datasets
+    FROM public.dataset_versions
     WHERE id = :datasetId
 );

@@ -4,7 +4,7 @@ import { Button, FormSelect } from 'components';
 import Pagination from 'components/molecules/Pagination';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { formattedArray, parseVersionString } from 'utils/commonUtilts';
+import { formattedArray } from 'utils/commonUtilts';
 import DataModelCard from 'components/molecules/DataModelCard';
 import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
 import { ButtonAppearanceTypes } from 'enums/commonEnums';
@@ -123,7 +123,7 @@ const DataModels: FC = () => {
                     label=""
                     name=""
                     placeholder={t('dataModels.filters.maturity') ?? ''}
-                    options={formattedArray(deploymentEnvironmentsData[0]?.deploymentEnvironments) ?? []}
+                    options={formattedArray(deploymentEnvironmentsData?.[0]?.deploymentEnvironments) ?? []}
                     onSelectionChange={(selection) =>
                       handleFilterChange('deploymentEnvironment', selection?.value)
                     }
@@ -189,7 +189,7 @@ const DataModels: FC = () => {
                     trainingStatus={prodDataModel.trainingStatus}
                     modelStatus={prodDataModel?.modelStatus}
                     deploymentEnv={prodDataModel?.deploymentEnv}
-                  // results={model?.trainingResults ?? null}
+                   results={prodDataModel?.trainingResults ?? null}
 
                   /></div>
               </div>}
@@ -211,7 +211,7 @@ const DataModels: FC = () => {
                           trainingStatus={model.trainingStatus}
                           modelStatus={model?.modelStatus}
                           deploymentEnv={model?.deploymentEnv}
-                        // results={model?.trainingResults ?? null}
+                          // results={model?.trainingResults ?? null}
 
                         />
                       );

@@ -15,6 +15,7 @@ import ViewDataset from 'pages/ViewDataset';
 import DataModels from 'pages/DataModels';
 import CreateDataModel from 'pages/DataModels/CreateDataModel';
 import ConfigureDataModel from 'pages/DataModels/ConfigureDataModel';
+import TestModel from 'pages/TestModel';
 
 const App: FC = () => {
   const navigate = useNavigate();
@@ -70,6 +71,8 @@ const App: FC = () => {
             <Route path="/data-models" element={<DataModels />} />
             <Route path="/create-data-model" element={<CreateDataModel />} />
             <Route path="/configure-datamodel" element={<ConfigureDataModel />} />
+            <Route path="/testing" element={<TestModel />} />
+
 
           </Route>
         </Routes>
