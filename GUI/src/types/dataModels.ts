@@ -6,6 +6,7 @@ export type DataModel = {
   baseModels: string[];
   deploymentEnvironment: string;
   version?: string;
+  trainingResults?: TrainingResultsResponse | null;
 };
 
 export type TrainingProgressData = {
@@ -67,12 +68,22 @@ export type DataModelResponse = {
   trainingResults?: string | null;
 };
 
-export type TrainingResults ={
-  trainingResults: {
-    classes: string[];
-    accuracy: string[];
-    f1_score: string[];
+export type ClassMetrics = {
+  f1?: number;
+  recall?: number;
+  accuracy?: number;
+  precision?: number;
+};
+
+export type ModelPerformance = {
+  model_type?: string;
+  class_metrics: {
+    [className: string]: ClassMetrics;
   };
+};
+
+export type ModelResultsProps = {
+  models?: ModelPerformance[];
 };
 
 export type DataModelsFilters = {
@@ -89,4 +100,66 @@ export type ErrorsType = {
   deploymentEnvironment?: string;
   baseModels?: string;
   datasetId?: string;
+};
+
+export type TrainingResults = {
+  best_model_info: {
+    model_type: string;
+    class_metrics: {
+      [className: string]: {
+        f1: number;
+        recall: number;
+        accuracy: number;
+        precision: number;
+      };
+    };
+    overall_metrics: {
+      recall: number;
+      roc_auc: number;
+      accuracy: number;
+      f1_score: number;
+      precision: number;
+    };
+  };
+  training_summary: {
+    model_id: number;
+    timestamp: string;
+    dataset_id: string;
+    failed_models: number;
+    best_overall_f1: number;
+    successful_models: number;
+    best_overall_model: string;
+    total_models_attempted: number;
+  };
+  models_performance: Array<{
+    status: string;
+    best_epoch: number;
+    model_name: string;
+    model_type: string;
+    best_val_f1: number;
+    class_metrics: {
+      [className: string]: {
+        f1: number;
+        recall: number;
+        accuracy: number;
+        precision: number;
+      };
+    };
+    num_parameters: number;
+    overall_metrics: {
+      f1: number;
+      recall: number;
+      roc_auc: number;
+      accuracy: number;
+      precision: number;
+    };
+    training_time_seconds: number;
+    inference_time_seconds: number;
+  }>;
+};
+
+export type TrainingResultsResponse = {
+ type: "jsonb";
+ value: string;
+ null: boolean;
 };

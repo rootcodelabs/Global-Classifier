@@ -1,0 +1,45 @@
+import { ModelResultsProps } from 'types/dataModels';
+import './TrainingResults.scss';
+
+const ModelResults: React.FC<ModelResultsProps> = ({ models }) => {
+    return (
+        <div className="results-wrapper">
+            <h3 className="best-model-header">
+                Best Performing Model - {models?.[0]?.model_type || "N/A"}
+            </h3>
+            <h4 className="section-title">Training Results</h4>
+
+            {models?.map((model, idx) => (
+                <div className="model-section" key={idx}>
+                    <h5 className="model-name">{model.model_type}</h5>
+
+                    <div className='model-metrics-card'>
+                        <div className="header-row">
+                            <div className="header-classes">Classes</div>
+                            <div className="header-metrics">
+                                <div>F1</div>
+                                <div>Recall</div>
+                                <div>Accuracy</div>
+                                <div>Precision</div>
+                            </div>
+                        </div>
+                        <hr className="hr-divider" />
+                        {Object.entries(model?.class_metrics).map(([className, metrics]) => (
+                            <div key={className} className="metric-row">
+                                <div className="metric-class">{className}</div>
+                                <div className="metric-values">
+                                    <div>{metrics.f1}</div>
+                                    <div>{metrics.recall}</div>
+                                    <div>{metrics.accuracy}</div>
+                                    <div>{metrics.precision}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export default ModelResults;

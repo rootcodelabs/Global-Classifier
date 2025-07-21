@@ -1,4 +1,4 @@
-UPDATE public.datasets
+UPDATE public.dataset_versions 
 SET 
     connected_models = CASE 
         WHEN connected_models IS NULL THEN 
