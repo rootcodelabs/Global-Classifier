@@ -55,9 +55,7 @@ docker build -t resql . # in cloned Resql repo
 ```
 
 ### Testing Requirements
-- **Python**: Use `pytest` with 80% coverage minimum (`src/tests/`)
-- **Frontend**: Playwright tests in `GUI/tests/` for critical user flows
-- **Linting**: All code must pass `ruff check .` and `ruff format .`
+x- **Linting**: All code must pass `ruff check .` and `ruff format .`
 
 ### Branch Strategy
 1. **wip** → **testing** → **dev** (three-tier workflow)
