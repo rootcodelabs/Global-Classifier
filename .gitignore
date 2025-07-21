@@ -53,3 +53,4 @@ venv
 /signed.py
 /minio_presigned_urls.txt
 minio_data/
+temp_models/
