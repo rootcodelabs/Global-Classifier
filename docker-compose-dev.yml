@@ -164,88 +164,6 @@ services:
       - bykstack
     depends_on:
       - init
-
-  # classifier-service:
-  #   container_name: classifier-service
-  #   build:
-  #     context: ./src/classifier-service 
-  #   ports:
-  #     - "8090:8090"
-  #   networks:
-  #     - bykstack
-  #   volumes:
-  #     - ./src/classifier-service:/app
-  #   environment:
-  #     - NODE_ENV=development
-  #   restart: always
-
-  # Dataset Generator services
-  # dataset-gen-ollama:
-  #   image: synthesisai/dataset-generator-ollama:latest
-  #   container_name: dataset-gen-ollama
-  #   ports:
-  #     - "11434:11434"
-  #   environment:
-  #     # - NVIDIA_VISIBLE_DEVICES=all
-  #     # - OLLAMA_USE_GPU=1
-  #     - OLLAMA_HOST=0.0.0.0
-  #   volumes:
-  #     - dataset_gen_ollama_models:/root/.ollama
-  #     - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
-  #   entrypoint: ["bash", "/ollama-entrypoint.sh"]
-  #   # deploy:
-  #   #   resources:
-  #   #     reservations:
-  #   #       devices:
-  #   #         - driver: nvidia
-  #   #           count: 1
-  #   #           capabilities: [gpu]
-  #   networks:
-  #     - bykstack
-
-  # dataset-gen-service:
-  #   image: synthesisai/dataset-generator:latest
-  #   container_name: dataset-gen-service
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - PROVIDER_API_URL=http://dataset-gen-ollama:11434
-  #     - SERVICE_DEBUG=false
-  #     - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/config:/app/config
-  #     - ./DSL/DatasetGenerator/templates:/app/templates
-  #     - ./DSL/DatasetGenerator/user_configs:/app/user_configs
-  #     - cron_data:/app/data
-  #     - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
-  #     - ./DSL/DatasetGenerator/logs:/app/logs
-  #   depends_on:
-  #     - dataset-gen-ollama
-  #     - dataset-gen-mlflow
-  #   networks:
-  #     - bykstack
-
-  # dataset-gen-mlflow:
-  #   image: synthesisai/dataset-generator-mlflow:latest
-  #   container_name: dataset-gen-mlflow
-  #   ports:
-  #     - "5000:5000"
-  #   env_file:
-  #     - sidecar.env
-  #   environment:
-  #   - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
-  #   - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
-  #   - MLFLOW_HOST=${MLFLOW_HOST}
-  #   - MLFLOW_PORT=${MLFLOW_PORT}
-  #   - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
-  #   - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
-  #   - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
-  #     - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
-  #   networks:
-  #     - bykstack
-
   
   minio:
     image: minio/minio:latest
@@ -326,8 +244,10 @@ services:
 
 
   triton-production-server:
-    image: nvcr.io/nvidia/tritonserver:25.06-py3
     container_name: triton-production-server
+    build:
+      context: ./src/inference
+      dockerfile: Dockerfile
     command: tritonserver --model-repository=s3://minio:9000/production-models/model-repository --model-control-mode=explicit --log-verbose=1
     ports:
       - "6000:8000"
@@ -349,8 +269,10 @@ services:
       - ruuter-private
 
   triton-test-server:
-    image: nvcr.io/nvidia/tritonserver:25.06-py3
     container_name: triton-test-server
+    build:
+      context: ./src/inference
+      dockerfile: Dockerfile
     command: tritonserver --model-repository=s3://minio:9000/test-models/model-repository --model-control-mode=explicit --log-verbose=1
     ports:
       - "4000:8000"

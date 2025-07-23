@@ -35,7 +35,7 @@ class TritonPythonModel:
 
         # TODO - MODEL TYPE , TOKENIZER AND MAX LENGTH should be retrieved from the database during initialize        
 
-        model_path = args['model_repository'] 
+        model_path: Unknown = args['model_repository'] 
         label_file = os.path.join(model_path, "1", "label_mappings.json")
         self.logger = pb_utils.Logger
         try:
