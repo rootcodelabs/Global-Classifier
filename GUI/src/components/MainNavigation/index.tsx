@@ -1,7 +1,7 @@
 import { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
-import { MdCorporateFare, MdFileCopy, MdKeyboardArrowDown, MdOutlineDataset, MdSupervisorAccount } from 'react-icons/md';
+import { MdCorporateFare, MdFileCopy, MdKeyboardArrowDown, MdOutlineDataset, MdSearch, MdSupervisorAccount } from 'react-icons/md';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Icon } from 'components';
@@ -31,15 +31,41 @@ const MainNavigation: FC = () => {
     },
     {
       id: 'dataSets',
-      label: t('menu.dataSets'),
-      path: '/datasets',
+      label: t('menu.dataSets.title'),
+      path: '',
       icon: <MdFileCopy/>,
+      children: [
+        {
+          label: t('menu.dataSets.overview'),
+          path: 'datasets',
+        },
+        {
+          label: t('menu.dataSets.progress'),
+          path: 'datasets/progress',
+        }
+      ],
     },
     {
       id: 'dataModels',
-      label: t('menu.dataModels'),
-      path: '/data-models',
+      label: t('menu.dataModels.title'),
+      path: '',
       icon: <MdOutlineDataset />,
+      children: [
+        {
+          label: t('menu.dataModels.overview'),
+          path: 'data-models',
+        },
+        {
+          label: t('menu.dataModels.progress'),
+          path: 'training/progress',
+        }
+      ],
+    },
+    {
+      id: 'testing',
+      label: t('menu.testModel'),
+      path: '/testing',
+      icon: <MdSearch />
     }
   ];
 

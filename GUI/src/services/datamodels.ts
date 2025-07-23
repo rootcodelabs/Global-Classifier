@@ -1,5 +1,6 @@
-import { dataModelsEndpoints } from 'utils/endpoints';
+import { dataModelsEndpoints, testModelsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import { ClassifyTestModalPayloadType, ClassifyTestModalResponseType } from 'types/testModelTypes';
 
 export async function getDataModelsOverview(
   pageNum: number,
@@ -80,4 +81,24 @@ export async function deleteDataModel(modelId: number | string | null) {
     modelId,
   });
   return data?.response ?? {};
+}
+
+export async function getAllModelVersions() {
+  const { data } = await apiDev.get(dataModelsEndpoints.GET_ALL_DATAMODELS_VERSIONS());
+  return data?.response ?? [];
+}
+
+export async function loadModel(modelId: number | string | null) {
+  const { data } = await apiDev.post(dataModelsEndpoints.LOAD_MODEL(),{
+    modelId,
+  });
+  return data?.response ?? [];
+}
+
+export async function classify(data : ClassifyTestModalPayloadType) {
+   const response = await apiDev.post(
+        testModelsEndpoints.CLASSIFY_TEST_MODELS(),
+        { modelId: data.modelId, text: data.text },
+      );
+      return response?.data?.response?.data as ClassifyTestModalResponseType ??[];
 }

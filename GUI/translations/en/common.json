@@ -48,9 +48,9 @@
     "failed": "Failed",
     "sessionTimeOutTitle": "You session has been ended!",
     "sessionTimeOutDesc": "Extend your session or sign out from application in {{seconds}}",
-    "close":"Close",
-    "proceed":"Proceed",
-    "maxFileSize":"File size should not exceed 20 MB.",
+    "close": "Close",
+    "proceed": "Proceed",
+    "maxFileSize": "File size should not exceed 20 MB.",
     "select": "-Select-"
   },
   "menu": {
@@ -102,32 +102,31 @@
       "title": "Title"
     }
   },
-  "integratedAgencies":{
+  "integratedAgencies": {
     "title": "Integrated Clients",
-    "search":"Search client",
-    "sortOptions":{
-      "agencyAsc":"Agency Name A-Z",
-      "agencyDesc":"Agency Name Z-A",
-      "createdDateAsc":"Client Created Date Oldest First",
-      "createdDateDesc":"Client Created Date Latest First",
-      "lastUpdatedDateAsc":"Last Updated Date Oldest First",
-      "lastUpdatedDateDesc":"Last Updated Date Latest First"
+    "search": "Search client",
+    "sortOptions": {
+      "agencyAsc": "Agency Name A-Z",
+      "agencyDesc": "Agency Name Z-A",
+      "createdDateAsc": "Client Created Date Oldest First",
+      "createdDateDesc": "Client Created Date Latest First",
+      "lastUpdatedDateAsc": "Last Updated Date Oldest First",
+      "lastUpdatedDateDesc": "Last Updated Date Latest First"
     },
-    "agencyCard":{
+    "agencyCard": {
       "lastModelTrained": "Last Model Trained",
       "lastUsedForTraining": "Last Used For Training",
       "lastSynced": "Last Synced",
       "latest": "Latest",
-      "syncStatus":{
-        "synced":"Synced with CKB",
-        "unavailable":"Unavailable in CKB",
-        "resync":"Resync needed with CKB",
-        "inProgress":"Sync in Progress with CKB",
+      "syncStatus": {
+        "synced": "Synced with CKB",
+        "unavailable": "Unavailable in CKB",
+        "resync": "Resync needed with CKB",
+        "inProgress": "Sync in Progress with CKB",
         "resyncInProgress": "Resync in Progress with CKB",
         "failed": "Sync with CKB Failed"
-
       },
-      "resync":"Resync"
+      "resync": "Resync"
     }
   },
   "integration": {
@@ -176,10 +175,10 @@
   },
   "datasets": {
     "title": "Datasets",
-    "noDatasets":"No data sets available",
-    "sortOptions":{
-      "createdDateAsc":"Created Date Oldest First",
-      "createdDateDesc":"Created Date Latest First"
+    "noDatasets": "No data sets available",
+    "sortOptions": {
+      "createdDateAsc": "Created Date Oldest First",
+      "createdDateDesc": "Created Date Latest First"
     },
     "datasetCard": {
       "inProgress": "Data Generation in Progress",
@@ -193,7 +192,7 @@
     },
     "detailedView": {
       "dataset": "Dataset",
-      "version":"Dataset Version",
+      "version": "Dataset Version",
       "connectedModels": "Connected Models",
       "noOfItems": "Number of items",
       "export": "Export Dataset",
@@ -247,7 +246,7 @@
         "delete": {
           "title": "Are you sure?",
           "description": "Once you delete the dataset all models connected to this model will become untrainable. Are you sure you want to proceed?",
-          "error":"Dataset Group Deletion  Unsuccessful",
+          "error": "Dataset Group Deletion  Unsuccessful",
           "errorDesc": "There was an issue deleting the dataset group. Please try again. If the problem persists, contact support for assistance."
         },
         "edit": {
@@ -255,7 +254,7 @@
           "data": "Data",
           "label": "Label",
           "update": "Update",
-          "error":"Dataset Group Update Unsuccessful",
+          "error": "Dataset Group Update Unsuccessful",
           "errorDesc": "There was an issue updating the dataset group. Please try again. If the problem persists, contact support for assistance."
         },
         "upload": {
@@ -297,10 +296,8 @@
     "title": "Validation Sessions",
     "inprogress": "Validation in-Progress",
     "fail": "Validation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
-    "noSessions":"No ongoing validation sessions available"
-
+    "noSessions": "No ongoing validation sessions available"
   },
-
   "correctedTexts": {
     "title": "Corrected Texts",
     "export": "Export Data",
@@ -325,13 +322,13 @@
     "productionModels": "Production Models",
     "dataModels": "Data Models",
     "createModel": "Create Model",
-    "noProdModels":"No production models available",
-    "noModels":"No models available",
-    "sortOptions":{
-      "dataModelAsc":"Data Model Name A-Z",
-      "dataModelDesc":"Data Model Name Z-A",
-      "createdDateAsc":"Created Date Oldest First",
-      "createdDateDesc":"Created Date Latest First"
+    "noProdModels": "No production models available",
+    "noModels": "No models available",
+    "sortOptions": {
+      "dataModelAsc": "Data Model Name A-Z",
+      "dataModelDesc": "Data Model Name Z-A",
+      "createdDateAsc": "Created Date Oldest First",
+      "createdDateDesc": "Created Date Latest First"
     },
     "filters": {
       "modelName": "Model Name",
@@ -379,6 +376,13 @@
       "errorDesc": " There was an issue creating or training the data model. Please try again. If the problem persists, contact support for assistance.",
       "replaceWarning": "{{platform}} integration is currently disabled, therefore the model wouldn't receive any inputs or make any predictions"
     },
+    "loadDataModel": {
+      "title": "Load Data Model",
+      "loading": "Loading Data Model...",
+      "loaded": "Data Model Loaded",
+      "errorTitle": "Error Loading Data Model",
+      "errorDesc": " There was an issue loading the data model. Please try again. If the problem persists, contact support for assistance."
+    },
     "configureDataModel": {
       "saveChangesTitile": "Changes Saved Successfully",
       "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"All Data Models\" view.",
@@ -393,7 +397,7 @@
       "deleteModalSuccessTitle": "Model Deleted Successfully",
       "deleteModalSuccessDesc": "You have successfully deleted the data model. The model is no longer available and all related data has been removed.",
       "retrainDataModalErrorTitle": "Error retraining data model",
-      "retrainDataModalErrorDesc":"There was an issue retraining the data model. Please try again. If the problem persists, contact support for assistance." ,
+      "retrainDataModalErrorDesc": "There was an issue retraining the data model. Please try again. If the problem persists, contact support for assistance.",
       "title": "Configure Data Model",
       "retrainCard": "Model updated. Please initiate retraining to continue benefiting from the latest improvements.",
       "retrain": "Retrain",
@@ -407,17 +411,17 @@
       "datasetGroup": "Select Dataset Version",
       "baseModels": "Select Base Models",
       "deploymentPlatform": "Select Deployment Environment",
-      "errors":{
-        "datasetVersionNotExist":"Dataset version does not exist"
+      "errors": {
+        "datasetVersionNotExist": "Dataset version does not exist"
       }
-      }
+    }
   },
   "trainingSessions": {
     "title": "Training Sessions",
     "inprogress": "Validation in-Progress",
     "fail": "Validation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
-    "noSessions":"No Active Training Sessions",
-    "noSessionsDesc":"There are currently no active training sessions. Once you start a training session, it will appear here. In the meantime, you can initiate a new training session to begin improving your models."
+    "noSessions": "No Active Training Sessions",
+    "noSessionsDesc": "There are currently no active training sessions. Once you start a training session, it will appear here. In the meantime, you can initiate a new training session to begin improving your models."
   },
   "testModels": {
     "title": "Test Model",
@@ -440,10 +444,10 @@
     "userManagement": "User Management",
     "integration": "Integration",
     "dataset": "Dataset",
-    "dataModels":"Data Models",
+    "dataModels": "Data Models",
     "classes": "Classes",
-    "stopWords":"Stop Words",
+    "stopWords": "Stop Words",
     "incomingTexts": "Incoming Texts",
-    "testModel":  "Test Model"
+    "testModel": "Test Model"
   }
 }
