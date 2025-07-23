@@ -52,7 +52,7 @@ const TestModel: FC = () => {
         content: t('dataModels.loadDataModel.errorDesc'),
       });
       setModelLoadingStatus(t('dataModels.loadDataModel.errorTitle') ?? "");
-      setColor("#d73e3e")
+      setColor("#d73e3e");
     },
   });
 
@@ -87,8 +87,7 @@ const TestModel: FC = () => {
                 onSelectionChange={(selection) => {
                   handleChange('modelId', selection?.value as string);
                 }}
-                value={testModel?.modelId === null && t('testModels.errors.modelNotExist')}
-                defaultValue={testModel?.modelId ?? undefined}
+                value={testModel?.modelId === null ? t('testModels.errors.modelNotExist') : undefined} defaultValue={testModel?.modelId ?? undefined}
               />
               <Button onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
                 Load Model

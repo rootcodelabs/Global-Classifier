@@ -15,17 +15,17 @@ export async function getDataModelsOverview(
       modelStatus,
       trainingStatus,
       deploymentEnvironment,
-      sortBy:sort?.split(" ")?.[0],
+      sortBy: sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
       pageSize: 12,
     },
   });
-  return data?.response?? [];
+  return data?.response ?? [];
 }
 
 export async function getDeploymentEnvironments() {
   const { data } = await apiDev.get(dataModelsEndpoints.GET_DEPLOYMENT_ENVIRONMENTS());
-  return data?.response?? [];
+  return data?.response ?? [];
 }
 
 export async function getProductionDataModel() {
@@ -41,7 +41,7 @@ export async function getDataModelMetadata(
       modelId
     },
   });
-  return data?.response?.[0]?? [];
+  return data?.response?.[0] ?? [];
 }
 
 export async function createDataModel(payload: {
@@ -65,13 +65,13 @@ export async function configureDataModel(payload: {
   connectedDsMajorVersion: string | number;
   connectedDsMinorVersion: string | number;
   updateType: string;
-}, ) {
-  let endpoint ="";
+},) {
+  let endpoint = "";
   if (payload.updateType === 'major') {
     endpoint = dataModelsEndpoints.CREATE_MAJOR_VERSION();
   } else if (payload.updateType === 'minor') {
     endpoint = dataModelsEndpoints.CREATE_MINOR_VERSION();
-  } 
+  }
   const { data } = await apiDev.post(endpoint, payload);
   return data?.response ?? {};
 }
@@ -89,16 +89,16 @@ export async function getAllModelVersions() {
 }
 
 export async function loadModel(modelId: number | string | null) {
-  const { data } = await apiDev.post(dataModelsEndpoints.LOAD_MODEL(),{
+  const { data } = await apiDev.post(dataModelsEndpoints.LOAD_MODEL(), {
     modelId,
   });
   return data?.response ?? [];
 }
 
-export async function classify(data : ClassifyTestModalPayloadType) {
-   const response = await apiDev.post(
-        testModelsEndpoints.CLASSIFY_TEST_MODELS(),
-        { modelId: data.modelId, text: data.text },
-      );
-      return response?.data?.response?.data as ClassifyTestModalResponseType ??[];
+export async function classify(data: ClassifyTestModalPayloadType) {
+  const response = await apiDev.post(
+    testModelsEndpoints.CLASSIFY_TEST_MODELS(),
+    { modelId: data.modelId, text: data.text },
+  );
+  return response?.data?.response?.data as ClassifyTestModalResponseType ?? [];
 }
