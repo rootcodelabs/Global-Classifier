@@ -1,0 +1,57 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        git \
+        unzip \
+        wget \
+        build-essential \
+        gcc \
+        g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better Docker layer caching
+COPY requirements-cpu.txt /app/
+
+# Upgrade pip and install Python dependencies
+RUN pip install --upgrade pip
+
+# Install CPU-specific PyTorch and dependencies
+RUN pip install --no-cache-dir -r requirements-cpu.txt --timeout=1000
+
+# Copy the rest of the application
+COPY . /app
+
+# Create required directories
+RUN mkdir -p /shared /cache /app/outputs /app/model_trainer
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash app \
+    && chown -R app:app /app /shared /cache
+USER root
+
+# Expose the port the FastAPI app will run on
+EXPOSE 8900
+
+# Set environment variables
+ENV HF_HOME=/cache/ \
+    PYTHONPATH=/app \
+    TORCH_HOME=/cache/torch \
+    TRANSFORMERS_CACHE=/cache/transformers
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8900/model_checker/ || exit 1
+
+# Set the entry point to run the FastAPI server
+CMD ["uvicorn", "model_trainer_api:app", "--host", "0.0.0.0", "--port", "8900"]

@@ -56,6 +56,7 @@ const ConfigureDataModel: FC = () => {
     baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
     deploymentEnvironment: modelMetadata?.deploymentEnv,
     version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+    trainingResults: modelMetadata?.trainingResults,
   });
 
   useEffect(() => {
@@ -74,6 +75,8 @@ const ConfigureDataModel: FC = () => {
       baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
       deploymentEnvironment: modelMetadata?.deploymentEnv,
       version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+      trainingResults: modelMetadata?.trainingResults,
+
     });
   }, [modelMetadata]);
 
@@ -284,6 +287,15 @@ const ConfigureDataModel: FC = () => {
                 appearance={ButtonAppearanceTypes.ERROR}
               >
                 {t('global.delete')}
+              </Button>
+            ) : modalType === 'replace' ? (
+              <Button
+                disabled={updateMutation.isLoading}
+                showLoadingIcon={updateMutation.isLoading}
+                onClick={() => modalFunciton.current()}
+                appearance={ButtonAppearanceTypes.PRIMARY}
+              >
+                {t('global.replace')}
               </Button>
             )
               : modalType === 'warning' ? (

@@ -1,3 +1,3 @@
 SELECT id, major, minor
-FROM public.datasets
+FROM public.dataset_versions
 WHERE id = :id;
