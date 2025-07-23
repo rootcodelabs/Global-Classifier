@@ -21,5 +21,9 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v10-datasets-metadata.sql
   - include:
       file: changelog/global-classifier-script-v11-model-training-jobs.sql
+  - include:
+      file: changelog/classifier-script-v12-dataset-progress-sessions.sql
+  - include:
+      file: changelog/classifier-script-v13-data-model-progress-sessions.sql
 
       

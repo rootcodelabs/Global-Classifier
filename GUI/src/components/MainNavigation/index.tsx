@@ -31,15 +31,35 @@ const MainNavigation: FC = () => {
     },
     {
       id: 'dataSets',
-      label: t('menu.dataSets'),
-      path: '/datasets',
+      label: t('menu.dataSets.title'),
+      path: '',
       icon: <MdFileCopy/>,
+      children: [
+        {
+          label: t('menu.dataSets.overview'),
+          path: 'datasets',
+        },
+        {
+          label: t('menu.dataSets.progress'),
+          path: 'datasets/progress',
+        }
+      ],
     },
     {
       id: 'dataModels',
-      label: t('menu.dataModels'),
-      path: '/data-models',
+      label: t('menu.dataModels.title'),
+      path: '',
       icon: <MdOutlineDataset />,
+      children: [
+        {
+          label: t('menu.dataModels.overview'),
+          path: 'data-models',
+        },
+        {
+          label: t('menu.dataModels.progress'),
+          path: 'training/progress',
+        }
+      ],
     }
   ];
 

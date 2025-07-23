@@ -76,7 +76,7 @@ const DataModelForm: FC<DataModelFormType> = ({
           }} >
             <FormSelect
               name="datasetId"
-              options={toLabelValueArray(datasetVersions, 'id','version')??[]}
+              options={datasetVersions && toLabelValueArray(datasetVersions, 'id','version')}
               label=""
               onSelectionChange={(selection) => {
                 handleChange('datasetId', selection?.value);
