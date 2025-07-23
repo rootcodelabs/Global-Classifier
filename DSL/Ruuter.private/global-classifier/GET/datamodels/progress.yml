@@ -7,7 +7,7 @@ declaration:
   returns: json
   namespace: classifier
 
-get_data_mdoel_progress_sessions:
+get_data_model_progress_sessions:
   call: http.post
   args:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/get-data-model-progress-sessions"

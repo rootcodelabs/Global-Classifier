@@ -29,8 +29,9 @@ function addSSEHeader(req, res) {
 }
 
 function extractOrigin(reqOrigin) {
-  const corsWhitelist = process.env.CORS_WHITELIST_ORIGINS.split(",");
-  const whitelisted = corsWhitelist.indexOf(reqOrigin) !== -1;
+const corsWhitelist = process.env.CORS_WHITELIST_ORIGINS
+    ? process.env.CORS_WHITELIST_ORIGINS.split(",")
+    : [];  const whitelisted = corsWhitelist.indexOf(reqOrigin) !== -1;
   return whitelisted ? reqOrigin : "*";
 }
 

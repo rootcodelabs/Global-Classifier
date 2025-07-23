@@ -10,9 +10,9 @@ const sse = <T>(url: string,module:string, onMessage: (data: T) => void): EventS
   );
 
   eventSource.onmessage = (event: MessageEvent) => {
-    if (event.data != undefined && event.data != 'undefined') {
+    if (event.data !== undefined && event.data !== 'undefined') {
       const response = JSON.parse(event.data);
-      if (response != undefined) {
+      if (response !== undefined) {
         onMessage(response as T);
       }
     }
