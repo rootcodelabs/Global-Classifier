@@ -188,6 +188,7 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - cron_data:/app/data
     env_file:
       - config.env
     ports:
@@ -300,10 +301,9 @@ volumes:
     name: opensearch-data
   dataset_gen_ollama_models:
     name: dataset_gen_ollama_models
-  minio_data:
-    name: minio_data
   cron_data:
     name: cron_data
+
 
 networks:
   bykstack:
