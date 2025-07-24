@@ -7,7 +7,6 @@ import sys
 import json
 import argparse
 import logging
-from pathlib import Path
 import traceback
 from constants import SCRIPT_DIR
 
