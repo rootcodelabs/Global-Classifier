@@ -102,3 +102,7 @@ export async function classify(data: ClassifyTestModalPayloadType) {
   );
   return response?.data?.response?.data as ClassifyTestModalResponseType ?? [];
 }
+export async function getDataModelsProgress() {
+  const { data } = await apiDev.get(dataModelsEndpoints.GET_DATA_MODEL_PROGRESS());
+  return data?.response?.data;
+}

@@ -58,6 +58,7 @@ export const dataModelsEndpoints = {
   DELETE_MODEL: (): string => '/global-classifier/datamodels/delete',
   GET_ALL_DATAMODELS_VERSIONS: (): string => '/global-classifier/datamodels/versions',
   LOAD_MODEL: (): string => '/global-classifier/datamodels/load',
+  GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodels/progress`,
 
   
   GET_DATAMODELS_FILTERS: (): string =>
@@ -68,7 +69,6 @@ export const dataModelsEndpoints = {
   UPDATE_DATA_MODEL: (): string => `global-classifier/datamodel/update`,
   DELETE_DATA_MODEL: (): string => `global-classifier/datamodel/delete`,
   RETRAIN_DATA_MODEL: (): string => `global-classifier/datamodel/retrain`,
-  GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodel/progress`,
 };
 
 export const testModelsEndpoints = {

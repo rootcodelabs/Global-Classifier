@@ -57,10 +57,18 @@
   "menu": {
     "userManagement": "User Management",
     "agencies": "Integrated Clients",
-    "dataSets": "Datasets",
+    "dataSets": {
+      "title": "Datasets",
+      "overview": "Overview",
+      "progress": "Data Generation Progress"
+    },
     "datasetGroups": "Dataset Groups",
     "validationSessions": "Validation Sessions",
-    "dataModels": "Data Models",
+    "dataModels": {
+      "title": "Data Models",
+      "overview": "Overview",
+      "progress": "Training Progress"
+    },
     "models": "Models",
     "trainingSessions": "Training Sessions",
     "testModel": "Test Model",
