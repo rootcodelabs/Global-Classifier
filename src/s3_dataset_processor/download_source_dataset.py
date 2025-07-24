@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# filepath: c:\Users\charith.bimsara_root\Rootcode\Estonian-Gov-AI\New\Global-Classifier\src\s3_dataset_processor\download_source_dataset.py
 """
 Direct Python script for downloading datasets from S3 signed URLs.
 Replaces the FastAPI /download-datasets endpoint for CronManager execution.
@@ -11,6 +9,7 @@ import argparse
 import logging
 from pathlib import Path
 import traceback
+from constants import SCRIPT_DIR
 
 # Configure logging
 logging.basicConfig(
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Add the s3_dataset_processor to Python path to import modules FIRST
 # This path corresponds to the volume mount in docker-compose.yml
-script_dir = Path("/app/src/s3_dataset_processor")
+script_dir = SCRIPT_DIR
 sys.path.insert(0, str(script_dir))
 
 # Now import the services AFTER adding to path
@@ -76,7 +75,7 @@ def main():
         logger.info("Decoding signed URLs...")
         # Decode the data using service
         decoded_data = url_decoder_service.decode_signed_urls(args.encoded_data)
-        logger.info(f"Starting download for {len(decoded_data)} files")
+        logger.info(f"Starting download for {len(decoded_data)} files: {decoded_data}")
 
         logger.info("Processing downloads...")
         # Process downloads using service
