@@ -114,6 +114,8 @@ services:
       - 8082:8082
     volumes:
       - ./DSL/Resql:/DSL
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
     networks:
       - bykstack
 
@@ -128,6 +130,8 @@ services:
       - 5435:5432
     volumes:
       - ./global-classifier-db/db_files:/var/lib/postgresql/data
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
 
     networks:
       - bykstack
@@ -135,10 +139,11 @@ services:
 
   init:
     image: busybox
-    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer"]
+    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer && chmod -R 777 /app/data"]
     volumes:
       - shared-volume:/shared
       - ./model_trainer:/app/model_trainer
+      - cron_data:/app/data
     networks:
       - bykstack
 
@@ -188,52 +193,6 @@ services:
   #   environment:
   #     - NODE_ENV=development
   #   restart: always
-
-  # Dataset Generator services
-  dataset-gen-ollama:
-    image: synthesisai/dataset-generator-ollama:latest
-    container_name: dataset-gen-ollama
-    ports:
-      - "11434:11434"
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - OLLAMA_USE_GPU=1
-      - OLLAMA_HOST=0.0.0.0
-    volumes:
-      - dataset_gen_ollama_models:/root/.ollama
-      - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
-    entrypoint: ["bash", "/ollama-entrypoint.sh"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    networks:
-      - bykstack
-
-  dataset-gen-service:
-    image: synthesisai/dataset-generator:latest
-    container_name: dataset-gen-service
-    ports:
-      - "8000:8000"
-    environment:
-      - PROVIDER_API_URL=http://dataset-gen-ollama:11434
-      - SERVICE_DEBUG=false
-      - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
-    volumes:
-      - ./DSL/DatasetGenerator/config:/app/config
-      - ./DSL/DatasetGenerator/templates:/app/templates
-      - ./DSL/DatasetGenerator/user_configs:/app/user_configs
-      - cron_data:/app/data
-      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
-      - ./DSL/DatasetGenerator/logs:/app/logs
-    depends_on:
-      - dataset-gen-ollama
-      - mlflow
-    networks:
-      - bykstack
 
   mlflow:
     build:
@@ -308,6 +267,68 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  opensearch-node:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-node
+    environment:
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
+    networks:
+      - bykstack
+
+  notifications-node:
+    container_name: notifications-node
+    build:
+      context: ./notification-server
+      dockerfile: Dockerfile
+    ports:
+      - 4040:4040
+    depends_on:
+      - opensearch-node
+    environment:
+      OPENSEARCH_PROTOCOL: http
+      OPENSEARCH_HOST: opensearch-node
+      OPENSEARCH_PORT: 9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      PORT: 4040
+      REFRESH_INTERVAL: 1000
+      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
+      RUUTER_URL: http://ruuter-public:8086
+    volumes:
+      - /app/node_modules
+      - ./notification-server:/app
+    networks:
+      - bykstack
+
+  # Uncomment below container if you wish to debug progress bar sessions in opensearch dashboard
+  opensearch-dashboards:
+      image: opensearchproject/opensearch-dashboards:2.11.1
+      container_name: opensearch-dashboards
+      environment:
+        - OPENSEARCH_HOSTS=http://opensearch-node:9200
+        - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      ports:
+        - 5601:5601
+      networks:
+        - bykstack
         
   gui:
     container_name: gui

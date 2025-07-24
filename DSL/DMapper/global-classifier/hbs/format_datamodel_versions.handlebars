@@ -1,0 +1,5 @@
+[
+{{#each datamodels}}
+  {"id":{{id}},"version":"{{modelName}} V{{major}}.{{minor}}"}{{#unless @last}},{{/unless}}
+{{/each}}
+]

@@ -18,7 +18,7 @@ log "🔍 Python path: $(which python3)"
 
 # Install required packages
 log "🔍 Installing required Python packages..."
-python3 -m pip install --quiet --no-cache-dir requests pydantic || {
+python3 -m pip install --quiet --no-cache-dir requests pydantic pandas || {
     log "❌ Failed to install packages"
     exit 1
 }
@@ -28,8 +28,7 @@ log "Dataset generation callback processing started"
 log "File path: $filePath"
 log "Encoded results length: ${#results} characters"
 
-# Extract dataset ID from file path for logging
-dataset_id=$(echo "$filePath" | grep -o '/[^/]*\.json$' | sed 's|/\([^/]*\)\.json$|\1|' || echo "unknown")
+dataset_id=$(echo "$filePath" | grep -o '/[^/]*\.csv$' | sed 's|/\([^/]*\)\.csv$|\1|' || echo "unknown")
 log "Extracted dataset ID: $dataset_id"
 
 # Direct Python script path for processing generation callback (inside container)
@@ -40,13 +39,19 @@ log "🔍 Calling direct Python script to process generation callback..."
 # Create temporary file for response
 temp_response="/tmp/callback_response.json"
 
-# Call the direct Python script instead of API endpoint
 python3 "$CALLBACK_SCRIPT" \
   --file-path "$filePath" \
   --encoded-results "$results" \
-  --output-json "$temp_response"
-
+  --output-json "$temp_response" \
+  > /tmp/callback_stdout.log 2> /tmp/callback_stderr.log
 exit_code=$?
+
+log "🪵 Python STDOUT:"
+cat /tmp/callback_stdout.log
+
+log "🪵 Python STDERR:"
+cat /tmp/callback_stderr.log
+
 log "🔍 Python script exit code: $exit_code"
 
 if [ -f "$temp_response" ]; then
