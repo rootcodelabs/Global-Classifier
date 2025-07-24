@@ -81,3 +81,8 @@ export async function deleteDataModel(modelId: number | string | null) {
   });
   return data?.response ?? {};
 }
+
+export async function getDataModelsProgress() {
+  const { data } = await apiDev.get(dataModelsEndpoints.GET_DATA_MODEL_PROGRESS());
+  return data?.response?.data;
+}
