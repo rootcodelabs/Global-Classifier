@@ -105,8 +105,9 @@ handle_client_error:
       message: "Invalid request to cron manager"
       errorCode: "INVALID_REQUEST"
       statusCode: ${cron_res.response.statusCodeValue}
-  status: 400
   return: ${error_response}
+  status: 400
+  next: end
 
 handle_server_error:
   assign:
@@ -115,8 +116,9 @@ handle_server_error:
       message: "Cron manager service temporarily unavailable"
       errorCode: "SERVICE_UNAVAILABLE"
       statusCode: ${cron_res.response.statusCodeValue}
-  status: 502
   return: ${error_response}
+  status: 502
+  next: end
 
 handle_unexpected_error:
   assign:
@@ -124,15 +126,15 @@ handle_unexpected_error:
       operationSuccessful: false
       message: "Unexpected response from cron manager"
       errorCode: "UNEXPECTED_ERROR"
-  status: 500
   return: ${error_response}
+  status: 500
+  next: end
 
 cron_job_format_res:
   assign:
     format_res:
       operationSuccessful: true
       message: "Dataset generation job scheduled successfully"
-      operationId: ${cron_res.response.body?.operationId}
   next: return_success
 
 return_success:
@@ -140,3 +142,4 @@ return_success:
   headers:
     Content-Type: application/json
   return: ${format_res}
+  next: end
