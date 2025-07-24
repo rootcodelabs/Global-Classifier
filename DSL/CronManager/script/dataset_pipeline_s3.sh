@@ -14,6 +14,7 @@ log() {
 }
 
 data_generation_request="$signedUrls"
+chmod 777 /app/data
 
 # Install required Python packages if not present
 echo "🔍 Installing required Python packages..."
@@ -105,7 +106,8 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
                     echo "      \"agency_id\": \"$agency_id\"," >> "$temp_payload"
                     echo "      \"agency_name\": \"$agency_name\"," >> "$temp_payload"
                     echo "      \"data_path\": \"$folder_path\"," >> "$temp_payload"
-                    echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
+                    echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
+                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
                     echo "    }" >> "$temp_payload"
                     first_entry=false
                 fi
@@ -129,7 +131,8 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
                     echo "      \"agency_id\": \"$agency_id\"," >> "$temp_payload"
                     echo "      \"agency_name\": \"$agency_name\"," >> "$temp_payload"
                     echo "      \"data_path\": \"$folder_path\"," >> "$temp_payload"
-                    echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
+                    echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
+                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
                     echo "    }" >> "$temp_payload"
                     first_entry=false
                 fi

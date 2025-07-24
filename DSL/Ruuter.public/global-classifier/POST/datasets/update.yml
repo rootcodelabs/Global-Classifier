@@ -1,0 +1,55 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Bulk insert datasets from CSV file"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: filePath
+        type: string
+        description: "Path to the CSV file (required)"
+  next: extractRequestData
+
+extractRequestData:
+  assign:
+    filePath: ${incoming.body.filePath}
+  next: validateRequiredFields
+    
+validateRequiredFields:
+  switch:
+    - condition: ${filePath === null || filePath === undefined || filePath === ""}
+      next: return_missing_required_fields
+  next: insertDatasets
+
+insertDatasets:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-grouped-datasets"
+    body:
+      filePath: ${filePath}
+  result: insert_result
+  next: checkInsertResult
+
+checkInsertResult:
+  switch:
+    - condition: ${!insert_result || !insert_result.response}
+      next: return_insert_failed
+  next: return_success
+
+return_success:
+  return: "Datasets inserted successfully from file: ${filePath}"
+  status: 200
+  next: end
+
+return_missing_required_fields:
+  return: "error: missing required field (filePath)"
+  status: 400
+  next: end
+
+return_insert_failed:
+  return: "error: failed to insert datasets from CSV file"
+  status: 500
+  next: end
