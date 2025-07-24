@@ -385,6 +385,13 @@
       "errorDesc": " There was an issue creating or training the data model. Please try again. If the problem persists, contact support for assistance.",
       "replaceWarning": "{{platform}} integration is currently disabled, therefore the model wouldn't receive any inputs or make any predictions"
     },
+    "loadDataModel": {
+      "title": "Load Data Model",
+      "loading": "Loading Data Model...",
+      "loaded": "Data Model Loaded",
+      "errorTitle": "Error Loading Data Model",
+      "errorDesc": " There was an issue loading the data model. Please try again. If the problem persists, contact support for assistance."
+    },
     "configureDataModel": {
       "saveChangesTitile": "Changes Saved Successfully",
       "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"All Data Models\" view.",

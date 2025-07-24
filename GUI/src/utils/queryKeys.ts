@@ -88,6 +88,7 @@ export const dataModelsQueryKeys = {
     );
   },
   GET_DATA_MODELS_PROGRESS: () => ['datamodels/progress'],
+  GET_ALL_DATA_MODELS_VERSIONS: (): string[] => ['datamodels/versions'],
 };
 
 export const testModelsQueryKeys = {

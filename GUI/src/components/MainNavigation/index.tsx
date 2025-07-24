@@ -1,7 +1,7 @@
 import { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
-import { MdCorporateFare, MdFileCopy, MdKeyboardArrowDown, MdOutlineDataset, MdSupervisorAccount } from 'react-icons/md';
+import { MdCorporateFare, MdFileCopy, MdKeyboardArrowDown, MdOutlineDataset, MdSearch, MdSupervisorAccount } from 'react-icons/md';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Icon } from 'components';
@@ -60,6 +60,12 @@ const MainNavigation: FC = () => {
           path: 'training/progress',
         }
       ],
+    },
+    {
+      id: 'testing',
+      label: t('menu.testModel'),
+      path: '/testing',
+      icon: <MdSearch />
     }
   ];
 
