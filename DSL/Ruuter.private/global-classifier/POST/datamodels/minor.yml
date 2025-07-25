@@ -29,6 +29,9 @@ declaration:
       - field: connectedDsMinorVersion
         type: number
         description: "Connected dataset minor version (required)"
+      - field: isTrainingNeeded
+        type: boolean
+        description: "Whether to initiate training after model creation (optional, defaults to false)"
   next: extractRequestData
 
 # Data Extraction
@@ -41,12 +44,12 @@ extractRequestData:
     connectedDsId: ${incoming.body.connectedDsId}
     connectedDsMajorVersion: ${incoming.body.connectedDsMajorVersion}
     connectedDsMinorVersion: ${incoming.body.connectedDsMinorVersion}
+    isTrainingNeeded: ${incoming.body.isTrainingNeeded || false}
   next: validateRequiredFields
-
 # Required Field Validation
 validateRequiredFields:
   switch:
-    - condition: ${modelGroupKey === null || modelGroupKey === undefined || modelGroupKey === "" || modelName === null || modelName === undefined || modelName === "" || deploymentEnv === null || deploymentEnv === undefined || deploymentEnv === "" || baseModels === null || baseModels === undefined || connectedDsId === null || connectedDsId === undefined}
+    - condition: ${modelGroupKey === null || modelGroupKey === undefined || modelGroupKey === "" || modelName === null || modelName === undefined || modelName === "" || deploymentEnv === null || deploymentEnv === undefined || deploymentEnv === "" || baseModels === null || baseModels === undefined || connectedDsId === null || connectedDsId === undefined }
       next: return_missing_required_fields
     - condition: ${connectedDsMajorVersion === null || connectedDsMajorVersion === undefined || connectedDsMinorVersion === null || connectedDsMinorVersion === undefined}
       next: return_missing_required_fields
@@ -162,7 +165,14 @@ checkDatasetUpdateResult:
   switch:
     - condition: ${!updateDatasetResult || !updateDatasetResult.response || !updateDatasetResult.response.body || updateDatasetResult.response.body.length === 0}
       next: return_dataset_update_failed
-  next: initiateTraining
+  next: checkTrainingRequired
+
+# Check if Training is Required
+checkTrainingRequired:
+  switch:
+    - condition: ${isTrainingNeeded === true}
+      next: initiateTraining
+  next: return_success_no_training
 
 # Initiate Training 
 initiateTraining:
@@ -173,6 +183,9 @@ initiateTraining:
       cookie: ${incoming.headers.cookie}
     body:
       modelId: ${insertResult.response.body[0].modelId}
+      modelName: ${modelName}
+      majorVersion: ${insertResult.response.body[0].major}
+      minorVersion: ${insertResult.response.body[0].minor}
   result: training_res
   next: logTrainingResult
 
@@ -190,7 +203,12 @@ checkTrainingResult:
   next: return_success
 
 return_success:
-  return: "Data model created successfully and training initiated. Model ID:${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body.response.jobId}"
+  return: "Data model created successfully and training initiated. Model ID: ${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body.response.jobId}"
+  status: 200
+  next: end
+
+return_success_no_training:
+  return: "Data model created successfully. Model ID: ${insertResult.response.body[0].modelId}"
   status: 200
   next: end
 

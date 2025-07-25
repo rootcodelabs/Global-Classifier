@@ -109,6 +109,9 @@ const ConfigureDataModel: FC = () => {
     },
   });
 
+  console.log(!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]));
+  
+
   const handleSaveChanges = () => {
     const payload = getChangedAttributes(initialData, dataModel);
     let updateType: string | undefined;
@@ -127,6 +130,7 @@ const ConfigureDataModel: FC = () => {
       connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
       connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
       updateType: updateType ?? "",
+      isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
     };
 
     if (updateType) {
