@@ -1,0 +1,57 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Bulk update and delete datasets"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: updatedRows
+        type: array
+        description: "Array of dataset rows to update"
+      - field: deletedRows
+        type: array
+        description: "Array of item_ids to delete"
+  next: updateRows
+
+updateRows:
+  foreach: ${incoming.body.updatedRows}
+  as: row
+  do:
+    call: http.post
+    args:
+      url: "[#GLOBAL_CLASSIFIER_RESQL]/update-dataset"
+      body:
+        itemId: ${row.id}
+        agencyName: ${row.clientName}
+        agencyId: ${row.clientId}
+        dataItem: ${row.question}
+    result: updateResult
+  next: deleteRows
+
+deleteRows:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-dataset-records"
+    body:
+      itemIds: ${incoming.body.deletedRows}
+  result: deleteResult
+  next: returnResult
+
+# Update CSV
+#updateCSV:
+#  call: http.post
+#  args:
+#    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-dataset-csv"
+#    body:
+#      datasetVersionId: ${incoming.body.datasetVersionId}
+#      ...other fields...
+#  result: updateCSVResult
+#  next: checkCSVUpdateResult
+
+returnResult:
+  return: "Datasets updated successfully"
+  status: 200
+  next: end
