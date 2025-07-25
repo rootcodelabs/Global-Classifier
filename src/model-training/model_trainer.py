@@ -21,6 +21,7 @@ from constants import (
     F1_WEIGHT,
 )
 from loguru import logger
+import argparse
 
 logger.remove()
 logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
@@ -389,3 +390,42 @@ class ModelTrainer:
                 f"UNIFIED TRAINING CRASHED - ERROR - {str(e)}"
             )
             raise
+# ----------------------TODO: Uncomment the CLI section when needed----------------------
+# def parse_args():
+#     parser = argparse.ArgumentParser(description="Model Trainer CLI")
+#     parser.add_argument("--model_types", type=str, required=True, help="Model types (JSON string or list)")
+#     parser.add_argument("--model_id", type=int, required=True, help="Model ID")
+#     parser.add_argument("--job_id", type=int, required=True, help="Job ID")
+#     parser.add_argument("--dataset_id", type=int, required=True, help="Dataset ID")
+#     parser.add_argument("--model_name", type=str, required=True, help="Model Name")
+#     parser.add_argument("--major_version", type=int, required=True, help="Major Version")
+#     parser.add_argument("--minor_version", type=int, required=True, help="Minor Version")
+#     parser.add_argument("--latest", type=str, required=True, help="Is Latest (true/false)")
+#     parser.add_argument("--deployment_environment", type=str, required=True, help="Deployment Environment")
+#     return parser.parse_args()
+
+# if __name__ == "__main__":
+#     args = parse_args()
+#     old_model_id = args.model_id
+#     prev_deployment_env = "undeployed"  # Or fetch as needed
+#     update_type = "train"  # Or fetch as needed
+#     progress_session_id = args.job_id  # Or fetch as needed
+#     model_details = {
+#         "response": {
+#             "data": [
+#                 {"connectedDgId": args.dataset_id}
+#             ]
+#         }
+#     }
+#     current_deployment_platform = "undeployed"  # Or fetch as needed
+
+#     trainer = ModelTrainer(
+#         new_model_id=args.model_id,
+#         # old_model_id=old_model_id,
+#         prev_deployment_env=prev_deployment_env,
+#         update_type=update_type,
+#         progress_session_id=progress_session_id,
+#         model_details=model_details,
+#         current_deployment_platform=current_deployment_platform,
+#     )
+#     trainer.train()
