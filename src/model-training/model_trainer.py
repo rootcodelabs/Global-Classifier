@@ -21,7 +21,7 @@ from constants import (
     F1_WEIGHT,
 )
 from loguru import logger
-import argparse
+# import argparse
 
 logger.remove()
 logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
@@ -390,6 +390,8 @@ class ModelTrainer:
                 f"UNIFIED TRAINING CRASHED - ERROR - {str(e)}"
             )
             raise
+
+
 # ----------------------TODO: Uncomment the CLI section when needed----------------------
 # def parse_args():
 #     parser = argparse.ArgumentParser(description="Model Trainer CLI")
