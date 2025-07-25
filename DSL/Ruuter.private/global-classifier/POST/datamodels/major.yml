@@ -185,6 +185,7 @@ initiateTraining:
       majorVersion: ${insertResult.response.body[0].major}
       minorVersion: ${insertResult.response.body[0].minor}
       latest: true
+      deploymentEnv: ${deploymentEnv}
   result: training_res
   next: logTrainingResult
 
