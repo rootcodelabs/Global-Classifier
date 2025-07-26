@@ -288,10 +288,13 @@ services:
           echo 'Uploading models...' && 
 
           echo 'Uploading initial dummy model to testing registry...' && 
-          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/testing && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/testing s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/testing && 
 
           echo 'Uploading initial dummy model to production registry...' && 
-          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/production && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/production s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/production && 
+
+          echo 'Uploading initial dummy model to undeployed registry...' && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/undeployed s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/undeployed && 
 
           echo 'Upload complete.'
         "

@@ -18,12 +18,16 @@ declaration:
       - field: targetEnv
         type: string
         description: "Target environment: undeployed, testing, or production"
+      - field: firstDeployment
+        type: boolean
+        description: "Indicates if this is the first deployment of the model"
   next: extractRequestData
 
 # Data Extraction
 extractRequestData:
   assign:
     modelId: ${incoming.body.modelId}
+    firstDeployment: ${incoming.body.firstDeployment}
     currentEnv: ${incoming.body.currentEnv}
     targetEnv: ${incoming.body.targetEnv}
     deploymentType: ${currentEnv + "_to_" + targetEnv} 
@@ -34,13 +38,31 @@ validate_input:
   switch:
     - condition: ${!modelId}
       next: validation_error
+    - condition: ${!firstDeployment}
+      next: validation_error
     - condition: ${!currentEnv || !['undeployed', 'testing', 'production'].includes(currentEnv)}
       next: validation_error
     - condition: ${!targetEnv || !['undeployed', 'testing', 'production'].includes(targetEnv)}
       next: validation_error
     - condition: ${currentEnv === targetEnv}
       next: same_environment_error
+  next: checkFirstDeployment
+
+checkFirstDeployment:
+  switch:
+    - condition: ${firstDeployment}
+      next: handleFirstDeployment
   next: selectDeploymentPath
+
+handleFirstDeployment:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/initial_deployment/load_model"
+    query:
+      modelId: ${modelId}
+  result: res
+  next: selectDeploymentPath
+
 
 selectDeploymentPath:
   switch:
