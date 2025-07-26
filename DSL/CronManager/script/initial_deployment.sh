@@ -120,4 +120,71 @@ fi
 
 echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - Model files extracted successfully"
 
-#TODO - 
+
+# step 4 upload files to model repository
+
+echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - Step 3: Uploading model files to model repository..."
+
+
+# Define S3 destination base paths
+S3_TESTING_BASE="models/testing/modelId-${modelId}"
+S3_PRODUCTION_BASE="models/production/modelId-${modelId}"
+
+# Array of local files to upload (relative to S3_FERRY_LOCAL_DOWNLOAD_PATH)
+declare -a MODEL_FILES=(
+    "${modelId}-classifier-ensemble/config.pbtxt"
+    "${modelId}-pre-processing/config.pbtxt"
+    "${modelId}-pre-processing/1/model.py"
+    "${modelId}-pre-processing/1/label_mappings.json"
+    "${modelId}-post-processing/config.pbtxt"
+    "${modelId}-post-processing/1/model.py"
+    "${modelId}-post-processing/1/label_mappings.json"
+    "${modelId}-text-classifier/config.pbtxt"
+    "${modelId}-text-classifier/1/model.onnx"
+)
+
+# Function to upload files to both environments
+upload_model_files() {
+    local environment="$1"
+    local s3_base_path="$2"
+    
+    echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - Uploading model files to $environment environment..."
+    
+    for file in "${MODEL_FILES[@]}"; do
+        local local_file_path="${S3_FERRY_LOCAL_DOWNLOAD_PATH}/${file}"
+        local s3_dest_path="${s3_base_path}/${file}"
+        
+        if ! call_s3_ferry "$local_file_path" "FS" "$s3_dest_path" "S3"; then
+            echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - ERROR: Failed to upload $file to $environment environment"
+            return 1
+        fi
+    done
+    
+    echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - Successfully uploaded all files to $environment environment"
+    return 0
+}
+
+# Upload to testing environment
+if ! upload_model_files "testing" "$S3_TESTING_BASE"; then
+    echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - ERROR: Failed to upload model to testing environment"
+    exit 1
+fi
+
+# Upload to production environment
+if ! upload_model_files "production" "$S3_PRODUCTION_BASE"; then
+    echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - ERROR: Failed to upload model to production environment"
+    exit 1
+fi
+
+echo "$(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - Model deployment completed successfully for both environments"
+
+
+
+
+# TODO - UPDATE MINIO FOLDER STRUCTURE TO PLACE PRODUCTION AND TESTING MODEL REPOSITORIES UNDER GLOBAL-CLASSIFIER/RESOURCES/MODELS
+#TODO - COMPLETE MODEL PUSH TO REPOSITORY
+# TODO - COMPLETE MODEL LOADING ENDPOINT TO PRODUCTION AND TESTING ENVIRONMENTS FROM UNDEPLOYED
+# TODO - COMPLETE TESTING TO PRODUCTION MIGRATION AND VICE VERSA
+# TODO - CREATE RUUTER ENDPOINT TO CALL INFERENCE ENDPOINT AND RETURN RESULT
+# TODO - UPDATE CONFIG.PBTXT AND DOCKER COMPOSE CONFIGURATION DEPLOY IN GPU VM FOR TRAINING AND INFERENCE SERVERS
+# TODO - CREATE A TEMP EMPTY MODEL (A PYTHON BACKEND MODEL) IN TRITON SERVER TO DEPLOY AS A DUMMY INITIAL MODEL SO THE SERVER DOESN'T CRASH
