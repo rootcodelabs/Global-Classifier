@@ -11,12 +11,12 @@ declaration:
       - field: sessionId
         type: number
         description: "Body field 'sessionId'"
-      - field: validationStatus
+      - field: generationStatus
         type: string
-        description: "Body field 'validationStatus'"
-      - field: validationMessage
+        description: "Body field 'generationStatus'"
+      - field: generationMessage
         type: string
-        description: "Body field 'validationMessage'"
+        description: "Body field 'generationMessage'"
       - field: progressPercentage
         type: number
         description: "Body field 'progressPercentage'"
@@ -27,22 +27,22 @@ declaration:
 extract_request_data:
   assign:
     session_id: ${incoming.body.sessionId}
-    validation_status: ${incoming.body.validationStatus}
-    validation_message: ${incoming.body.validationMessage}
+    generation_status: ${incoming.body.generationStatus}
+    generation_message: ${incoming.body.generationMessage}
     progress_percentage: ${incoming.body.progressPercentage}
     process_complete: ${incoming.body.processComplete}
   next: check_for_request_data
 
 check_for_request_data:
   switch:
-    - condition: ${session_id !== null || !validation_status || progress_percentage !==null}
+    - condition: ${session_id !== null || !generation_status || progress_percentage !==null}
       next: get_random_string_cookie
   next: return_incorrect_request
 
 get_random_string_cookie:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/classifier/return_random_string"
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/return_random_string"
     headers:
       type: json
   result: res_cookie
@@ -65,9 +65,9 @@ update_dataset_progress_session:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/update-dataset-progress-session"
     body:
       id: ${session_id}
-      validation_status: ${validation_status}
+      generation_status: ${generation_status}
       progress_percentage: ${progress_percentage}
-      validation_message: ${validation_message}
+      generation_message: ${generation_message}
       process_complete: ${process_complete}
   result: res
   next: check_status
@@ -108,8 +108,8 @@ update_progress:
     body:
       sessionId: ${session_id}
       progressPercentage: ${progress_percentage}
-      validationStatus: ${validation_status}
-      validationMessage: ${validation_message}
+      generationStatus: ${generation_status}
+      generationMessage: ${generation_message}
   result: res_node
   next: check_node_server_status
 

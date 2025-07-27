@@ -1,48 +1,45 @@
 declaration:
   call: declare
   version: 0.1
-  description: "Description placeholder for 'UPDATE'"
+  description: "Description placeholder for 'CREATE'"
   method: post
   accepts: json
   returns: json
   namespace: classifier
   allowlist:
     body:
-      - field: sessionId
+      - field: datasetId
         type: number
-        description: "Body field 'sessionId'"
-      - field: trainingStatus
-        type: string
-        description: "Body field 'trainingStatus'"
-      - field: trainingMessage
-        type: string
-        description: "Body field 'trainingMessage'"
-      - field: progressPercentage
+        description: "Body field 'dgId'"
+        description: "Body field 'groupName'"
+      - field: majorVersion
         type: number
-        description: "Body field 'progressPercentage'"
-      - field: processComplete
+        description: "Body field 'majorVersion'"
+      - field: minorVersion
+        type: number
+        description: "Body field 'minorVersion'"
+      - field: latest
         type: boolean
-        description: "Body field 'processComplete'"
+        description: "Body field 'latest'"
 
 extract_request_data:
   assign:
-    session_id: ${incoming.body.sessionId}
-    training_status: ${incoming.body.trainingStatus}
-    training_message: ${incoming.body.trainingMessage}
-    progress_percentage: ${incoming.body.progressPercentage}
-    process_complete: ${incoming.body.processComplete}
+    dataset_id: ${incoming.body.datasetId}
+    major_version: ${incoming.body.majorVersion}
+    minor_version: ${incoming.body.minorVersion}
+    latest: ${incoming.body.latest}
   next: check_for_request_data
 
 check_for_request_data:
   switch:
-    - condition: ${session_id !== null || !training_status || progress_percentage !==null}
+    - condition: ${dataset_id !== null || major_version !=null || minor_version !==null || patch_version !==null }
       next: get_random_string_cookie
   next: return_incorrect_request
 
 get_random_string_cookie:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/classifier/return_random_string"
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/return_random_string"
     headers:
       type: json
   result: res_cookie
@@ -57,26 +54,32 @@ check_random_string_status:
 assign_csrf_cookie:
   assign:
     csrf_cookie: ${'_csrf=' + res_cookie.response.body.randomHexString+';'}
-  next: update_data_model_progress_session
+  next: create_dataset_progress_session
 
-update_data_model_progress_session:
+create_dataset_progress_session:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-data-model-progress-session"
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-dataset-progress-session"
     body:
-      id: ${session_id}
-      training_progress_status: ${training_status}
-      progress_percentage: ${progress_percentage}
-      training_message: ${training_message}
-      process_complete: ${process_complete}
+      dataset_id: ${dataset_id}
+      major_version: ${major_version}
+      minor_version: ${minor_version}
+      latest: ${latest}
+      progressPercentage: 0
+      generation_status: 'Initiating Dataset Generation'
   result: res
   next: check_status
 
 check_status:
   switch:
     - condition: ${200 <= res.response.statusCodeValue && res.response.statusCodeValue < 300}
-      next: get_csrf_token
+      next: assign_session_id
   next: assign_fail_response
+
+assign_session_id:
+  assign:
+    session_id: ${res.response.body[0].id}
+  next: get_csrf_token
 
 get_csrf_token:
   call: http.get
@@ -101,15 +104,15 @@ assign_csrf_token:
 update_progress:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_NOTIFICATIONS]/model/progress"
+    url: "[#GLOBAL_CLASSIFIER_NOTIFICATIONS]/dataset/progress"
     headers:
       X-CSRF-Token: ${token}
       cookie: ${csrf_cookie}
     body:
       sessionId: ${session_id}
-      progressPercentage: ${progress_percentage}
-      trainingStatus: ${training_status}
-      trainingMessage: ${training_message}
+      progressPercentage: 0
+      generationStatus: 'Initiating Validation'
+      generationMessage: ''
   result: res_node
   next: check_node_server_status
 
