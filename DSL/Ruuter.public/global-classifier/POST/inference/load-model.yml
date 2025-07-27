@@ -30,7 +30,7 @@ validate_input:
 load_model:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/initial_deployment/load_model"
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/deploy/deploy_model"
     query:
       modelId: ${modelId}
   result: res

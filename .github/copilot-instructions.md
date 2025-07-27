@@ -1,5 +1,9 @@
 # Global Classifier AI Coding Instructions
 
+## Code Style Requirements
+
+**CRITICAL: Never use emojis in any generated code, comments, log messages, or documentation. Use plain text only.**
+
 ## Architecture Overview
 
 Global Classifier is a machine learning platform built on the **BYK Stack** - a microservices architecture with specialized DSL-based components:

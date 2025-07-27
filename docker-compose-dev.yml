@@ -147,6 +147,7 @@ services:
     networks:
       - bykstack
 
+# It's important to build the cron-manager container from the Dockerfile.python containing the Python enviro 
   cron-manager:
     container_name: cron-manager
     image: cron-manager-python:latest
@@ -157,6 +158,8 @@ services:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
+      - ./src/inference/inference_scripts:/app/inference_scripts
+      - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
     environment:
       - server.port=9010

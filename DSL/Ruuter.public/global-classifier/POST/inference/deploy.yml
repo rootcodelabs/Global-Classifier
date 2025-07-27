@@ -57,9 +57,12 @@ checkFirstDeployment:
 handleFirstDeployment:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/initial_deployment/load_model"
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/deploy/deploy_model"
     query:
       modelId: ${modelId}
+      currentEnv: ${currentEnv}
+      targetEnv: ${targetEnv}
+      firstDeployment: ${firstDeployment}
   result: res
   next: selectDeploymentPath
 
@@ -93,6 +96,16 @@ pushUndeployedModelToTesting:
     response:
       success: true
       message: "Model successfully pushed from undeployed to testing environment"
+  result: deployment_status
+  next: return_deployment_status
+
+
+pushUndeployedModelToProduction:
+  call: reflect.mock
+  args:
+    response:
+      success: true
+      message: "Model  successfully pushed from undeployed to production environment"
   result: deployment_status
   next: return_deployment_status
 
@@ -132,14 +145,6 @@ pushProductionModelToUndeployed:
   result: deployment_status
   next: return_deployment_status
 
-pushUndeployedModelToProduction:
-  call: reflect.mock
-  args:
-    response:
-      success: true
-      message: "Model  successfully pushed from undeployed to production environment"
-  result: deployment_status
-  next: return_deployment_status
 
 
 return_invalid_deployment_path_error:

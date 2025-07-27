@@ -1,7 +1,0 @@
-load_model:
-  trigger: off
-  type: exec
-  command: "../app/scripts/initial_deployment.sh"
-  allowedEnvs: ['modelId']
-
-  

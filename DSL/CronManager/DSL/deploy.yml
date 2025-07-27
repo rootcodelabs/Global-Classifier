@@ -1,0 +1,7 @@
+deploy_model:
+  trigger: off
+  type: exec
+  command: "/app/scripts/deployment_script_starter.sh"
+  allowedEnvs: ['modelId','currentEnv','targetEnv','firstDeployment']
+
+  
