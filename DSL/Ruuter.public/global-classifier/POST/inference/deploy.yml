@@ -38,13 +38,13 @@ validate_input:
   switch:
     - condition: ${!modelId}
       next: validation_error
-    - condition: ${!firstDeployment}
+    - condition: ${firstDeployment !== true && firstDeployment !== false}
       next: validation_error
     - condition: ${!currentEnv || !['undeployed', 'testing', 'production'].includes(currentEnv)}
       next: validation_error
     - condition: ${!targetEnv || !['undeployed', 'testing', 'production'].includes(targetEnv)}
       next: validation_error
-    - condition: ${currentEnv === targetEnv}
+    - condition: ${currentEnv === targetEnv && currentEnv !== 'undeployed'}
       next: same_environment_error
   next: checkFirstDeployment
 
