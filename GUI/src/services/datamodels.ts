@@ -76,6 +76,16 @@ export async function configureDataModel(payload: {
   return data?.response ?? {};
 }
 
+
+export async function deployDataModel(payload: {
+  modelId: string | number;
+  currentEnv: string;
+  targetEnv: string;
+},) {
+  const { data } = await apiDev.post(dataModelsEndpoints.DEPLOY_MODEL(), payload);
+  return data?.response ?? {};
+}
+
 export async function deleteDataModel(modelId: number | string | null) {
   const { data } = await apiDev.post(dataModelsEndpoints.DELETE_MODEL(), {
     modelId,

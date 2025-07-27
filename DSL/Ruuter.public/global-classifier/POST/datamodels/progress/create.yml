@@ -23,10 +23,6 @@ declaration:
       - field: latest
         type: boolean
         description: "Body field 'latest'"
-    headers:
-      - field: cookie
-        type: string
-        description: "Cookie field"
 
 extract_request_data:
   assign:
@@ -67,7 +63,7 @@ check_data_model_exist:
 get_random_string_cookie:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/classifier/return_random_string"
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/return_random_string"
     headers:
       type: json
   result: res_cookie

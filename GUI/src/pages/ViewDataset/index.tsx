@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { generateDynamicColumns } from 'utils/dataTableUtils';
 import { MdOutlineDeleteOutline, MdOutlineEdit } from 'react-icons/md';
-import { CellContext, ColumnDef, PaginationState } from '@tanstack/react-table';
+import { CellContext, ColumnDef, createColumnHelper, PaginationState } from '@tanstack/react-table';
 import {
   SelectedRowPayload,
 } from 'types/datasets';
@@ -46,7 +46,7 @@ const ViewDataset = () => {
 
   const { data: dataset, isLoading: datasetIsLoading } = useQuery({
     queryKey: datasetQueryKeys.GET_DATA_SETS(datasetId ?? 0, selectedAgencyId, pagination.pageIndex + 1),
-    queryFn: () => getDatasetData(datasetId ?? 0, selectedAgencyId, pagination.pageIndex + 1),
+    queryFn: () => getDatasetData(datasetId ?? 0, pagination.pageIndex + 1),
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
 
@@ -54,7 +54,7 @@ const ViewDataset = () => {
     if (dataset) {
       setUpdatedDataset(dataset);
     }
-  }, [dataset]);
+  }, [dataset]);  
 
   const { data: agencies } = useQuery({
     queryKey: integratedAgenciesQueryKeys.ALL_AGENCIES_LIST(),
@@ -109,83 +109,113 @@ const ViewDataset = () => {
     </Button>
   );
 
-  const dataColumns = useMemo(
-    () => generateDynamicColumns(["id", "question", "clientName"], editView, deleteView),
-    [editView, deleteView]
-  );
+const dataColumns = useMemo(() => {
+  const columnHelper = createColumnHelper<any>();
+  
+  // Incremental ID column
+  const incrementalIdColumn = columnHelper.display({
+    id: 'rowNumber',
+    header: t('datasets.detailedView.table.id') || 'Item ID',
+    cell: ({ row }) => {
+      const rowNumber = (pagination.pageIndex * pagination.pageSize) + row.index + 1;
+      return <span>{rowNumber}</span>;
+    },
+    meta: { size: 60 },
+  });
+
+  const questionColumn = columnHelper.accessor('dataItem', {
+    header: t('datasets.detailedView.table.data') || 'Data',
+    id: 'dataItem',
+  });
+
+  const agencyColumn = columnHelper.accessor('agencyName', {
+    header: t('datasets.detailedView.table.client') || 'Client Name',
+    id: 'agencyName',
+  });
+
+  // Action columns
+  const editColumn = columnHelper.display({
+    id: 'edit',
+    cell: editView,
+    meta: { size: '1%' },
+  });
+
+  const deleteColumn = columnHelper.display({
+    id: 'delete', 
+    cell: deleteView,
+    meta: { size: '1%' },
+  });
+
+  return [incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
+}, [editView, deleteView, pagination.pageIndex, pagination.pageSize, t]);
 
   const editDataRecord = (dataRow: SelectedRowPayload) => {
     const originalRow = dataset?.find(
-      (row: any) => row.id === dataRow.id
+      (row: any) => row.itemId === dataRow.itemId
     );
 
-    // Only proceed if question or clientId has changed
     if (
       originalRow &&
-      (originalRow.question !== dataRow.question || originalRow.clientId !== dataRow.clientId)
+      (originalRow.dataItem !== dataRow.dataItem || originalRow.agencyId !== dataRow.agencyId)
     ) {
-      // Compute the new editedRows array
       setEditedRows((prev) => {
-        const exists = prev.find((row) => row.id === dataRow.id);
+        const exists = prev.find((row) => row.itemId === dataRow.itemId);
         const newEditedRows = exists
-          ? prev.map((row) => (row.id === dataRow.id ? dataRow : row))
+          ? prev.map((row) => (row.itemId === dataRow.itemId ? dataRow : row))
           : [...prev, dataRow];
-
-        console.log('Updated editedRows:', newEditedRows);
         setIsUpdateModalOpen(false);
 
         return newEditedRows;
       });
     }
-    // Update the table view as before
+
+    // Update the table view
     const payload = updatedDataset?.map((row: any) =>
-      row.id === selectedRow?.id
+      row.itemId === selectedRow?.itemId
         ? {
-          id: dataRow.id,
-          question: (dataRow as any).question,
-          clientId: (dataRow as any).clientId,
-          clientName: (dataRow as any).clientName,
+          itemId: dataRow.itemId,
+          dataItem: (dataRow as any).dataItem,
+          agencyId: (dataRow as any).agencyId,
+          agencyName: (dataRow as any).agencyName,
 
         }
         : row
     );
-    setUpdatedDataset(payload as { id: number; question: string; clientId: string; clientName: string; }[]);
+    setUpdatedDataset(payload as { itemId: number; dataItem: string; agencyId: string; agencyName: string; }[]);
   };
 
   const deleteDataRecord = (dataRow: SelectedRowPayload) => {
     if (!dataRow) return;
-    setUpdatedDataset((prev: { id: number; question: string; clientName: string; clientId: string }[] | undefined) => prev?.filter((row: { id: number }) => row.id !== dataRow.id));
-    setDeletedRowIds((prev) => [...prev, dataRow.id]);
+    setUpdatedDataset((prev: { itemId: number; dataItem: string; agencyName: string; agencyId: string }[] | undefined) => prev?.filter((row: { itemId: number }) => row.itemId !== dataRow.itemId));
+    setDeletedRowIds((prev) => [...prev, dataRow.itemId]);
     close();
   };
 
-  const minorUpdate = () => {
-    const questionUpdated: SelectedRowPayload[] = [];
-    const clientUpdated: SelectedRowPayload[] = [];
+const minorUpdate = () => {
+  const updatedDataItems: SelectedRowPayload[] = [];
 
-    editedRows.forEach((row) => {
-      const original = dataset?.find((r: any) => r.id === row.id);
-      if (!original) return;
-      const isQuestionChanged = original.question !== row.question;
-      const isClientChanged = original.clientId !== row.clientId;
+  editedRows.forEach((row) => {
+    // Skip if this row was deleted
+    if (deletedRowIds.includes(row.itemId)) {
+      return;
+    }
 
-      if (isQuestionChanged && !isClientChanged) {
-        questionUpdated.push(row);
-      }
-      if (isClientChanged) {
-        clientUpdated.push(row);
-      }
-    });
+    const original = dataset?.find((r: any) => r.itemId === row.itemId);
+    if (!original) return;
+    
+    // Check if anything changed
+    if (original.dataItem !== row.dataItem || original.agencyId !== row.agencyId) {
+      updatedDataItems.push(row);
+    }
+  });
 
-    const payload = {
-      questionUpdated,
-      clientUpdated,
-      deletedRows: deletedRowIds,
-    };
-    console.log(payload, 'minorUpdatePayload');
+  const payload = {
+    updatedDataItems,
+    deletedRows: deletedRowIds,
   };
+  console.log(payload, 'minorUpdatePayload');
+};
   
-
   return (
     <div className="container">
       <div className="title_container">
@@ -215,8 +245,6 @@ const ViewDataset = () => {
                 </p>
               </div>
               <div>
-                {/* <Switch label=''></Switch>
-                <br /> */}
                 <Button appearance='secondary' size='s'>
                   Export Dataset
                 </Button>
@@ -234,16 +262,15 @@ const ViewDataset = () => {
             pagination={pagination}
             dropdownFilters={[
               {
-                columnId: 'clientName',
+                columnId: 'agencyName',
                 options: agencies?.map((a: { agencyName: string; agencyId: number }) => ({
                   label: a.agencyName,
                   value: a.agencyId,
-                  clientId: a.agencyId,
+                  agencyId: a.agencyId,
                 })) ?? [],
               },
             ]}
             onSelect={(value) => {
-              console.log('Selected option:', value);
               setSelectedAgencyId(value);
               setPagination({
                 pageIndex: 0,
@@ -294,12 +321,12 @@ const ViewDataset = () => {
 
           <DynamicForm
             formData={
-              (selectedRow as SelectedRowPayload | undefined) ?? { question: '', clientName: '', id: 0, clientId: 0 }
+              (selectedRow as SelectedRowPayload | undefined) ?? { dataItem: '', agencyName: '', itemId: 0, agencyId: 0 }
             }
             clientOptions={agencies?.map((a: { agencyName: string; agencyId: number }) => ({
               label: a.agencyName,
               value: a.agencyId,
-              clientId: a.agencyId,
+              agencyId: a.agencyId,
             })) ?? []}
             onSubmit={editDataRecord as (data: SelectedRowPayload) => void}
             setPatchUpdateModalOpen={setIsUpdateModalOpen as React.Dispatch<React.SetStateAction<boolean>>}

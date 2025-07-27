@@ -28,21 +28,22 @@ export async function getDatasetMetadata(
 }
 
 export async function getDatasetData(
-  datasetId: number |string,
-  agencyId?: number |string,
+  datasetVersionId: number |string,
   pageNum?: number,
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
-      datasetId,
-      agencyId,
+      datasetVersionId,
       pageNum : pageNum ?? 1,
+      pageSize:5
     },
   });
-  return data?.response?.data ?? [];
+  return data?.response ?? [];
 }
 
 export async function getAllDatasetVersions() {
   const { data } = await apiDev.get(datasetsEndpoints.GET_ALL_DATASET_VERSIONS());
   return data?.response ?? [];
 }
+
+

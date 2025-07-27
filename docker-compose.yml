@@ -164,9 +164,9 @@ services:
       - ./src/training/dataset_artifacts:/app/src/training/dataset_artifacts
       - ./models:/app/models
       - ./src/training/logs:/app/src/training/logs
-    runtime: nvidia  
+    # runtime: nvidia  
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+      # - NVIDIA_VISIBLE_DEVICES=all
       - server.port=9010
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PYTHONPATH=/app:/app/src/training:/app/src/training/scripts:/app/src/s3_dataset_processor:/app/src
