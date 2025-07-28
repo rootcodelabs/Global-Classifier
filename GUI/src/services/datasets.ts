@@ -29,12 +29,12 @@ export async function getDatasetMetadata(
 }
 
 export async function getDatasetData(
-  datasetId: number |string,
+  datasetVersionId: number |string,
   pageNum?: number,
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
-      datasetId,
+      datasetVersionId,
       pageNum : pageNum ?? 1,
       pageSize:DATASET_PAGE_SIZE
     },
