@@ -2,21 +2,14 @@ from datapipeline import DataPipeline
 from trainingpipeline import TrainingPipeline, create_training_pipeline
 import os
 import sys
-import pickle
 import shutil
 import json
 from datetime import datetime, timezone
 from s3_ferry import S3Ferry
 from constants import (
     MODEL_RESULTS_PATH,
-    LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH,
-    LOCAL_CLASSIFICATION_LAYER_SAVE_PATH,
-    LOCAL_LABEL_ENCODER_SAVE_PATH,
     S3_FERRY_MODEL_STORAGE_PATH,
-    SUPPORTED_BASE_MODELS,
-    SUPPORTED_OOD_METHODS,
     ACCURACY_WEIGHT,
-    DEFAULT_OOD_CONFIGS,
     UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
     SEQUENCE_LENGTH,
@@ -105,74 +98,29 @@ class ModelTrainer:
             logger.info(f"MODELS_INFERENCE_METADATA : {models_inference_metadata}")
 
             # Setup paths
-            local_basemodel_layers_save_path = (
-                LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH.format(model_id=self.model_id)
-            )
-            local_classification_layer_save_path = (
-                LOCAL_CLASSIFICATION_LAYER_SAVE_PATH.format(model_id=self.model_id)
-            )
-            local_label_encoder_save_path = LOCAL_LABEL_ENCODER_SAVE_PATH.format(
-                model_id=self.model_id
-            )
-
-            self.create_training_folders(
-                [
-                    local_basemodel_layers_save_path,
-                    local_classification_layer_save_path,
-                    local_label_encoder_save_path,
-                ]
-            )
-
-            # Save inference metadata
-            with open(
-                f"{MODEL_RESULTS_PATH}/{self.model_id}/models_dets.pkl", "wb"
-            ) as file:
-                pickle.dump(models_inference_metadata, file)
 
             # Generate all model variants to train
             model_variants = []
 
             # Add standard models
-            for base_model in SUPPORTED_BASE_MODELS:
+            for base_model in model_types:
                 model_variants.append(
                     {
-                        "name": base_model,
+                        "name": base_model + "-sngp",
                         "base_model": base_model,
-                        "ood_method": None,
-                        "type": "standard",
+                        "ood_method": "sngp",
+                        "type": "ood",
+                        "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
+                            "uncertainty_strategy", None
+                        ),
+                        "human_handoff_threshold": UNCERTAINTY_CONFIGS.get(
+                            "human_handoff_threshold", 0.8
+                        ),
+                        "confidence_scaling": UNCERTAINTY_CONFIGS.get(
+                            "confidence_scaling", False
+                        ),
                     }
                 )
-
-            # Add OOD variants
-            for base_model in SUPPORTED_BASE_MODELS:
-                for ood_method in SUPPORTED_OOD_METHODS:
-                    model_variants.append(
-                        {
-                            "name": f"{base_model}-{ood_method}",
-                            "base_model": base_model,
-                            "ood_method": ood_method,
-                            "type": "ood",
-                            "energy_temp": DEFAULT_OOD_CONFIGS.get(ood_method, {}).get(
-                                "energy_temp", 1.0
-                            ),
-                            "softmax_temp": DEFAULT_OOD_CONFIGS.get(ood_method, {}).get(
-                                "temperature", 1.0
-                            ),
-                            "ood_threshold": DEFAULT_OOD_CONFIGS.get(
-                                ood_method, {}
-                            ).get("ood_threshold", 0.5),
-                            "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
-                                "uncertainty_strategy", None
-                            ),
-                            "human_handoff_threshold": UNCERTAINTY_CONFIGS.get(
-                                "human_handoff_threshold", 0.8
-                            ),
-                            "confidence_scaling": UNCERTAINTY_CONFIGS.get(
-                                "confidence_scaling", False
-                            ),
-                        }
-                    )
-
             logger.info(f"TRAINING {len(model_variants)} MODEL VARIANTS:")
             for variant in model_variants:
                 logger.info(f"  - {variant['name']} ({variant['type']})")
@@ -258,37 +206,23 @@ class ModelTrainer:
                 "training_timestamp": self.get_current_timestamp(),
             }
 
-            with open(
-                f"{MODEL_RESULTS_PATH}/{self.model_id}/training_summary.json", "w"
-            ) as f:
+            with open(f"{MODEL_RESULTS_PATH}/training_summary.json", "w") as f:
                 json.dump(training_summary, f, indent=2)
-            from trainingpipeline import convert_model_to_onnx, EnhancedModel
+            from trainingpipeline import export_inference_model_to_onnx
 
             # Convert best model to ONNX
             # check if it is sngp
-            if best_variant["ood_method"] == "sngp":
-                logger.info("CONVERTING SNGP MODEL TO ONNX")
-                convert_model_to_onnx(
-                    best_result["model_path"],
-                    EnhancedModel,
-                )
-            else:
-                logger.info("CONVERTING STANDARD MODEL TO ONNX")
-            convert_model_to_onnx(
-                best_result["model_path"],
-                None,  # No custom class for standard models
-            )
+            logger.info("CONVERTING SNGP MODEL TO ONNX")
+            onnx_path = export_inference_model_to_onnx(best_result["model_path"])
+            logger.info(f"ONNX MODEL SAVED AT: {onnx_path}")
 
             # create model-id folder and copy model-repository directory contents there
             new_model_repo_path = f"{MODEL_RESULTS_PATH}/modelId-{self.model_id}"
             if not os.path.exists(new_model_repo_path):
                 os.makedirs(new_model_repo_path)
-            model_repository_path = os.path.join(MODEL_RESULTS_PATH, "model-repository")
-            if not os.path.exists(model_repository_path):
-                os.makedirs(model_repository_path)
-                logger.info(
-                    f"Created shared model-repository at {model_repository_path}"
-                )
+            # this is the pre-defined model-repository path
+            model_repository_path = "model-repository"
+
             # copy all contents and directories of model-repository to new_model_repo_path
             shutil.copytree(
                 src=model_repository_path,
@@ -296,25 +230,30 @@ class ModelTrainer:
                 dirs_exist_ok=True,
             )
             # add labels-mapping.json to new_model_repo_path pre-processing and post-processing directories
-            label_mappings_path = f"{new_model_repo_path}/pre-processing/1"
+            label_mappings_path = f"{new_model_repo_path}/pre_processing/1"
             if not os.path.exists(label_mappings_path):
                 os.makedirs(label_mappings_path)
             shutil.copy(
-                src=f"{MODEL_RESULTS_PATH}/{self.model_id}/label_mappings.json",
+                src=f"{best_result['model_path']}/base_model/config.json",
                 dst=f"{label_mappings_path}/label_mappings.json",
             )
             shutil.copy(
-                src=f"{MODEL_RESULTS_PATH}/{self.model_id}/label_mappings.json",
-                dst=f"{new_model_repo_path}/post-processing/1/label_mappings.json",
+                src=f"{best_result['model_path']}/base_model/config.json",
+                dst=f"{new_model_repo_path}/post_processing/1/label_mappings.json",
             )
+            top_level_dirs = [
+                d
+                for d in os.listdir(new_model_repo_path)
+                if os.path.isdir(os.path.join(new_model_repo_path, d))
+            ]
             # add modelId-{model-id} to all folders inside the new_model_repo_path
-            for root, dirs, files in os.walk(new_model_repo_path):
-                for dir_name in dirs:
-                    old_path = os.path.join(root, dir_name)
-                    new_path = os.path.join(root, f"modelId-{self.model_id}", dir_name)
-                    if not os.path.exists(new_path):
-                        os.makedirs(new_path)
-                    shutil.move(old_path, new_path)
+            for dir_name in top_level_dirs:
+                old_path = os.path.join(new_model_repo_path, dir_name)
+                new_dir_name = f"modelId-{self.model_id}-{dir_name}"
+                new_path = os.path.join(new_model_repo_path, new_dir_name)
+
+                logger.info(f"Renaming {dir_name} to {new_dir_name}")
+                os.rename(old_path, new_path)
 
             # move onnx model to the new model-id folder inside model-id/text_classifier/1/model.onnx
             onnx_model_path = (
