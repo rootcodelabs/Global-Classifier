@@ -1,0 +1,84 @@
+name: "classifier_ensemble"
+platform: "ensemble"
+max_batch_size: 32
+input [
+  {
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [-1]
+  },
+  {
+    name: "top_k"
+    data_type: TYPE_INT32
+    dims: [ 1 ]
+    optional: true
+  }
+]
+output [
+  {
+    name: "TOP_K_PREDICTIONS"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+ensemble_scheduling {
+  step [
+    {
+      model_name: "pre_processing"
+      model_version: -1
+      input_map {
+        key: "TEXT"
+        value: "TEXT"
+      }
+      output_map {
+        key: "input_ids"
+        value: "input_ids"
+      }
+      output_map {
+        key: "attention_mask"
+        value: "attention_mask"
+      }
+      output_map {
+        key: "token_type_ids"
+        value: "token_type_ids"
+      }
+    },
+    {
+      model_name: "text_classifier"
+      model_version: -1
+      input_map {
+        key: "input_ids"
+        value: "input_ids"
+      }
+      input_map {
+        key: "attention_mask"
+        value: "attention_mask"
+      }
+      input_map {
+        key: "token_type_ids"
+        value: "token_type_ids"
+      }
+      output_map {
+        key: "logits"
+        value: "logits"
+      }
+      
+    },
+    {
+      model_name: "post_processing"
+      model_version: -1
+      input_map {
+        key: "logits"
+        value: "logits"
+      }
+      input_map {
+        key: "top_k"
+        value: "top_k"
+      }
+      output_map {
+        key: "TOP_K_PREDICTIONS"
+        value: "TOP_K_PREDICTIONS"
+      }
+    }
+  ]
+}
