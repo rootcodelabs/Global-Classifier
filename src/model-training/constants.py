@@ -109,6 +109,8 @@ MODEL_CONFIGS = {
     },
 }
 
+SEQUENCE_LENGTH = 128
+
 # OOD Training configurations
 SUPPORTED_OOD_METHODS = ["energy", "sngp", "softmax"]
 
@@ -132,6 +134,12 @@ DEFAULT_OOD_CONFIGS = {
     },
     "softmax": {"temperature": 1.0, "use_entropy": True, "calibrate": False},
 }
+UNCERTAINTY_CONFIGS = {
+    "uncertainty_strategy": "sngp",
+    "confidence_scaling": False,
+    "human_handoff_threshold": 0.8,
+}
+
 
 # Training parameters
 DEFAULT_TRAINING_ARGS = {
