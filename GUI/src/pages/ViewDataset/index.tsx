@@ -34,20 +34,20 @@ const ViewDataset = () => {
   const datasets = sampleDatasetRows;
   const [deletedRowIds, setDeletedRowIds] = useState<(string | number)[]>([]);
   const [searchParams] = useSearchParams();
-  const datasetId = searchParams.get('datasetId');
+  const datasetVersionId = searchParams.get('datasetId');
   const [selectedRow, setSelectedRow] = useState<SelectedRowPayload>();
   const [editedRows, setEditedRows] = useState<SelectedRowPayload[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
 
 
   const { data: metadata, isLoading } = useQuery({
-    queryKey: datasetQueryKeys.GET_META_DATA(datasetId ?? 0),
-    queryFn: () => getDatasetMetadata(datasetId ?? 0),
+    queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
+    queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
 
   const { data: dataset, isLoading: datasetIsLoading } = useQuery({
-    queryKey: datasetQueryKeys.GET_DATA_SETS(datasetId ?? 0, selectedAgencyId, pagination.pageIndex + 1),
-    queryFn: () => getDatasetData(datasetId ?? 0, pagination.pageIndex + 1),
+    queryKey: datasetQueryKeys.GET_DATA_SETS(datasetVersionId ?? 0, selectedAgencyId, pagination.pageIndex + 1),
+    queryFn: () => getDatasetData(datasetVersionId ?? 0, pagination.pageIndex + 1),
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
 
