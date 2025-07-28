@@ -34,7 +34,7 @@ logs/
 test/logs/
 **/logs/
 *.log.*
-*.zip
+
 
 *.bkp
 *.dtmp
@@ -52,3 +52,5 @@ dataset_artifacts/
 venv
 /signed.py
 /minio_presigned_urls.txt
+minio_data/
+temp_models/

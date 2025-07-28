@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset Erangi Ariyasena:classifier-script-v12-changeset1
-CREATE TYPE Validation_Progress_Status AS ENUM ('Initiating Validation', 'Validation In-Progress', 'Cleaning Dataset', 'Generating Data', 'Success', 'Fail');
+CREATE TYPE Generation_Progress_Status AS ENUM ('Initiating Dataset Generation', 'Downloading Source Datasets', 'Calling Dataset Generation', 'Dataset Generation In progress', 'New Dataset Uploading to s3', 'Success', 'Fail');
 
 -- changeset Erangi Ariyasena:classifier-script-v12-changeset2
 CREATE TABLE dataset_progress_sessions (
@@ -12,8 +12,8 @@ CREATE TABLE dataset_progress_sessions (
     latest BOOLEAN DEFAULT false,
     process_complete BOOLEAN DEFAULT false,
     progress_percentage INT,
-    validation_status Validation_Progress_Status,
-    validation_message TEXT ,
+    generation_status Generation_Progress_Status,
+    generation_message TEXT ,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT dataset_progress_sessions_pkey PRIMARY KEY (id)
 );

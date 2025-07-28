@@ -82,7 +82,7 @@ const TestModel: FC = () => {
               <FormSelect
                 label=""
                 name="modelId"
-                options={toLabelValueArray(modelVersions, 'id', 'version') ?? []}
+                options={modelVersions ? toLabelValueArray(modelVersions, 'id', 'version') ?? [] : []}
                 placeholder={t('testModels.placeholder') ?? ''}
                 onSelectionChange={(selection) => {
                   handleChange('modelId', selection?.value as string);

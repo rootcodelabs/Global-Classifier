@@ -58,7 +58,7 @@ export enum ValidationErrorTypes {
   NULL = 'NULL',
 }
 
-export enum ValidationSessionsStatuses {
+export enum DataGenerationSessionsStatuses {
   VALIDATION_SUCCESS_STATUS = 'Success',
   VALIDATION_FAILED_STATUS = 'Fail'
 }
