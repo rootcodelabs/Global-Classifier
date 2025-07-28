@@ -1,0 +1,32 @@
+name: "pre_processing"
+backend: "python"
+max_batch_size: 32
+input [
+  {
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [-1]
+  }
+]
+
+
+output [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT64
+    dims: [ -1 ]
+  },
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT64
+    dims: [ -1 ]
+  },
+  {
+    name: "token_type_ids"
+    data_type: TYPE_INT64
+    dims: [ -1 ]
+  }
+]
+dynamic_batching {
+  max_queue_delay_microseconds: 100
+}

@@ -18,9 +18,13 @@ from constants import (
     SUPPORTED_BASE_MODELS,
     SUPPORTED_OOD_METHODS,
     ACCURACY_WEIGHT,
+    DEFAULT_OOD_CONFIGS,
+    UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
+    SEQUENCE_LENGTH,
 )
 from loguru import logger
+
 # import argparse
 
 logger.remove()
@@ -211,9 +215,27 @@ class ModelTrainer:
                     model_variants.append(
                         {
                             "name": f"{base_model}-{ood_method}",
-                            "base_model": base_model,
+                            "model_name": base_model,
                             "ood_method": ood_method,
                             "type": "ood",
+                            "energy_temp": DEFAULT_OOD_CONFIGS.get(ood_method, {}).get(
+                                "energy_temp", 1.0
+                            ),
+                            "softmax_temp": DEFAULT_OOD_CONFIGS.get(ood_method, {}).get(
+                                "temperature", 1.0
+                            ),
+                            "ood_threshold": DEFAULT_OOD_CONFIGS.get(
+                                ood_method, {}
+                            ).get("ood_threshold", 0.5),
+                            "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
+                                "uncertainty_strategy", None
+                            ),
+                            "human_handoff_threshold": UNCERTAINTY_CONFIGS.get(
+                                "human_handoff_threshold", 0.8
+                            ),
+                            "confidence_scaling": UNCERTAINTY_CONFIGS.get(
+                                "confidence_scaling", False
+                            ),
                         }
                     )
 
@@ -322,8 +344,90 @@ class ModelTrainer:
                 enhanced_model_class=None,  # No custom class for standard models
             )
 
+            # create model-id folder and copy model-repository directory contents there
+            new_model_repo_path = f"{MODEL_RESULTS_PATH}/modelId-{self.new_model_id}"
+            if not os.path.exists(new_model_repo_path):
+                os.makedirs(new_model_repo_path)
+            model_repository_path = "model-repository"
+            # copy all contents and directories of model-repository to new_model_repo_path
+            shutil.copytree(
+                src=model_repository_path,
+                dst=new_model_repo_path,
+                dirs_exist_ok=True,
+            )
+            # add labels-mapping.json to new_model_repo_path pre-processing and post-processing directories
+            label_mappings_path = f"{new_model_repo_path}/pre-processing/1"
+            if not os.path.exists(label_mappings_path):
+                os.makedirs(label_mappings_path)
+            shutil.copy(
+                src=f"{MODEL_RESULTS_PATH}/{self.new_model_id}/label_mappings.json",
+                dst=f"{label_mappings_path}/label_mappings.json",
+            )
+            shutil.copy(
+                src=f"{MODEL_RESULTS_PATH}/{self.new_model_id}/label_mappings.json",
+                dst=f"{new_model_repo_path}/post-processing/1/label_mappings.json",
+            )
+            # add modelId-{model-id} to all folders inside the new_model_repo_path
+            for root, dirs, files in os.walk(new_model_repo_path):
+                for dir_name in dirs:
+                    old_path = os.path.join(root, dir_name)
+                    new_path = os.path.join(
+                        root, f"modelId-{self.new_model_id}", dir_name
+                    )
+                    if not os.path.exists(new_path):
+                        os.makedirs(new_path)
+                    shutil.move(old_path, new_path)
+
+            # move onnx model to the new model-id folder inside model-id/text_classifier/1/model.onnx
+            onnx_model_path = (
+                f"{new_model_repo_path}/modelId-{self.new_model_id}-text_classifier/1"
+            )
+            if not os.path.exists(onnx_model_path):
+                os.makedirs(onnx_model_path)
+            shutil.move(
+                src=f"{best_result['model_path']}/model.onnx",
+                dst=f"{onnx_model_path}/model.onnx",
+            )
+
+            model_config = {
+                "model_name": best_variant["name"],
+                "sequence_length": SEQUENCE_LENGTH,
+                "ood_method": best_variant.get("ood_method", "standard"),
+                "ood_threshold": best_variant.get("ood_threshold", 0.5),
+                "energy_temp": best_variant.get("energy_temp", 1.0),
+                "softmax_temp": best_variant.get("softmax_temp", 1.0),
+                "uncertainty_strategy": best_variant.get(
+                    "uncertainty_strategy", "none"
+                ),
+                "human_handoff_threshold": best_variant.get(
+                    "human_handoff_threshold", 0.5
+                ),
+                "confidence_scaling": best_variant.get("confidence_scaling", "linear"),
+                "base_model_type": best_variant.get("base_model_type", "bert"),
+            }
+
+            for root, dirs, files in os.walk(new_model_repo_path):
+                for file_name in files:
+                    if file_name == "config.pbtxt":
+                        config_file_path = os.path.join(root, file_name)
+                        with open(config_file_path, "r") as f:
+                            config_content = f.read()
+
+                        # Add parameters section if not present
+                        if "parameters:" not in config_content:
+                            config_content += "\nparameters:\n["
+
+                        # Add each parameter
+                        for key, value in model_config.items():
+                            config_content += f'{key}: {{\n    value: "{value}"\n}}\n'
+                        config_content += "]\n"
+
+                        # Write back the updated content
+                        with open(config_file_path, "w") as f:
+                            f.write(config_content)
+
             # Create model archive
-            model_zip_path = f"{MODEL_RESULTS_PATH}/{str(self.new_model_id)}"
+            model_zip_path = new_model_repo_path
             shutil.make_archive(
                 base_name=model_zip_path, root_dir=model_zip_path, format="zip"
             )
@@ -393,41 +497,54 @@ class ModelTrainer:
 
 
 # ----------------------TODO: Uncomment the CLI section when needed----------------------
-# def parse_args():
-#     parser = argparse.ArgumentParser(description="Model Trainer CLI")
-#     parser.add_argument("--model_types", type=str, required=True, help="Model types (JSON string or list)")
-#     parser.add_argument("--model_id", type=int, required=True, help="Model ID")
-#     parser.add_argument("--job_id", type=int, required=True, help="Job ID")
-#     parser.add_argument("--dataset_id", type=int, required=True, help="Dataset ID")
-#     parser.add_argument("--model_name", type=str, required=True, help="Model Name")
-#     parser.add_argument("--major_version", type=int, required=True, help="Major Version")
-#     parser.add_argument("--minor_version", type=int, required=True, help="Minor Version")
-#     parser.add_argument("--latest", type=str, required=True, help="Is Latest (true/false)")
-#     parser.add_argument("--deployment_environment", type=str, required=True, help="Deployment Environment")
-#     return parser.parse_args()
+def parse_args():
+    import argparse
 
-# if __name__ == "__main__":
-#     args = parse_args()
-#     old_model_id = args.model_id
-#     prev_deployment_env = "undeployed"  # Or fetch as needed
-#     update_type = "train"  # Or fetch as needed
-#     progress_session_id = args.job_id  # Or fetch as needed
-#     model_details = {
-#         "response": {
-#             "data": [
-#                 {"connectedDgId": args.dataset_id}
-#             ]
-#         }
-#     }
-#     current_deployment_platform = "undeployed"  # Or fetch as needed
+    parser = argparse.ArgumentParser(description="Model Trainer CLI")
+    parser.add_argument(
+        "--model_types",
+        type=str,
+        required=True,
+        help="Model types (JSON string or list)",
+    )
+    parser.add_argument("--model_id", type=int, required=True, help="Model ID")
+    parser.add_argument("--job_id", type=int, required=True, help="Job ID")
+    parser.add_argument("--dataset_id", type=int, required=True, help="Dataset ID")
+    parser.add_argument("--model_name", type=str, required=True, help="Model Name")
+    parser.add_argument(
+        "--major_version", type=int, required=True, help="Major Version"
+    )
+    parser.add_argument(
+        "--minor_version", type=int, required=True, help="Minor Version"
+    )
+    parser.add_argument(
+        "--latest", type=str, required=True, help="Is Latest (true/false)"
+    )
+    parser.add_argument(
+        "--deployment_environment",
+        type=str,
+        required=True,
+        help="Deployment Environment",
+    )
+    return parser.parse_args()
 
-#     trainer = ModelTrainer(
-#         new_model_id=args.model_id,
-#         # old_model_id=old_model_id,
-#         prev_deployment_env=prev_deployment_env,
-#         update_type=update_type,
-#         progress_session_id=progress_session_id,
-#         model_details=model_details,
-#         current_deployment_platform=current_deployment_platform,
-#     )
-#     trainer.train()
+
+if __name__ == "__main__":
+    args = parse_args()
+    old_model_id = args.model_id
+    prev_deployment_env = "undeployed"  # Or fetch as needed
+    update_type = "train"  # Or fetch as needed
+    progress_session_id = args.job_id  # Or fetch as needed
+    model_details = {"response": {"data": [{"connectedDgId": args.dataset_id}]}}
+    current_deployment_platform = "undeployed"  # Or fetch as needed
+
+    trainer = ModelTrainer(
+        new_model_id=args.model_id,
+        old_model_id=old_model_id,
+        prev_deployment_env=prev_deployment_env,
+        update_type=update_type,
+        progress_session_id=progress_session_id,
+        model_details=model_details,
+        current_deployment_platform=current_deployment_platform,
+    )
+    trainer.train()
