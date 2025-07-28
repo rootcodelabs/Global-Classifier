@@ -1,6 +1,7 @@
 import { dataModelsEndpoints, testModelsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
 import { ClassifyTestModalPayloadType, ClassifyTestModalResponseType } from 'types/testModelTypes';
+import { OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
 export async function getDataModelsOverview(
   pageNum: number,
@@ -17,7 +18,7 @@ export async function getDataModelsOverview(
       deploymentEnvironment,
       sortBy: sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
-      pageSize: 12,
+      pageSize: OVERVIEW_PAGE_SIZE,
     },
   });
   return data?.response ?? [];

@@ -19,12 +19,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
 import NoDataView from 'components/molecules/NoDataView';
+import { DATASET_PAGE_SIZE } from 'utils/constants';
 
 const ViewDataset = () => {
   const { t } = useTranslation();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 5,
+    pageSize: DATASET_PAGE_SIZE,
   });
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const { open, close } = useDialog();
@@ -274,7 +275,7 @@ const minorUpdate = () => {
               setSelectedAgencyId(value);
               setPagination({
                 pageIndex: 0,
-                pageSize: 5,
+                pageSize: DATASET_PAGE_SIZE,
               });
               setUpdatedDataset([]);
             }}

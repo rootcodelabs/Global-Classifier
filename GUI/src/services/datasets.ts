@@ -1,5 +1,6 @@
 import { dataModelsEndpoints, datasetsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import { DATASET_PAGE_SIZE, OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
 export async function getDatasetsOverview(
   pageNum: number,
@@ -11,7 +12,7 @@ export async function getDatasetsOverview(
       generationStatus: "all",
       sortBy:sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
-      pageSize: 12,
+      pageSize: OVERVIEW_PAGE_SIZE,
     },
   });
   return data?.response ?? [];
@@ -28,14 +29,14 @@ export async function getDatasetMetadata(
 }
 
 export async function getDatasetData(
-  datasetVersionId: number |string,
+  datasetId: number |string,
   pageNum?: number,
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
-      datasetVersionId,
+      datasetId,
       pageNum : pageNum ?? 1,
-      pageSize:5
+      pageSize:DATASET_PAGE_SIZE
     },
   });
   return data?.response ?? [];
