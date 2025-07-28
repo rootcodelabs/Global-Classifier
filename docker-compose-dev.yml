@@ -65,7 +65,8 @@ services:
     container_name: tim
     image: tim
     depends_on:
-      - tim-postgresql
+      tim-postgresql:
+        condition: service_started
     environment:
       - SECURITY_ALLOWLIST_JWT=ruuter-private,ruuter-public,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1
       - KEY_PASS=ppjjpp
@@ -105,7 +106,8 @@ services:
     container_name: resql
     image: resql
     depends_on:
-      - users_db
+      users_db:
+        condition: service_started
     environment:
       - sqlms.datasources.[0].name=byk
       - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/global-classifier #For LocalDb Use
@@ -145,6 +147,7 @@ services:
     networks:
       - bykstack
 
+# It's important to build the cron-manager container from the Dockerfile.python containing the Python enviro 
   cron-manager:
     container_name: cron-manager
     image: cron-manager-python:latest
@@ -155,6 +158,9 @@ services:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
+      - ./src/inference/inference_scripts:/app/inference_scripts
+      - ./grafana-configs/loki_logger.py:/app/inference_scripts/loki_logger.py
+      - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
     environment:
       - server.port=9010
@@ -163,102 +169,27 @@ services:
     networks:
       - bykstack
     depends_on:
-      - init
-
-  # classifier-service:
-  #   container_name: classifier-service
-  #   build:
-  #     context: ./src/classifier-service 
-  #   ports:
-  #     - "8090:8090"
-  #   networks:
-  #     - bykstack
-  #   volumes:
-  #     - ./src/classifier-service:/app
-  #   environment:
-  #     - NODE_ENV=development
-  #   restart: always
-
-  # Dataset Generator services
-  # dataset-gen-ollama:
-  #   image: synthesisai/dataset-generator-ollama:latest
-  #   container_name: dataset-gen-ollama
-  #   ports:
-  #     - "11434:11434"
-  #   environment:
-  #     # - NVIDIA_VISIBLE_DEVICES=all
-  #     # - OLLAMA_USE_GPU=1
-  #     - OLLAMA_HOST=0.0.0.0
-  #   volumes:
-  #     - dataset_gen_ollama_models:/root/.ollama
-  #     - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
-  #   entrypoint: ["bash", "/ollama-entrypoint.sh"]
-  #   # deploy:
-  #   #   resources:
-  #   #     reservations:
-  #   #       devices:
-  #   #         - driver: nvidia
-  #   #           count: 1
-  #   #           capabilities: [gpu]
-  #   networks:
-  #     - bykstack
-
-  # dataset-gen-service:
-  #   image: synthesisai/dataset-generator:latest
-  #   container_name: dataset-gen-service
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - PROVIDER_API_URL=http://dataset-gen-ollama:11434
-  #     - SERVICE_DEBUG=false
-  #     - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/config:/app/config
-  #     - ./DSL/DatasetGenerator/templates:/app/templates
-  #     - ./DSL/DatasetGenerator/user_configs:/app/user_configs
-  #     - cron_data:/app/data
-  #     - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
-  #     - ./DSL/DatasetGenerator/logs:/app/logs
-  #   depends_on:
-  #     - dataset-gen-ollama
-  #     - dataset-gen-mlflow
-  #   networks:
-  #     - bykstack
-
-  # dataset-gen-mlflow:
-  #   image: synthesisai/dataset-generator-mlflow:latest
-  #   container_name: dataset-gen-mlflow
-  #   ports:
-  #     - "5000:5000"
-  #   env_file:
-  #     - sidecar.env
-  #   environment:
-  #   - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
-  #   - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
-  #   - MLFLOW_HOST=${MLFLOW_HOST}
-  #   - MLFLOW_PORT=${MLFLOW_PORT}
-  #   - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
-  #   - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
-  #   - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
-  #   volumes:
-  #     - ./DSL/DatasetGenerator/mlflow_data:/mlflow/mlflow_data
-  #     - ./DSL/DatasetGenerator/mlflow_artifacts:/mlflow/mlflow_artifacts
-  #   networks:
-  #     - bykstack
-
+      init:
+        condition: service_completed_successfully
   
   minio:
     image: minio/minio:latest
     container_name: minio
     env_file:
-      - sidecar.env
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
-    command: server /data --console-address ":9001"
+      - config.env
+
+    # command: server /data --console-address ":9001"
+    entrypoint:  >
+          sh -c "
+            export MINIO_ROOT_USER=$${S3_ACCESS_KEY_ID} && \
+            export MINIO_ROOT_PASSWORD=$${S3_SECRET_ACCESS_KEY} && \
+            export MINIO_BROWSER_REDIRECT_URL=$${MINIO_BROWSER_REDIRECT_URL} && \
+
+            minio server /app/minio_data --console-address ":9001"
+          "
+        
     volumes:
-      - minio_data:/data
+      - minio_data:/app/minio_data
     ports:
       - "9000:9000"  # API port
       - "9001:9001"  # Console port
@@ -270,6 +201,8 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./src/inference/dummy_model:/app/dummy_model
+      - cron_data:/app/data
     env_file:
       - config.env
     ports:
@@ -277,7 +210,10 @@ services:
     user: "root"
     networks:
       - bykstack
-
+    depends_on:
+      minio:
+        condition: service_started
+                                                                                                                                                                                                                           
   dataset-file-handler:
     container_name: dataset-file-handler
     build: ./src/dataset_file_handler
@@ -324,6 +260,177 @@ services:
     cpus: "0.5"
     mem_limit: "1G"
 
+
+  #temporarary container to initialize S3 storage with necessary buckets and models  
+  init-storage:
+
+    container_name: init-storage
+    image: amazon/aws-cli:latest
+    volumes:
+      - cron_data:/data_models
+      - ./src/inference/model-repository:/app/model-repository
+    entrypoint: >
+        sh -c "
+          echo 'Setting AWS KEYS' && 
+          aws configure set aws_access_key_id $${S3_ACCESS_KEY_ID} && 
+          aws configure set aws_secret_access_key $${S3_SECRET_ACCESS_KEY} && 
+
+          echo \"WAITING for S3 storage to be ready...\" &&
+          until curl -s $${S3_HEALTH_ENDPOINT}; do sleep 2; done &&
+
+          echo \"Checking for S3 bucket: $${S3_DATA_BUCKET_NAME} ...\" && 
+          if ! aws --endpoint-url $${S3_ENDPOINT_URL} s3api head-bucket --bucket $${S3_DATA_BUCKET_NAME} 2>/dev/null; then
+            echo \"Bucket $${S3_DATA_BUCKET_NAME} does not exist. Creating...\" && 
+            aws --endpoint-url $${S3_ENDPOINT_URL} s3 mb s3://$${S3_DATA_BUCKET_NAME} && 
+            echo \"Bucket $${S3_DATA_BUCKET_NAME} created successfully.\"
+          else
+            echo \"Bucket $${S3_DATA_BUCKET_NAME} already exists. Skipping creation.\"
+          fi && 
+
+
+          echo 'S3 storage is ready.' && 
+          echo 'Uploading models...' && 
+
+          echo 'Uploading initial dummy model to testing registry...' && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/testing s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/testing && 
+
+          echo 'Uploading initial dummy model to production registry...' && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/production s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/production && 
+
+          echo 'Uploading initial dummy model to undeployed registry...' && 
+          aws --endpoint-url $${S3_ENDPOINT_URL} s3 cp --recursive /app/model-repository/undeployed s3://$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/undeployed && 
+
+          echo 'Upload complete.'
+        "
+
+    env_file:
+      - config.env
+    networks:
+      - bykstack
+    depends_on:
+      minio:
+        condition: service_started
+      cron-manager:
+        condition: service_started
+      ruuter-private:
+        condition: service_started
+      ruuter-public:
+        condition: service_started
+      gc-s3-ferry:
+        condition: service_started
+
+  triton-production-server:
+    container_name: triton-production-server
+    build:
+      context: ./src/inference
+      dockerfile: Dockerfile
+    command: >
+      sh -c "
+        echo 'Setting environment variables for S3 access...' && 
+        export AWS_ACCESS_KEY_ID=$${S3_ACCESS_KEY_ID} && 
+        export AWS_SECRET_ACCESS_KEY=$${S3_SECRET_ACCESS_KEY} && 
+        export AWS_REGION=$${S3_REGION} && 
+        export AWS_ENDPOINT_URL=$${S3_ENDPOINT_URL} && 
+
+        echo 'Starting Triton server for production models...' && 
+        tritonserver --model-repository=s3://$${S3_ENDPOINT_NAME}/$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/production  --model-control-mode=explicit --log-verbose=1
+      "
+    ports:
+      - "6000:8000"
+      - "6001:8001"
+      - "6002:8002"
+    volumes:
+      - cron_data:/data_models
+
+    env_file:
+      - config.env
+    networks:
+      - bykstack
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      cron-manager:
+        condition: service_started
+      ruuter-private:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  triton-test-server:
+    container_name: triton-test-server
+    build:
+      context: ./src/inference
+      dockerfile: Dockerfile
+    command: >
+      sh -c "
+
+        echo 'Setting environment variables for S3 access...' && 
+
+        export AWS_ACCESS_KEY_ID=$${S3_ACCESS_KEY_ID} && 
+        export AWS_SECRET_ACCESS_KEY=$${S3_SECRET_ACCESS_KEY} && 
+        export AWS_REGION=$${S3_REGION} && 
+        export AWS_ENDPOINT_URL=$${S3_ENDPOINT_URL} && 
+
+        echo 'Starting Triton server for testing models...' && \ 
+
+        tritonserver  --model-repository=s3://$${S3_ENDPOINT_NAME}/$${S3_DATA_BUCKET_NAME}/$${S3_DATA_BUCKET_PATH}/models/testing --model-control-mode=explicit --log-verbose=1
+      "
+    ports:
+      - "4000:8000"
+      - "4001:8001"
+      - "4002:8002"
+    volumes:
+      - cron_data:/data_models
+
+    env_file:
+      - config.env
+    networks:
+      - bykstack
+    depends_on:
+      init-storage:
+        condition: service_completed_successfully
+      cron-manager:
+        condition: service_started
+      ruuter-private:
+        condition: service_started
+      minio:
+        condition: service_started
+
+  # Logging Stack - Loki and Grafana
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./grafana-configs/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    networks:
+      - bykstack
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    ports:
+      - "4005:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-configs/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana-configs/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana-configs/grafana-dashboard-deployment.json:/etc/grafana/dashboards/deployment.json
+    networks:
+      - bykstack
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+
 volumes:
   shared-volume:
     name: shared-volume
@@ -331,10 +438,15 @@ volumes:
     name: opensearch-data
   dataset_gen_ollama_models:
     name: dataset_gen_ollama_models
-  minio_data:
-    name: minio_data
   cron_data:
     name: cron_data
+  minio_data:
+    name: minio_data
+  loki-data:
+    name: loki-data
+  grafana-data:
+    name: grafana-data
+
 
 networks:
   bykstack:

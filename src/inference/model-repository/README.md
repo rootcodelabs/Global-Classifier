@@ -1,0 +1,2 @@
+### Model repository template
+This is is a model repository template that will be copied to the S3 compitable storage medium so that when the triton server containers (production and testing) starts all the necessary model-repository paths are configured and available
