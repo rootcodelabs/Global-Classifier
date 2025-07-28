@@ -287,7 +287,7 @@ const minorUpdate = () => {
                 return;
               setPagination(state);
             }}
-            pagesCount={4}
+            pagesCount={dataset[0]?.totalPages ?? 0}
             isClientSide={false}
           />
         )}
