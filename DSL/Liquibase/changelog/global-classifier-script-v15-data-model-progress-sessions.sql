@@ -2,7 +2,7 @@
 
 -- changeset Erangi Ariyasena:classifier-script-v13-changeset1
 -- todo update with the latest changes
-CREATE TYPE Training_Progress_Status AS ENUM ('Initiating Training', 'Training In-Progress', 'Deploying Model', 'Model Trained And Deployed','Training Failed');
+CREATE TYPE Training_Progress_Status AS ENUM ('Initiating Training', 'Training In-Progress', 'Deploying Model', 'Model Trained And Deployed','Training Failed','Deployment Failed');
 
 -- changeset Erangi Ariyasena:classifier-script-v13-changeset2
 CREATE TABLE model_progress_sessions (
