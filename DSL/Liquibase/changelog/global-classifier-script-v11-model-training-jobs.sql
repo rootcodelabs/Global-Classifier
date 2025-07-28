@@ -13,7 +13,8 @@ CREATE TABLE public.model_training_jobs (
     model_name VARCHAR(255) NOT NULL,
     major_version INTEGER NOT NULL,
     minor_version INTEGER NOT NULL,
-    latest BOOLEAN DEFAULT false
+    latest BOOLEAN DEFAULT false,
+    deployment_environment VARCHAR(255) NOT NULL,
     
     -- Add foreign key constraint to data_models table
     CONSTRAINT fk_model_training_jobs_model_id 

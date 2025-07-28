@@ -42,9 +42,6 @@ const Datasets: FC = () => {
     setPageIndex(1);
   };
 
-  console.log(pageCount);
-
-
   return (
     <div>
       {view === DatasetViewEnum.LIST && (

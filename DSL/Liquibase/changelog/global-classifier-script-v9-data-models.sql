@@ -45,6 +45,6 @@ CREATE TABLE model_configurations (
 -- changeset erangi:global-classifier-model_configurations-add-data
 INSERT INTO model_configurations (base_models, deployment_environments) VALUES
 (
-    '["bert", "roberta", "xlm"]'::JSONB,
+    '["estbert", "xlm-roberta", "multilingual-distilbert"]'::JSONB,
     ARRAY['undeployed', 'testing', 'production']::deployment_environment[]
 );

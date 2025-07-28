@@ -14,7 +14,7 @@ import { DataModel, UpdatedDataModelPayload } from 'types/dataModels';
 import { dataModelsQueryKeys } from 'utils/queryKeys';
 import { useTranslation } from 'react-i18next';
 import './DataModels.scss';
-import { configureDataModel, deleteDataModel, getDataModelMetadata, getProductionDataModel } from 'services/datamodels';
+import { configureDataModel, deleteDataModel, deployDataModel, getDataModelMetadata, getProductionDataModel } from 'services/datamodels';
 import { use } from 'i18next';
 import { set } from 'date-fns';
 import { areArraysEqual } from 'utils/commonUtilts';
@@ -109,44 +109,93 @@ const ConfigureDataModel: FC = () => {
     },
   });
 
-  console.log(!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]));
+  const deployMutation = useMutation({
+    mutationFn: deployDataModel,
+    onSuccess: () => {
+      open({
+        title: t('dataModels.configureDataModel.deployDataModalSuccessTitle'),
+        content: t('dataModels.configureDataModel.deployDataModalSuccessDesc'),
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
+      });
+
+    },
+    onError: () => {
+      open({
+        title: t('dataModels.configureDataModel.deployDataModalErrorTitle'),
+        content: t('dataModels.configureDataModel.deployDataModalErrorDesc'),
+      });
+    },
+  });
+
+const handleSaveChanges = () => {
+  const payload = getChangedAttributes(initialData, dataModel);
+
+  const updateType = getUpdateType(payload);
   
-
-  const handleSaveChanges = () => {
-    const payload = getChangedAttributes(initialData, dataModel);
-    let updateType: string | undefined;
-    if (payload.datasetId) {
-      updateType = UpdateType.MAJOR;
-    } else if (payload.baseModels) {
-      updateType = UpdateType.MINOR;
-    }
-
-    const updatedPayload = {
-      modelGroupKey: modelMetadata.modelGroupKey ?? "",
-      modelName: dataModel.modelName ?? "",
-      connectedDsId: Number(dataModel.datasetId) ?? 0,
-      deploymentEnv: dataModel.deploymentEnvironment ?? "",
-      baseModels: dataModel.baseModels ?? [],
-      connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
-      connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
-      updateType: updateType ?? "",
-      isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
-    };
-
-    if (updateType) {
-      if (prodDataModel && dataModel.deploymentEnvironment === "production") {
-        openModal(
-          t('dataModels.createDataModel.replaceDesc'),
-          t('dataModels.createDataModel.replaceTitle'),
-          () => updateMutation.mutate(updatedPayload),
-          'replace'
-        );
-      } else {
-        updateMutation.mutate(updatedPayload);
+  const updatedPayload = buildUpdatedPayload(updateType);
+  
+  const isDeploymentChanged = payload.deploymentEnvironment;
+  
+  const isChangingToProduction = dataModel.deploymentEnvironment === "production" && prodDataModel;
+  
+  if (isChangingToProduction && !updateType && isDeploymentChanged) {
+    const deployPayload = {
+                modelId: modelMetadata.modelId ?? "",
+                currentEnv: initialData.deploymentEnvironment ?? "",
+                targetEnv: dataModel.deploymentEnvironment ?? ""
+              };
+    // Always show replace modal when changing to production
+    openModal(
+      t('dataModels.createDataModel.replaceDesc'),
+      t('dataModels.createDataModel.replaceTitle'),
+      () =>  deployMutation.mutate(deployPayload),
+      'replace'
+    );
+  } else if (updateType) {
+    // Direct update for non-production changes
+    updateMutation.mutate(updatedPayload, {
+      onSuccess: () => {
+        if (isDeploymentChanged) {
+          const deployPayload = {
+            modelId: modelMetadata.modelId ?? "",
+            currentEnv: initialData.deploymentEnvironment ?? "",
+            targetEnv: dataModel.deploymentEnvironment ?? ""
+          };
+          deployMutation.mutate(deployPayload);
+        }
       }
-    }
+    });
+  } else if (isDeploymentChanged) {
+    // Only deployment environment changed, no update needed, just deploy
+    const deployPayload = {
+      modelId: modelMetadata.modelId ?? "",
+      currentEnv: initialData.deploymentEnvironment ?? "",
+      targetEnv: dataModel.deploymentEnvironment ?? ""
+    };
+    deployMutation.mutate(deployPayload);
+  }
+};
 
-  };
+const getUpdateType = (payload: any): string | undefined => {
+  if (payload.datasetId) {
+    return UpdateType.MAJOR;
+  } else if (!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])) {
+    return UpdateType.MINOR;
+  }
+  return undefined;
+};
+
+const buildUpdatedPayload = (updateType: string | undefined) => ({
+  modelGroupKey: modelMetadata.modelGroupKey ?? "",
+  modelName: dataModel.modelName ?? "",
+  connectedDsId: Number(dataModel.datasetId) ?? 0,
+  deploymentEnv: dataModel.deploymentEnvironment ?? "",
+  baseModels: dataModel.baseModels ?? [],
+  connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
+  connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
+  updateType: updateType ?? "",
+  isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
+});
 
   const deleteDataModelMutation = useMutation({
     mutationFn: deleteDataModel,
@@ -253,7 +302,7 @@ const ConfigureDataModel: FC = () => {
         >
           {t('dataModels.configureDataModel.deleteModal')}
         </Button>
-       
+
         <Button
           disabled={updateMutation.isLoading || (initialData.datasetId === dataModel.datasetId && initialData.deploymentEnvironment === dataModel.deploymentEnvironment && areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]))}
           showLoadingIcon={updateMutation.isLoading}
@@ -275,15 +324,7 @@ const ConfigureDataModel: FC = () => {
             >
               {t('global.cancel')}
             </Button>
-            {modalType === 'retrain' ? (
-              <Button
-                // disabled={retrainDataModelMutation.isLoading || !dataModel.datasetId || dataModel.datasetId === 0}
-                // showLoadingIcon={retrainDataModelMutation.isLoading}
-                onClick={() => modalFunciton.current()}
-              >
-                {t('dataModels.configureDataModel.retrain')}
-              </Button>
-            ) : modalType === 'delete' ? (
+            {modalType === 'delete' ? (
               <Button
                 disabled={deleteDataModelMutation.isLoading}
                 showLoadingIcon={deleteDataModelMutation.isLoading}

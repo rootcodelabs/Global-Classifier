@@ -7,10 +7,10 @@ import Track from 'components/Track';
 import { useTranslation } from 'react-i18next';
 import { SelectedRowPayload } from 'types/datasets';
 
-type ClientOption = { label: string; value: string; clientId: number | string };
+type ClientOption = { label: string; value: string; agencyId: number | string };
 
 type DynamicFormProps = {
-  formData: {id:string |number, question: string; clientName: string; clientId?: number | string };
+  formData: {itemId:string |number, dataItem: string; agencyName: string; agencyId?: number | string };
   clientOptions: ClientOption[];
   onSubmit: (data: SelectedRowPayload) => void;
   setPatchUpdateModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,33 +29,32 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   const { t } = useTranslation();
 
   const allValues = watch();
-const [selectedClientId, setSelectedClientId] = useState(formData.clientId ?? '');
+const [selectedClientId, setSelectedClientId] = useState(formData.agencyId ?? '');
 
   useEffect(() => {
     const currentValues = getValues();
     setIsChanged(
-      currentValues.question !== formData.question ||
-      currentValues.clientId !== formData.clientId
+      currentValues.dataItem !== formData.dataItem ||
+      currentValues.agencyId !== formData.agencyId
     );
   }, [allValues, formData, getValues]);
 
  const handleFormSubmit = (data: any) => {
-  // Find the selected client option
-  const selectedClient = clientOptions.find(opt => opt.value === data.clientId);
+  const selectedClient = clientOptions.find(opt => opt.value === data.agencyId);
   onSubmit({
-    id: formData.id, // Always return the id from formData
-    question: data.question,
-    clientId: selectedClient?.value ?? "0",
-    clientName: selectedClient?.label ?? data.clientName,
+    itemId: formData.itemId, 
+    dataItem: data.dataItem,
+    agencyId: selectedClient?.value ?? "0",
+    agencyName: selectedClient?.label ?? data.agencyName,
   });
 };
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)}>
       <div style={{ marginBottom: '15px' }}>
-        <label>{t('datasets.detailedView.question')}</label>
+        <label>{t('datasets.detailedView.data')}</label>
         <Controller
-          name="question"
+          name="dataItem"
           control={control}
           render={({ field }) => (
             <FormInput
@@ -69,7 +68,7 @@ const [selectedClientId, setSelectedClientId] = useState(formData.clientId ?? ''
       <div style={{ marginBottom: '15px' }}>
         <label>{t('datasets.detailedView.clientName')}</label>
         <Controller
-          name="clientId"
+          name="agencyId"
           control={control}
           render={({ field }) => (
             <FormSelect
