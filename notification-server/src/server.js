@@ -46,10 +46,10 @@ app.get("/csrf-token", (req, res) => {
 
 // Endpoint to update the dataset_progress_sessions index
 app.post("/dataset/progress", async (req, res) => {
-  const { sessionId, progressPercentage, validationStatus, validationMessage } =
+  const { sessionId, progressPercentage, generationStatus, generationMessage } =
     req.body;
 
-  if (!sessionId || progressPercentage === undefined || !validationStatus) {
+  if (!sessionId || progressPercentage === undefined || !generationStatus) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -57,8 +57,8 @@ app.post("/dataset/progress", async (req, res) => {
     await updateDatasetGroupProgress(
       sessionId,
       progressPercentage,
-      validationStatus,
-      validationMessage
+      generationStatus,
+      generationMessage
     );
     res.status(201).json({ message: "Document created successfully" });
   } catch (error) {
