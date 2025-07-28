@@ -7,6 +7,7 @@ import os
 logger.remove()
 logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
+
 class DataPipeline:
     def __init__(self, dataset_id):
         logger.info(f"DOWNLOADING DATASET WITH Dataset - {dataset_id}")
@@ -16,7 +17,7 @@ class DataPipeline:
         os.makedirs(datasets_dir, exist_ok=True)
         # Download dataset
         s3_ferry = S3Ferry()
-        response = s3_ferry.transfer_file(
+        s3_ferry.transfer_file(
             destination_file_path=f"/shared/datasets/dataset_{dataset_id}.csv",
             destination_storage_type="FS",
             source_file_path=f"datasets/{dataset_id}/aggregated_dataset.csv",
@@ -48,7 +49,7 @@ class DataPipeline:
                     "data_item": {"isDataClass": False},
                     "agency_name": {"isDataClass": True},
                 }
-            }
+            },
         }
 
     def extract_input_columns(self):

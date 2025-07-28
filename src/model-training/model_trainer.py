@@ -2,14 +2,12 @@ from datapipeline import DataPipeline
 from trainingpipeline import TrainingPipeline, create_training_pipeline
 import os
 import sys
-import requests
 import pickle
 import shutil
 import json
 from datetime import datetime, timezone
 from s3_ferry import S3Ferry
 from constants import (
-    TEST_DEPLOYMENT_ENDPOINT,
     MODEL_RESULTS_PATH,
     LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH,
     LOCAL_CLASSIFICATION_LAYER_SAVE_PATH,
@@ -43,7 +41,7 @@ class ModelTrainer:
         latest,
         current_deployment_env,
         progress_session_id,
-        target_deployment_platform
+        target_deployment_platform,
     ) -> None:
         try:
             logger.info("INITIALIZING MODEL TRAINER")
@@ -57,24 +55,7 @@ class ModelTrainer:
             self.current_deployment_platform = current_deployment_env
             self.target_deployment_platform = target_deployment_platform
 
-            # self.cookies_payload = {"customJwtCookie": cookie}
             self.progress_session_id = int(progress_session_id)
-
-            # logger.info(f"COOKIES PAYLOAD - {self.cookies_payload}")
-
-            # if self.update_type == "retrain":
-            #     logger.info(
-            #         f"ENTERING INTO RETRAIN SEQUENCE FOR MODELID - {self.new_model_id}"
-            #     )
-
-            # # Determine if this is a replacement deployment
-            # if self.old_model_id == self.new_model_id:
-            #     self.replace_deployment = False
-            # else:
-            #     self.replace_deployment = True
-
-            # self.model_details = model_details
-            # self.current_deployment_platform = current_deployment_platform
 
         except Exception as e:
             logger.error(f"EXCEPTION IN MODEL_TRAINER INIT : {e}")
@@ -113,8 +94,6 @@ class ModelTrainer:
             logger.info("ENTERING UNIFIED TRAINING FUNCTION")
             logger.info(f"DEPLOYMENT PLATFORM - {self.current_deployment_platform}")
 
-            # session_id = self.progress_session_id
-            # logger.info(f"SESSION ID - {session_id}")
 
             # Initialize services
             s3_ferry = S3Ferry()
@@ -128,9 +107,7 @@ class ModelTrainer:
 
             # Setup paths
             local_basemodel_layers_save_path = (
-                LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH.format(
-                    model_id=self.model_id
-                )
+                LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH.format(model_id=self.model_id)
             )
             local_classification_layer_save_path = (
                 LOCAL_CLASSIFICATION_LAYER_SAVE_PATH.format(model_id=self.model_id)
@@ -173,7 +150,7 @@ class ModelTrainer:
                     model_variants.append(
                         {
                             "name": f"{base_model}-{ood_method}",
-                            "base_model": base_model, 
+                            "base_model": base_model,
                             "ood_method": ood_method,
                             "type": "ood",
                             "energy_temp": DEFAULT_OOD_CONFIGS.get(ood_method, {}).get(
@@ -310,7 +287,9 @@ class ModelTrainer:
             model_repository_path = os.path.join(MODEL_RESULTS_PATH, "model-repository")
             if not os.path.exists(model_repository_path):
                 os.makedirs(model_repository_path)
-                logger.info(f"Created shared model-repository at {model_repository_path}")
+                logger.info(
+                    f"Created shared model-repository at {model_repository_path}"
+                )
             # copy all contents and directories of model-repository to new_model_repo_path
             shutil.copytree(
                 src=model_repository_path,
@@ -333,9 +312,7 @@ class ModelTrainer:
             for root, dirs, files in os.walk(new_model_repo_path):
                 for dir_name in dirs:
                     old_path = os.path.join(root, dir_name)
-                    new_path = os.path.join(
-                        root, f"modelId-{self.model_id}", dir_name
-                    )
+                    new_path = os.path.join(root, f"modelId-{self.model_id}", dir_name)
                     if not os.path.exists(new_path):
                         os.makedirs(new_path)
                     shutil.move(old_path, new_path)
@@ -396,7 +373,9 @@ class ModelTrainer:
 
             # Upload to S3
             s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}/{str(self.model_id)}.zip"
-            local_source_location = f"{MODEL_RESULTS_PATH.replace('/shared/', '')}/{str(self.model_id)}.zip"
+            local_source_location = (
+                f"{MODEL_RESULTS_PATH.replace('/shared/', '')}/{str(self.model_id)}.zip"
+            )
 
             logger.info("INITIATING MODEL UPLOAD TO S3")
             _ = s3_ferry.transfer_file(
@@ -460,7 +439,6 @@ class ModelTrainer:
 
 # ----------------------TODO: Uncomment the CLI section when needed----------------------
 def parse_args():
-
     parser = argparse.ArgumentParser(description="Model Trainer CLI")
     parser.add_argument(
         "--model_types",
@@ -495,7 +473,11 @@ if __name__ == "__main__":
     model_id = args.model_id
     model_name = args.model_name
     dataset_id = args.dataset_id
-    model_types = json.loads(args.model_types) if isinstance(args.model_types, str) else args.model_types
+    model_types = (
+        json.loads(args.model_types)
+        if isinstance(args.model_types, str)
+        else args.model_types
+    )
     major_version = args.major_version
     minor_version = args.minor_version
     latest = args.latest.lower() == "true"
@@ -513,6 +495,6 @@ if __name__ == "__main__":
         latest=latest,
         current_deployment_env=current_deployment_env,
         progress_session_id=progress_session_id,
-        target_deployment_platform=target_deployment_platform
+        target_deployment_platform=target_deployment_platform,
     )
     trainer.train()
