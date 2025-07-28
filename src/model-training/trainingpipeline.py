@@ -20,6 +20,7 @@ import torch.nn.functional as F
 import shutil
 from pathlib import Path
 import pandas as pd
+from constants import MODEL_RESULTS_PATH
 import numpy as np
 import sys
 from typing import Union
@@ -359,93 +360,177 @@ class EnhancedModel(nn.Module):
         return model
 
 
-def create_onnx_wrapper(enhanced_model):
+class EnhancedModelInference(nn.Module):
     """
-    Create a wrapper around the enhanced model that's compatible with ONNX export.
-    This wrapper presents the enhanced model as a standard transformers model.
+    Inference-only version of EnhancedModel - ONNX compatible
     """
 
-    class ONNXCompatibleWrapper(torch.nn.Module):
-        def __init__(self, enhanced_model):
-            super().__init__()
-            self.enhanced_model = enhanced_model
-            self.base_model = enhanced_model.base_model
-            self.config = enhanced_model.base_model.config
+    def __init__(self, base_model, num_labels, hidden_dim=768, dropout_rate=0.1):
+        super().__init__()
+        self.base_model = base_model
+        self.num_labels = num_labels
+        self.hidden_dim = hidden_dim
+        self.dropout_rate = dropout_rate
 
-        def forward(
-            self, input_ids, attention_mask=None, token_type_ids=None, **kwargs
-        ):
-            # Call the enhanced model's forward method
-            outputs = self.enhanced_model.forward(
-                input_ids=input_ids, attention_mask=attention_mask, **kwargs
+        # Get the hidden size from the base model
+        if hasattr(base_model.config, "hidden_size"):
+            self.hidden_size = base_model.config.hidden_size
+        else:
+            self.hidden_size = hidden_dim
+
+        # Simple uncertainty head - no spectral norm wrapper needed
+        # The weights will be copied from the trained spectral normalized layers
+        self.uncertainty_head = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Linear(self.hidden_size, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_dim, num_labels),
+        )
+
+    def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
+        # Get outputs from base model
+        outputs = self.base_model(
+            input_ids=input_ids, attention_mask=attention_mask, **kwargs
+        )
+
+        # Extract hidden representation
+        if hasattr(outputs, "pooler_output") and outputs.pooler_output is not None:
+            hidden_state = outputs.pooler_output
+        elif hasattr(outputs, "last_hidden_state"):
+            hidden_state = outputs.last_hidden_state[:, 0, :]
+        else:
+            # Fallback for ONNX
+            batch_size = input_ids.shape[0]
+            hidden_state = torch.zeros(
+                batch_size, self.hidden_size, device=input_ids.device
             )
-            return outputs
 
-    return ONNXCompatibleWrapper(enhanced_model)
+        # Apply uncertainty head (weights are already spectrally normalized!)
+        logits = self.uncertainty_head(hidden_state)
+
+        return type(outputs)(logits=logits)
+
+    def save_pretrained(self, save_directory, tokenizer=None, **kwargs):
+        """Save inference model"""
+        save_directory = Path(save_directory)
+        save_directory.mkdir(parents=True, exist_ok=True)
+
+        # Save the base model
+        base_model_dir = save_directory / "base_model"
+        self.base_model.save_pretrained(base_model_dir, **kwargs)
+
+        # Save tokenizer if provided
+        if tokenizer is not None:
+            tokenizer.save_pretrained(save_directory)
+            tokenizer.save_pretrained(base_model_dir)
+
+        # Save uncertainty head
+        torch.save(
+            self.uncertainty_head.state_dict(),
+            save_directory / "uncertainty_head.bin",
+        )
+
+        # Save inference config
+        config = {
+            "model_type": "enhanced_model_inference",
+            "num_labels": self.num_labels,
+            "hidden_dim": self.hidden_dim,
+            "dropout_rate": self.dropout_rate,
+            "hidden_size": self.hidden_size,
+            "base_model_type": self.base_model.__class__.__name__,
+        }
+
+        if hasattr(self.base_model, "config"):
+            config["base_model_config"] = self.base_model.config.to_dict()
+
+        with open(save_directory / "inference_config.json", "w") as f:
+            json.dump(config, f, indent=2)
+
+        logger.info(f"Inference model saved to {save_directory}")
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_path, **kwargs):
+        """Load inference model"""
+        pretrained_model_path = Path(pretrained_model_path)
+
+        # Load configuration
+        with open(pretrained_model_path / "inference_config.json", "r") as f:
+            config = json.load(f)
+
+        # Load base model
+        base_model_dir = pretrained_model_path / "base_model"
+        from transformers import AutoModelForSequenceClassification
+
+        base_model = AutoModelForSequenceClassification.from_pretrained(base_model_dir)
+
+        # Create inference model instance
+        model = cls(
+            base_model=base_model,
+            num_labels=config["num_labels"],
+            hidden_dim=config["hidden_dim"],
+            dropout_rate=config["dropout_rate"],
+        )
+
+        # Load uncertainty head
+        uncertainty_head_path = pretrained_model_path / "uncertainty_head.bin"
+        if uncertainty_head_path.exists():
+            uncertainty_state = torch.load(uncertainty_head_path, map_location="cpu")
+            model.uncertainty_head.load_state_dict(uncertainty_state)
+
+        return model
 
 
-def convert_model_to_onnx(model_dir: str, enhanced_model_class=None):
+def export_inference_model_to_onnx(model_dir: str):
     """
-    Convert a Hugging Face model or Enhanced model to ONNX format.
-
-    Args:
-        model_dir: Directory containing the saved model
-        enhanced_model_class: Class of the enhanced model (if dealing with enhanced model)
+    Export inference model to ONNX - much simpler now!
     """
     try:
-        from transformers import AutoModelForSequenceClassification, AutoTokenizer
-        from transformers.onnx import FeaturesManager, export
+        from transformers import AutoTokenizer
+        import torch
 
         model_dir = Path(model_dir)
 
-        # Check if this is an enhanced model
-        enhanced_config_path = model_dir / "enhanced_config.json"
-        is_enhanced_model = enhanced_config_path.exists()
+        # Load inference model
+        inference_model = EnhancedModelInference.from_pretrained(model_dir)
+        inference_model.eval()
 
-        if is_enhanced_model:
-            logger.info("Detected enhanced model, loading accordingly...")
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-            # Load enhanced model
-            if enhanced_model_class is None:
-                raise ValueError(
-                    "enhanced_model_class must be provided for enhanced models"
-                )
-
-            model = enhanced_model_class.from_pretrained(model_dir)
-
-            # Load tokenizer from base model directory
-            base_model_dir = model_dir / "base_model"
-            tokenizer = AutoTokenizer.from_pretrained(base_model_dir)
-
-            # For ONNX export, we need to create a wrapper that looks like a standard model
-            onnx_model = create_onnx_wrapper(model)
-
-        else:
-            logger.info("Loading standard transformers model...")
-            model = AutoModelForSequenceClassification.from_pretrained(model_dir)
-            tokenizer = AutoTokenizer.from_pretrained(model_dir)
-            onnx_model = model
-
-        # Get ONNX configuration
-        _, model_onnx_config = FeaturesManager.check_supported_model_or_raise(
-            onnx_model.base_model if is_enhanced_model else onnx_model,
-            feature="sequence-classification",
+        # Create dummy input
+        dummy_input = tokenizer(
+            "This is a sample text for ONNX export.",
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512,
         )
-
-        # Use the base model's config for ONNX configuration
-        base_config = (
-            onnx_model.base_model.config if is_enhanced_model else onnx_model.config
-        )
-        onnx_config = model_onnx_config(base_config)
 
         output_path = model_dir / "model.onnx"
-        logger.info(f"Exporting model to ONNX format at: {output_path}")
 
-        # Export to ONNX
-        export(tokenizer, onnx_model, onnx_config, opset=14, output=output_path)
+        # Export to ONNX (should work smoothly now!)
+        torch.onnx.export(
+            inference_model,
+            (dummy_input["input_ids"], dummy_input["attention_mask"]),
+            str(output_path),
+            input_names=["input_ids", "attention_mask"],
+            output_names=["logits"],
+            dynamic_axes={
+                "input_ids": {0: "batch_size", 1: "sequence_length"},
+                "attention_mask": {0: "batch_size", 1: "sequence_length"},
+                "logits": {0: "batch_size"},
+            },
+            opset_version=11,
+            do_constant_folding=True,
+            export_params=True,
+        )
 
-        logger.info(f"ONNX model exported to: {output_path}")
-        return str(output_path)
+        if output_path.exists():
+            logger.info(f"ONNX export successful: {output_path}")
+            return str(output_path)
+        else:
+            return None
 
     except Exception as e:
         logger.error(f"ONNX export failed: {e}")
@@ -905,12 +990,47 @@ class TrainingPipeline:
 
             trainer.train()
             # save the model
-            from constants import MODEL_RESULTS_PATH
 
             # save the model
-            model_dir = f"{MODEL_RESULTS_PATH}/{method_name}_model_{i + 2}"
+            model_dir = f"{MODEL_RESULTS_PATH}/{method_name}"
             os.makedirs(model_dir, exist_ok=True)
-            model.save_pretrained(model_dir)
+            inference_model = EnhancedModelInference(
+                base_model=model.base_model,
+                num_labels=len(label_encoder.classes_),
+                hidden_dim=model.hidden_dim,
+                dropout_rate=model.dropout_rate,
+            )
+            if (
+                hasattr(model, "uncertainty_head")
+                and model.uncertainty_head is not None
+            ):
+                # Extract weights from spectral normalized layers
+                training_state = model.uncertainty_head.state_dict()
+
+                # Map spectral norm weights to regular linear layers
+                inference_state = {}
+
+                # Map from SpectralNormalization layers to regular Linear layers
+                layer_mappings = {
+                    "1.layer.weight": "1.weight",  # First spectral norm -> first linear
+                    "1.layer.bias": "1.bias",
+                    "4.layer.weight": "4.weight",  # Second spectral norm -> second linear
+                    "4.layer.bias": "4.bias",
+                }
+
+                for training_key, inference_key in layer_mappings.items():
+                    if training_key in training_state:
+                        inference_state[inference_key] = training_state[training_key]
+
+                # Load the mapped weights
+                inference_model.uncertainty_head.load_state_dict(
+                    inference_state, strict=False
+                )
+                logger.info(
+                    "Successfully transferred spectrally normalized weights to inference model"
+                )
+
+            inference_model.save_pretrained(model_dir, tokenizer=tokenizer)
             tokenizer.save_pretrained(model_dir)
             logger.info(f"Model saved to {model_dir}")
 
