@@ -111,7 +111,7 @@ update_progress:
     body:
       sessionId: ${session_id}
       progressPercentage: 0
-      generationStatus: 'Initiating Validation'
+      generationStatus: 'Initiating Dataset Generation'
       generationMessage: ''
   result: res_node
   next: check_node_server_status

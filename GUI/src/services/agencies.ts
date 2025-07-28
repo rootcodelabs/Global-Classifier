@@ -1,5 +1,6 @@
 import { integratedAgenciesEndPoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import { OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
 export const fetchAgencies = async (
     pageIndex: number,
@@ -12,7 +13,7 @@ export const fetchAgencies = async (
     const { data } = await apiDev.get(integratedAgenciesEndPoints.GET_INTEGRATED_AGENCIES(), {
      params:{
       page: pageIndex,
-      pageSize: 9,
+      pageSize: OVERVIEW_PAGE_SIZE,
       sortBy: sortBy,
       sortType: sortType,
       agencyName
