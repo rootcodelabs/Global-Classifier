@@ -13,13 +13,12 @@ import shutil
 from pathlib import Path
 
 import requests
-from loguru import logger
-
-# Configure loguru logging
-logger.add("deployment_logs.log", level="DEBUG", rotation="10 MB")
-logger.add(sys.stderr, level="INFO")
+from loki_logger import LokiLogger
 
 CONSTANTS_INI_FILE_PATH = "/app/inference_scripts/constants.ini"
+
+# Initialize global logger instance with service name
+logger = LokiLogger(service_name="model-deployment-orchestrator")
 
 def read_constants_ini(constants_file_path: str = CONSTANTS_INI_FILE_PATH) -> dict:
     """Read configuration values from constants.ini file"""
@@ -135,20 +134,30 @@ class ModelDeploymentOrchestrator:
             f"{self.model_id}-text-classifier/1/model.onnx",
         ]
 
-    def log_message(self, message: str, level: str = "INFO"):
-        """Log a message using loguru"""
+    def log_message(self, message: str, level: str = "INFO", **extra_fields):
+        """Log a message using Loki API with optional extra fields"""
+        # Add model context to all logs
+        context = {
+            "model_id": self.model_id,
+            "current_env": self.current_env,
+            "target_env": self.target_env,
+            "first_deployment": str(self.first_deployment),
+            **extra_fields
+        }
+        
+        # Send log to appropriate level
         if level == "ERROR":
-            logger.error(message)
+            logger.error(message, **context)
         elif level == "WARNING":
-            logger.warning(message)
+            logger.warning(message, **context)
         elif level == "DEBUG":
-            logger.debug(message)
+            logger.debug(message, **context)
         else:
-            logger.info(message)
+            logger.info(message, **context)
 
-    def log_error(self, message: str):
-        """Log an error message"""
-        logger.error(message)
+    def log_error(self, message: str, **extra_fields):
+        """Log an error message with context"""
+        self.log_message(message, "ERROR", **extra_fields)
 
     def call_s3_ferry(
         self, source_path: str, source_type: str, dest_path: str, dest_type: str
@@ -733,10 +742,17 @@ def main():
         help=f"URL for Triton production environment (default: {constants['triton_prod_url']})",
     )
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit as e:
+        logger.error(f"Argument parsing failed with error arparse error code: {e} - Check the INFO logs for more details.")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error during argument parsing error code: {e}  - Check the INFO logs for more details.")
+        raise
 
     # Log all passed arguments for debugging
-    logger.info(f"Starting deployment with arguments: {vars(args)}")
+    logger.info(f"Starting deployment with arguments: {vars(args)}", model_id=args.model_id)
 
     try:
         deployer = ModelDeploymentOrchestrator(
@@ -752,20 +768,20 @@ def main():
         
         # Step 1: Upload model files to repository (only on first deployment)
         if args.first_deployment.lower() == "true":
-            logger.info("First deployment detected - uploading model files to repository")
+            logger.info("First deployment detected - uploading model files to repository", model_id=args.model_id)
             deployer.load_model_to_repository()
         else:
-            logger.info("Not a first deployment - skipping model repository upload")
+            logger.info("Not a first deployment - skipping model repository upload", model_id=args.model_id)
         
         # Step 2: Deploy model to Triton inference servers
         if not deployer.deploy_model():
-            logger.error("Model deployment to Triton servers failed")
+            logger.error("Model deployment to Triton servers failed", model_id=args.model_id)
             sys.exit(1)
             
-        logger.info("Model deployment completed successfully")
+        logger.info("Model deployment completed successfully", model_id=args.model_id)
         
     except Exception as e:
-        logger.error(f"Fatal error: {e}")
+        logger.error(f"Fatal error: {e}", model_id=getattr(args, 'model_id', None))
         sys.exit(1)
 
 

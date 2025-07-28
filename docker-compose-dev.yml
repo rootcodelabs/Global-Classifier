@@ -159,6 +159,7 @@ services:
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
       - ./src/inference/inference_scripts:/app/inference_scripts
+      - ./grafana-configs/loki_logger.py:/app/inference_scripts/loki_logger.py
       - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
     environment:
@@ -395,6 +396,40 @@ services:
       minio:
         condition: service_started
 
+  # Logging Stack - Loki and Grafana
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./grafana-configs/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    networks:
+      - bykstack
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    ports:
+      - "4005:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-configs/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana-configs/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana-configs/grafana-dashboard-deployment.json:/etc/grafana/dashboards/deployment.json
+    networks:
+      - bykstack
+    depends_on:
+      - loki
+    restart: unless-stopped
+
 
 volumes:
   shared-volume:
@@ -407,6 +442,10 @@ volumes:
     name: cron_data
   minio_data:
     name: minio_data
+  loki-data:
+    name: loki-data
+  grafana-data:
+    name: grafana-data
 
 
 networks:
