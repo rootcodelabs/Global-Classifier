@@ -8,7 +8,7 @@ SELECT
     last_trained,
     CEIL(COUNT(*) OVER() / :page_size::DECIMAL) AS total_pages
 FROM 
-    datasets
+    dataset_versions
 WHERE
     (:generation_status = 'all' OR generation_status ILIKE '%' || :generation_status || '%')
 ORDER BY

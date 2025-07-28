@@ -56,6 +56,7 @@ const ConfigureDataModel: FC = () => {
     baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
     deploymentEnvironment: modelMetadata?.deploymentEnv,
     version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+    trainingResults: modelMetadata?.trainingResults,
   });
 
   useEffect(() => {
@@ -74,6 +75,8 @@ const ConfigureDataModel: FC = () => {
       baseModels: modelMetadata ? JSON.parse(modelMetadata?.baseModels.value) : [],
       deploymentEnvironment: modelMetadata?.deploymentEnv,
       version: `V${modelMetadata?.major}.${modelMetadata?.minor}`,
+      trainingResults: modelMetadata?.trainingResults,
+
     });
   }, [modelMetadata]);
 
@@ -106,6 +109,9 @@ const ConfigureDataModel: FC = () => {
     },
   });
 
+  console.log(!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[]));
+  
+
   const handleSaveChanges = () => {
     const payload = getChangedAttributes(initialData, dataModel);
     let updateType: string | undefined;
@@ -124,6 +130,7 @@ const ConfigureDataModel: FC = () => {
       connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
       connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
       updateType: updateType ?? "",
+      isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
     };
 
     if (updateType) {
@@ -284,6 +291,15 @@ const ConfigureDataModel: FC = () => {
                 appearance={ButtonAppearanceTypes.ERROR}
               >
                 {t('global.delete')}
+              </Button>
+            ) : modalType === 'replace' ? (
+              <Button
+                disabled={updateMutation.isLoading}
+                showLoadingIcon={updateMutation.isLoading}
+                onClick={() => modalFunciton.current()}
+                appearance={ButtonAppearanceTypes.PRIMARY}
+              >
+                {t('global.replace')}
               </Button>
             )
               : modalType === 'warning' ? (

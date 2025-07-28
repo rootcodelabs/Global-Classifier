@@ -53,6 +53,14 @@ fi
 # Extract model_id and job_id
 model_id=$(echo "$response_first_come_training_job" | sed -E 's/.*"modelId":[[:space:]]*([0-9]+).*/\1/')
 job_id=$(echo "$response_first_come_training_job" | sed -E 's/.*"jobId":"?([0-9a-zA-Z-]+)"?.*/\1/')
+model_name=$(echo "$response_first_come_training_job" | sed -E 's/.*"modelName":"?([^",}]+)"?.*/\1/')
+major_version=$(echo "$response_first_come_training_job" | sed -E 's/.*"majorVersion":[[:space:]]*([0-9]+).*/\1/')
+minor_version=$(echo "$response_first_come_training_job" | sed -E 's/.*"minorVersion":[[:space:]]*([0-9]+).*/\1/')
+latest=$(echo "$response_first_come_training_job" | sed -E 's/.*"latest":[[:space:]]*(true|false).*/\1/')
+deployment_environment=$(echo "$response_first_come_training_job" | sed -E 's/.*"deploymentEnvironment":"?([^",}]+)"?.*/\1/')
+
+echo "🔍 [----DEBUG----] Raw response: '$response_first_come_training_job'"
+
 if [ -z "$model_id" ]; then
     echo "❌ [ERROR] Model ID not found in response"
     echo "🔍 [DEBUG] Raw response: '$response_first_come_training_job'"
@@ -67,6 +75,11 @@ fi
 
 echo "📦 [MODEL] Model ID: $model_id"
 echo "📦 [JOB] Job ID: $job_id"
+echo "📦 [MODEL] Model Name: $model_name"
+echo "📦 [VERSION] Major Version: $major_version"
+echo "📦 [VERSION] Minor Version: $minor_version"
+echo "📦 [VERSION] Latest: $latest"
+echo "📦 [ENVIRONMENT] Deployment Environment: $deployment_environment"
 
 response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
     -H "Content-Type: application/json" \
@@ -148,15 +161,15 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
         echo "✅ uv already installed."
     fi
 
-    if [ ! -f /app/src/training/requirements.txt ]; then
-        echo "❌ /app/src/training/requirements.txt not found!"
+    if [ ! -f /app/src/model_training/requirements-gpu.txt ]; then
+        echo "❌ /app/src/model_training/requirements-gpu.txt not found!"
         exit 1
     fi
 
-    echo "📦 [INSTALL] Installing from /app/src/training/requirements.txt using uv..."
-    uv pip install -r /app/src/training/requirements.txt || {
+    echo "📦 [INSTALL] Installing from /app/src/model_training/requirements-gpu.txt using uv..."
+    uv pip install -r /app/src/model_training/requirements-gpu.txt || {
         echo "⚠️ uv install failed — trying pip as fallback..."
-        pip install -r /app/src/training/requirements.txt || {
+        pip install -r /app/src/model_training/requirements-gpu.txt || {
             echo "❌ Both uv and pip install failed inside virtualenv"
             exit 1
         }
@@ -167,10 +180,10 @@ else
     echo "🎉 [SUCCESS] All required Python packages are already installed inside virtualenv."
 fi
 echo "✅ [VIRTUALENV] All checks passed, proceeding with training script..."
-echo "🚀 [TRAINING] Starting training for Model ID: $model_id, Dataset ID: $dataset_id"
+echo "🚀 [TRAINING] Starting training for Model ID: $model_id, Dataset ID: $dataset_id, Model Major Version: $major_version, Model Minor Version: $minor_version, Model Name: $model_name"
 
 # Set up training parameters
-TRAINING_SCRIPT="/app/src/training/scripts/train.py"
+TRAINING_SCRIPT="/app/src/model_training/model_trainer.py"
 TRAINING_OUTPUT_DIR="/app/models"
 MLFLOW_TRACKING_URI="${MLFLOW_TRACKING_URI:-http://mlflow:5000}"
 PROCESSED_DATA_DIR="/app/data/processed"
@@ -179,11 +192,11 @@ PROCESSED_DATA_DIR="/app/data/processed"
 training_output_dir="${TRAINING_OUTPUT_DIR}/model_${model_id}"
 mkdir -p "$training_output_dir"
 
-# Set default training parameters (can be made configurable)
-max_seq_length=128
-num_epochs=3
-batch_size=8
-learning_rate=2e-5
+# # Set default training parameters (can be made configurable)
+# max_seq_length=128
+# num_epochs=3
+# batch_size=8
+# learning_rate=2e-5
 
 echo "📋 [PARAMS] Training parameters:"
 echo "  - Dataset ID: $dataset_id"
@@ -191,6 +204,11 @@ echo "  - Model ID: $model_id"
 echo "  - Model Type: $model_types"
 echo "  - Output Dir: $training_output_dir"
 echo "  - MLflow URI: $MLFLOW_TRACKING_URI"
+echo "  - Model Name: $model_name"
+echo "  - Major Version: $major_version"
+echo "  - Minor Version: $minor_version"
+echo "  - Is Latest: $latest"
+echo "  - Deployment Environment: $deployment_environment"
 
 # Call the training script
 echo "🎓 [EXECUTE] Calling training script..."
@@ -200,14 +218,14 @@ python3 "$TRAINING_SCRIPT" \
     --model_id "$model_id" \
     --job_id "$job_id" \
     --dataset_id "$dataset_id" \
-    --data_dir "$PROCESSED_DATA_DIR" \
-    --output_dir "$training_output_dir" \
-    --mlflow_tracking_uri "$MLFLOW_TRACKING_URI" \
-    --num_epochs "$num_epochs" \
-    --batch_size "$batch_size" \
-    --learning_rate "$learning_rate" \
-    --max_seq_length "$max_seq_length" \
-    --seed 42
+    --model_name "$model_name" \
+    --major_version "$major_version" \
+    --minor_version "$minor_version" \
+    --latest "$latest" \
+    --deployment_environment "$deployment_environment" \
+    # --data_dir "$PROCESSED_DATA_DIR" \
+    # --output_dir "$training_output_dir" \
+    # --mlflow_tracking_uri "$MLFLOW_TRACKING_URI" \
 
 training_exit_code=$?
 

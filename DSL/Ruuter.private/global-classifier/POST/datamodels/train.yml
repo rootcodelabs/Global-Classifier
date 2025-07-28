@@ -11,10 +11,30 @@ declaration:
       - field: modelId
         type: number
         description: "Body field 'modelId'"
+      - field: modelName
+        type: string
+        description: "Body field 'modelName'"
+      - field: majorVersion
+        type: number
+        description: "Body field 'majorVersion'"
+      - field: minorVersion
+        type: number
+        description: "Body field 'minorVersion'"
+      - field: latest
+        type: boolean
+        description: "Body field 'latest'"
+      - field: deploymentEnvironment
+        type: string
+        description: "Body field 'deploymentEnvironment'"
 
 extract_request_data:
   assign:
     model_id: ${incoming.body.modelId}
+    model_name: ${incoming.body.modelName}
+    major_version: ${incoming.body.majorVersion}
+    minor_version: ${incoming.body.minorVersion}
+    latest: ${incoming.body.latest}
+    deployment_environment: ${incoming.body.deploymentEnvironment}
     next: check_for_request_data
 
 check_for_request_data:
@@ -29,6 +49,11 @@ create_training_job_in_queue:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-training-job-to-queue"
     body:
       model_id: ${model_id}
+      model_name: ${model_name}
+      major_version: ${major_version}
+      minor_version: ${minor_version}
+      latest: ${latest}
+      deployment_environment: ${deployment_environment}
   result: res_model
   next: log_result
 

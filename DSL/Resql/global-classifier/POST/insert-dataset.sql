@@ -1,4 +1,4 @@
-INSERT INTO public.datasets (
+INSERT INTO public.dataset_versions (
     major,
     minor,
     created_at,
