@@ -8,3 +8,7 @@ export enum AUTHOR_ROLES {
   END_USER = 'end-user',
   BACKOFFICE_USER = 'backoffice-user',
 }
+
+export const OVERVIEW_PAGE_SIZE = 12;
+export const DATASET_PAGE_SIZE = 5;
+export const USER_MANAGEMENT_PAGE_SIZE = 10;
