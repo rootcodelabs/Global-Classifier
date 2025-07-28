@@ -45,16 +45,22 @@ return_result:
   next: end
 
 return_empty_result:
-  return: '{"response":[]}'
+  return: ${[]}
   status: 200
   next: end
 
 return_database_error:
-  return: '{"error": "Failed to retrieve datamodel versions"}'
+  assign:
+    error_response:
+      error: "Failed to retrieve datamodel versions"
+  return: ${error_response}
   status: 500
   next: end
 
 return_format_error:
-  return: '{"error": "Failed to format datamodel versions"}'
+  assign:
+    error_response:
+      error: "Failed to format datamodel versions"
+  return: ${error_response}
   status: 500
   next: end

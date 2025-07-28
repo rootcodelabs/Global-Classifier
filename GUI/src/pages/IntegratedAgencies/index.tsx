@@ -40,10 +40,7 @@ const IntegratedAgencies: FC = () => {
   const handleSortChange = (selection: any) => {
     setSortOption(selection?.value as string);
     setPageIndex(1); 
-  };
-
-  console.log(pageCount);
-  
+  };  
 
   return (
     <div>

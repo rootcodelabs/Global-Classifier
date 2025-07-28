@@ -4,10 +4,10 @@
       "sessionId": {
         "type": "keyword"
       },
-      "validationStatus": {
+      "generationStatus": {
         "type": "keyword"
       },
-      "validationMessage": {
+      "generationMessage": {
         "type": "keyword"
       },
       "progressPercentage": {
