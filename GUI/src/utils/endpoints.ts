@@ -19,6 +19,7 @@ export const datasetsEndpoints = {
   GET_METADATA: (): string => `/global-classifier/datasets/metadata`,
   GET_DATASETS_DATA: (): string => '/global-classifier/datasets/data',
   GET_ALL_DATASET_VERSIONS: (): string => '/global-classifier/datasets/versions',
+  GET_DATA_GENERATION_PROGRESS: (): string => `/global-classifier/datasets/progress`,
 
 
   GET_DATASET_FILTERS: (): string =>

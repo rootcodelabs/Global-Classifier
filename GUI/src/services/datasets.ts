@@ -1,4 +1,4 @@
-import { datasetsEndpoints } from 'utils/endpoints';
+import { dataModelsEndpoints, datasetsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
 
 export async function getDatasetsOverview(
@@ -46,4 +46,7 @@ export async function getAllDatasetVersions() {
   return data?.response ?? [];
 }
 
-
+export async function getDataGenerationProgress() {
+  const { data } = await apiDev.get(datasetsEndpoints.GET_DATA_GENERATION_PROGRESS());
+  return data?.response?.data;
+}

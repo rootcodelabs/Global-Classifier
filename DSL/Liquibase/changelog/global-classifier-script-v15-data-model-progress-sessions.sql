@@ -1,6 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset Erangi Ariyasena:classifier-script-v13-changeset1
+-- todo update with the latest changes
 CREATE TYPE Training_Progress_Status AS ENUM ('Initiating Training', 'Training In-Progress', 'Deploying Model', 'Model Trained And Deployed','Training Failed');
 
 -- changeset Erangi Ariyasena:classifier-script-v13-changeset2
