@@ -1,0 +1,132 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Primary text classification endpoint for Buerokratt chatbot services"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: chatId
+        type: string
+        description: "Unique identifier for the chat session"
+      - field: message
+        type: string
+        description: "Text message to be classified"
+      - field: authorId
+        type: string
+        description: "Identifier of the message author"
+      - field: url
+        type: string
+        description: "URL context for the chat session"
+
+extractClassificationData:
+  assign:
+    chatId: ${incoming.body.chatId}
+    message: ${incoming.body.message}
+    authorId: ${incoming.body.authorId}
+    url: ${incoming.body.url ?? ""}
+  next: validate_input
+
+validate_input:
+  switch:
+    - condition: ${!chatId}
+      next: return_validation_error
+    - condition: ${!message}
+      next: return_validation_error
+    - condition: ${!authorId}
+      next: return_validation_error
+  next: get_production_model
+
+get_production_model:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-production-model-id"
+    body: {}
+  result: model_result
+  next: check_model_availability
+  error: handle_model_error
+
+check_model_availability:
+  switch:
+    - condition: ${!model_result.response.body || model_result.response.body.length == 0}
+      next: return_no_model_error
+  assign:
+    modelId: ${model_result.response.body[0].modelId}
+  next: prepare_inference_payload
+
+prepare_inference_payload:
+  assign:
+    ensembleModelName: ${modelId}-classifier-ensemble
+    inferencePayload:
+      inputs:
+        - name: "TEXT"
+          datatype: "BYTES"
+          shape: [1, 1]
+          data:
+            - ${message}
+  next: call_triton_inference
+
+call_triton_inference:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_PRODUCTION_ENV_MODEL_SERVER]/v2/models/${ensembleModelName}/infer"
+    body: ${inferencePayload}
+    headers:
+      Content-Type: "application/json"
+  result: inference_result
+  next: process_classification_result
+  error: handle_inference_error
+
+process_classification_result:
+  assign:
+    # Parse the JSON string output from Triton to get agency classification array
+    rawOutput: ${inference_result.response.body.outputs[0].data[0]}
+    parsedOutput: ${JSON.parse(rawOutput)}
+  next: return_classification_success
+
+return_classification_success:
+  status: 200
+  return: ${parsedOutput}
+  next: end
+
+handle_model_error:
+  log: "Error retrieving production model: ${model_result.error}"
+  next: return_model_error
+
+handle_inference_error:
+  log: "Error calling Triton inference server: ${inference_result.error}"
+  next: return_inference_error
+
+return_validation_error:
+  status: 400
+  return:
+    status: "error"
+    message: "Invalid payload. chatId, message, and authorId are required."
+    error: "VALIDATION_ERROR"
+  next: end
+
+return_no_model_error:
+  status: 503
+  return:
+    status: "error"
+    message: "No production model available for classification"
+    error: "NO_MODEL_AVAILABLE"
+  next: end
+
+return_model_error:
+  status: 500
+  return:
+    status: "error"
+    message: "Failed to retrieve production model configuration"
+    error: "MODEL_RETRIEVAL_ERROR"
+  next: end
+
+return_inference_error:
+  status: 500
+  return:
+    status: "error"
+    message: "Classification service temporarily unavailable"
+    error: "INFERENCE_ERROR"
+  next: end
