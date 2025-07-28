@@ -94,7 +94,6 @@ class ModelTrainer:
             logger.info("ENTERING UNIFIED TRAINING FUNCTION")
             logger.info(f"DEPLOYMENT PLATFORM - {self.current_deployment_platform}")
 
-
             # Initialize services
             s3_ferry = S3Ferry()
 
