@@ -30,8 +30,8 @@ async function searchDatasetGroupNotification({
         const sessionJson = {
           sessionId: hit._source.sessionId,
           progressPercentage: hit._source.progressPercentage,
-          validationStatus: hit._source.validationStatus,
-          validationMessage: hit._source.validationMessage,
+          generationStatus: hit._source.generationStatus,
+          generationMessage: hit._source.generationMessage,
         };
         await sender(sessionJson);
         await markAsSent(hit, connectionId);
@@ -99,16 +99,16 @@ async function markAsSent({ _index, _id }, connectionId) {
 async function updateDatasetGroupProgress(
   sessionId,
   progressPercentage,
-  validationStatus,
-  validationMessage
+  generationStatus,
+  generationMessage
 ) {
   await client.index({
     index: "dataset_progress_sessions",
     body: {
       sessionId,
-      validationStatus,
+      generationStatus,
       progressPercentage,
-      validationMessage,
+      generationMessage,
       timestamp: Date.now(),
     },
   });

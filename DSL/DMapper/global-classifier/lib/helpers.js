@@ -202,11 +202,7 @@ export function extractNewAgencies(gcAgencies, centopsAgencies) {
  * @param {string|number} pageNum
  * @returns {Object} Parsed JSON content of the file
  */
-export function getSingleChunkData(chunkData) {
-
-  console.log(chunkData, "dataChunk");
-  
- 
+export function getSingleChunkData(chunkData) { 
   const mapped = chunkData?.map(item => ({
     clientId: item.agency_id,
     id: item.id,
@@ -270,8 +266,6 @@ export function filterDataByAgency(aggregatedData, startIndex, agencyId, pageSiz
     clientName: item.agency_name, // No mapping available, so use agency_id
     question: item.question
   }));
-  console.log("Filtered  data:", filtered);
-  console.log("Paginated data:", paginated);
   return JSON.stringify(result);
   
 }

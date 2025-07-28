@@ -1,5 +1,6 @@
-import { datasetsEndpoints } from 'utils/endpoints';
+import { dataModelsEndpoints, datasetsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import { DATASET_PAGE_SIZE, OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
 export async function getDatasetsOverview(
   pageNum: number,
@@ -11,7 +12,7 @@ export async function getDatasetsOverview(
       generationStatus: "all",
       sortBy:sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
-      pageSize: 12,
+      pageSize: OVERVIEW_PAGE_SIZE,
     },
   });
   return data?.response ?? [];
@@ -28,21 +29,25 @@ export async function getDatasetMetadata(
 }
 
 export async function getDatasetData(
-  datasetId: number |string,
-  agencyId?: number |string,
+  datasetVersionId: number |string,
   pageNum?: number,
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
-      datasetId,
-      agencyId,
+      datasetVersionId,
       pageNum : pageNum ?? 1,
+      pageSize:DATASET_PAGE_SIZE
     },
   });
-  return data?.response?.data ?? [];
+  return data?.response ?? [];
 }
 
 export async function getAllDatasetVersions() {
   const { data } = await apiDev.get(datasetsEndpoints.GET_ALL_DATASET_VERSIONS());
   return data?.response ?? [];
+}
+
+export async function getDataGenerationProgress() {
+  const { data } = await apiDev.get(datasetsEndpoints.GET_DATA_GENERATION_PROGRESS());
+  return data?.response?.data;
 }

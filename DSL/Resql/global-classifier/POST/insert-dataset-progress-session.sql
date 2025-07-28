@@ -4,12 +4,12 @@ INSERT INTO "dataset_progress_sessions" (
     minor_version,
     latest,
     progress_percentage,
-    validation_status
+    generation_status
 ) VALUES (
     :dataset_id,
     :major_version,
     :minor_version,
     :latest,
     :progressPercentage,
-    :validation_status::Validation_Progress_Status
+    :generation_status::Generation_Progress_Status
 )RETURNING id;

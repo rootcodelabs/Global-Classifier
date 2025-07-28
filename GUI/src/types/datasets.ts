@@ -45,7 +45,7 @@ export type FilterData = {
 };
 
 
-export type SelectedRowPayload = {id:string |number, question: string; clientName: string; clientId?: number | string }
+export type SelectedRowPayload = {itemId:string |number, dataItem: string; agencyName: string; agencyId?: number | string }
 
 export type ValidationProgressData = {
   id: string;
@@ -54,14 +54,14 @@ export type ValidationProgressData = {
   minorVersion: number;
   patchVersion: number;
   latest: boolean;
-  validationStatus: string;
-  validationMessage?: string;
+  generationStatus: string;
+  generationMessage?: string;
   progressPercentage: number;
 };
 
 export type SSEEventData = {
   sessionId: string;
-  validationStatus: string;
-  validationMessage?: string;
+  generationStatus: string;
+  generationMessage?: string;
   progressPercentage: number;
 };

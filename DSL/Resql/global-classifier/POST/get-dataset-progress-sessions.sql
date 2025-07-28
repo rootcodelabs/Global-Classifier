@@ -6,7 +6,7 @@ SELECT
     latest,
     process_complete,
     progress_percentage,
-    validation_status,
-    validation_message
+    generation_status,
+    generation_message
 FROM dataset_progress_sessions
 ORDER BY created_time DESC;
