@@ -1,10 +1,11 @@
 #!/bin/bash
 
 echo "Started Shell Script for S3 DataSet Processing"
+PROGRESS_CREATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/create"
 
 # Check if environment variable is set
-if [ -z "$signedUrls" ] || [ -z "$datasetId" ]; then
-  echo "Please set the signedUrls and datasetId environment variables."
+if [ -z "$signedUrls" ] || [ -z "$datasetId" ] || [ -z "$majorVersion" ] || [ -z "$minorVersion" ]; then
+  echo "Please set the signedUrls, datasetId, majorVersion, and minorVersion environment variables."
   exit 1
 fi
 
