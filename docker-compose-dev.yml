@@ -415,10 +415,8 @@ services:
     container_name: grafana
     ports:
       - "4005:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
+    env_file:
+      - config.env
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana-configs/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
