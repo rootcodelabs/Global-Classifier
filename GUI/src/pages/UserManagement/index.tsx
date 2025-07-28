@@ -18,6 +18,7 @@ import { ButtonAppearanceTypes } from 'enums/commonEnums';
 import SkeletonTable from 'components/molecules/TableSkeleton/TableSkeleton';
 import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
 import ActionButtons from 'components/molecules/UserManagementActionButtons/UserManagementActionButtons';
+import { USER_MANAGEMENT_PAGE_SIZE } from 'utils/constants';
 
 const UserManagement: FC = () => {
   const columnHelper = createColumnHelper<User>();
@@ -26,7 +27,7 @@ const UserManagement: FC = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: USER_MANAGEMENT_PAGE_SIZE,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   const { t } = useTranslation();
