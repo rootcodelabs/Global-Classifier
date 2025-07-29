@@ -249,22 +249,22 @@ services:
     networks:
       - bykstack
 
-  dataset-file-handler:
-    container_name: dataset-file-handler
-    build: ./src/dataset_file_handler
-    ports:
-      - "8001:8001"
-    volumes:
-      - cron_data:/app/data  # Same volume as cron-manager
-    environment:
-      - PORT=8001
-    networks:
-      - bykstack
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # dataset-file-handler:
+  #   container_name: dataset-file-handler
+  #   build: ./src/dataset_file_handler
+  #   ports:
+  #     - "8001:8001"
+  #   volumes:
+  #     - cron_data:/app/data  # Same volume as cron-manager
+  #   environment:
+  #     - PORT=8001
+  #   networks:
+  #     - bykstack
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
   opensearch-node:
     image: opensearchproject/opensearch:2.11.1
