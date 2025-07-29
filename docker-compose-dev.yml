@@ -119,6 +119,8 @@ services:
       - 8082:8082
     volumes:
       - ./DSL/Resql:/DSL
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
     networks:
       - bykstack
 
@@ -133,6 +135,8 @@ services:
       - 5435:5432
     volumes:
       - ./global-classifier-db/db_files:/var/lib/postgresql/data
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
 
     networks:
       - bykstack
@@ -140,10 +144,11 @@ services:
 
   init:
     image: busybox
-    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer"]
+    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer && chmod -R 777 /app/data"]
     volumes:
       - shared-volume:/shared
       - ./model_trainer:/app/model_trainer
+      - cron_data:/app/data
     networks:
       - bykstack
 
@@ -158,12 +163,21 @@ services:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
+      - ./src/model-training:/app/src/training
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
+      - ./data/processed:/app/data/processed
+      - shared-volume:/app/shared
+      - ./models:/app/models
       - ./src/inference/inference_scripts:/app/inference_scripts
       - ./grafana-configs/loki_logger.py:/app/inference_scripts/loki_logger.py
       - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
+    runtime: nvidia 
     environment:
+      - NVIDIA_VISIBLE_DEVICES=all
       - server.port=9010
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONPATH=/app:/app/src/model_training:/app/src/s3_dataset_processor:/app/src
     ports:
       - 9010:8080
     networks:
@@ -171,6 +185,29 @@ services:
     depends_on:
       init:
         condition: service_completed_successfully
+  
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    container_name: mlflow
+    ports:
+      - "5001:5000"
+    env_file:
+      - sidecar.env
+    environment:
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_HOST=${MLFLOW_HOST}
+      - MLFLOW_PORT=${MLFLOW_PORT}
+      - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+      - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
+    volumes:
+      - ./mlflow/mlflow_data:/mlflow/mlflow_data
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
+    networks:
+      - bykstack
   
   minio:
     image: minio/minio:latest
@@ -201,6 +238,8 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - shared-volume:/app/shared
+      - ./models:/app/models
       - ./src/inference/dummy_model:/app/dummy_model
       - cron_data:/app/data
     env_file:
@@ -212,24 +251,68 @@ services:
       - bykstack
     depends_on:
       minio:
-        condition: service_started
-                                                                                                                                                                                                                           
-  dataset-file-handler:
-    container_name: dataset-file-handler
-    build: ./src/dataset_file_handler
-    ports:
-      - "8001:8001"
-    volumes:
-      - cron_data:/app/data  # Same volume as cron-manager
+        condition: service_started 
+
+  opensearch-node:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-node
     environment:
-      - PORT=8001
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
     networks:
-      - bykstack
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - bykstack 
+
+  notifications-node:
+    container_name: notifications-node
+    build:
+      context: ./notification-server
+      dockerfile: Dockerfile
+    ports:
+      - 4040:4040
+    depends_on:
+      - opensearch-node
+    environment:
+      OPENSEARCH_PROTOCOL: http
+      OPENSEARCH_HOST: opensearch-node
+      OPENSEARCH_PORT: 9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      PORT: 4040
+      REFRESH_INTERVAL: 1000
+      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
+      RUUTER_URL: http://ruuter-public:8086
+    volumes:
+      - /app/node_modules
+      - ./notification-server:/app
+    networks:
+      - bykstack 
+
+  opensearch-dashboards:
+      image: opensearchproject/opensearch-dashboards:2.11.1
+      container_name: opensearch-dashboards
+      environment:
+        - OPENSEARCH_HOSTS=http://opensearch-node:9200
+        - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      ports:
+        - 5601:5601
+      networks:
+        - bykstack                                                                                                                                                                                                                    
         
   gui:
     container_name: gui
