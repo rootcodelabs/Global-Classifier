@@ -127,75 +127,75 @@ const ConfigureDataModel: FC = () => {
     },
   });
 
-const handleSaveChanges = () => {
-  const payload = getChangedAttributes(initialData, dataModel);
+  const handleSaveChanges = () => {
+    const payload = getChangedAttributes(initialData, dataModel);
 
-  const updateType = getUpdateType(payload);
-  
-  const updatedPayload = buildUpdatedPayload(updateType);
-  
-  const isDeploymentChanged = payload.deploymentEnvironment;
-  
-  const isChangingToProduction = dataModel.deploymentEnvironment === "production" && prodDataModel;
-  
-  if (isChangingToProduction && !updateType && isDeploymentChanged) {
-    const deployPayload = {
-                modelId: modelMetadata.modelId ?? "",
-                currentEnv: initialData.deploymentEnvironment ?? "",
-                targetEnv: dataModel.deploymentEnvironment ?? ""
-              };
-    // Always show replace modal when changing to production
-    openModal(
-      t('dataModels.createDataModel.replaceDesc'),
-      t('dataModels.createDataModel.replaceTitle'),
-      () =>  deployMutation.mutate(deployPayload),
-      'replace'
-    );
-  } else if (updateType) {
-    // Direct update for non-production changes
-    updateMutation.mutate(updatedPayload, {
-      onSuccess: () => {
-        if (isDeploymentChanged) {
-          const deployPayload = {
-            modelId: modelMetadata.modelId ?? "",
-            currentEnv: initialData.deploymentEnvironment ?? "",
-            targetEnv: dataModel.deploymentEnvironment ?? ""
-          };
-          deployMutation.mutate(deployPayload);
-        }
+    const updateType = getUpdateType(payload);
+
+    const updatedPayload = buildUpdatedPayload(updateType);
+
+    const isDeploymentChanged = payload.deploymentEnvironment;
+
+    const isChangingToProduction = dataModel.deploymentEnvironment === "production" && prodDataModel;
+
+    if (isChangingToProduction) {
+      // Always show replace modal when changing to production
+      if (!updateType && isDeploymentChanged) {
+        const deployPayload = {
+          modelId: modelMetadata.modelId ?? "",
+          currentEnv: initialData.deploymentEnvironment ?? "",
+          targetEnv: dataModel.deploymentEnvironment ?? ""
+        };
+        openModal(
+          t('dataModels.createDataModel.replaceDesc'),
+          t('dataModels.createDataModel.replaceTitle'),
+          () => deployMutation.mutate(deployPayload),
+          'replace'
+        );
+      } else if (updateType) {
+        const updateType = getUpdateType(payload);
+        openModal(
+          t('dataModels.createDataModel.replaceDesc'),
+          t('dataModels.createDataModel.replaceTitle'),
+          () => updateMutation.mutate(buildUpdatedPayload(updateType)),
+          'replace'
+        );
       }
-    });
-  } else if (isDeploymentChanged) {
-    // Only deployment environment changed, no update needed, just deploy
-    const deployPayload = {
-      modelId: modelMetadata.modelId ?? "",
-      currentEnv: initialData.deploymentEnvironment ?? "",
-      targetEnv: dataModel.deploymentEnvironment ?? ""
-    };
-    deployMutation.mutate(deployPayload);
-  }
-};
 
-const getUpdateType = (payload: any): string | undefined => {
-  if (payload.datasetId) {
-    return UpdateType.MAJOR;
-  } else if (!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])) {
-    return UpdateType.MINOR;
-  }
-  return undefined;
-};
+    } else if (!isChangingToProduction &&updateType) {
+      // Direct update for non-production changes
+      updateMutation.mutate(updatedPayload);
+    } else if (isDeploymentChanged) {
+      // Only deployment environment changed, no update needed, just deploy
+      const deployPayload = {
+        modelId: modelMetadata.modelId ?? "",
+        currentEnv: initialData.deploymentEnvironment ?? "",
+        targetEnv: dataModel.deploymentEnvironment ?? ""
+      };
+      deployMutation.mutate(deployPayload);
+    }
+  };
 
-const buildUpdatedPayload = (updateType: string | undefined) => ({
-  modelGroupKey: modelMetadata.modelGroupKey ?? "",
-  modelName: dataModel.modelName ?? "",
-  connectedDsId: Number(dataModel.datasetId) ?? 0,
-  deploymentEnv: dataModel.deploymentEnvironment ?? "",
-  baseModels: dataModel.baseModels ?? [],
-  connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
-  connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
-  updateType: updateType ?? "",
-  isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
-});
+  const getUpdateType = (payload: any): string | undefined => {
+    if (payload.datasetId) {
+      return UpdateType.MAJOR;
+    } else if (!areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])) {
+      return UpdateType.MINOR;
+    }
+    return undefined;
+  };
+
+  const buildUpdatedPayload = (updateType: string | undefined) => ({
+    modelGroupKey: modelMetadata.modelGroupKey ?? "",
+    modelName: dataModel.modelName ?? "",
+    connectedDsId: Number(dataModel.datasetId) ?? 0,
+    deploymentEnv: dataModel.deploymentEnvironment ?? "",
+    baseModels: dataModel.baseModels ?? [],
+    connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
+    connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
+    updateType: updateType ?? "",
+    isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
+  });
 
   const deleteDataModelMutation = useMutation({
     mutationFn: deleteDataModel,
@@ -350,7 +350,16 @@ const buildUpdatedPayload = (updateType: string | undefined) => ({
                 >
                   View all Data Models
                 </Button>
-              )
+              ) : modalType === 'prod-update' ? (
+              <Button
+                disabled={deleteDataModelMutation.isLoading}
+                showLoadingIcon={deleteDataModelMutation.isLoading}
+                onClick={() => modalFunciton.current()}
+                appearance={ButtonAppearanceTypes.PRIMARY}
+              >
+                {t('global.continue')}
+              </Button>
+            )
                 : (
                   null
                 )}

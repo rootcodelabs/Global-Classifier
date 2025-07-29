@@ -1,0 +1,171 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Deploy a data model in a specified environment"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  # Input Validation Schema
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "Model identifier (integer)"
+      - field: currentEnv
+        type: string
+        description: "Current environment: undeployed, testing, or production"
+      - field: targetEnv
+        type: string
+        description: "Target environment: undeployed, testing, or production"
+      - field: firstDeployment
+        type: boolean
+        description: "Indicates if this is the first deployment of the model"
+  next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+    firstDeployment: ${incoming.body.firstDeployment}
+    currentEnv: ${incoming.body.currentEnv}
+    targetEnv: ${incoming.body.targetEnv}
+    deploymentType: ${currentEnv + "_to_" + targetEnv} 
+  next: validate_input
+    
+# Required Field Validation
+validate_input:
+  switch:
+    - condition: ${!modelId}
+      next: validation_error
+    - condition: ${firstDeployment !== true && firstDeployment !== false}
+      next: validation_error
+    - condition: ${!currentEnv || !['undeployed', 'testing', 'production'].includes(currentEnv)}
+      next: validation_error
+    - condition: ${!targetEnv || !['undeployed', 'testing', 'production'].includes(targetEnv)}
+      next: validation_error
+    - condition: ${currentEnv === targetEnv && currentEnv !== 'undeployed'}
+      next: same_environment_error
+  next: checkFirstDeployment
+
+checkFirstDeployment:
+  switch:
+    - condition: ${firstDeployment}
+      next: handleFirstDeployment
+  next: selectDeploymentPath
+
+handleFirstDeployment:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/deploy/deploy_model"
+    query:
+      modelId: ${modelId}
+      currentEnv: ${currentEnv}
+      targetEnv: ${targetEnv}
+      firstDeployment: ${firstDeployment}
+  result: res
+  next: selectDeploymentPath
+
+
+selectDeploymentPath:
+  switch:
+
+    - condition: ${deploymentType === "undeployed_to_testing"}
+      next: pushUndeployedModelToTesting
+
+    - condition: ${deploymentType === "testing_to_production"}
+      next: pushTestingModelToProduction
+
+    - condition: ${deploymentType === "production_to_testing"}
+      next: pushProductionModelToTesting
+
+    - condition: ${deploymentType === "testing_to_undeployed"}
+      next: pushTestingModelToUndeployed
+
+    - condition: ${deploymentType === "production_to_undeployed"}
+      next: pushProductionModelToUndeployed
+
+    - condition: ${deploymentType === "undeployed_to_production"}
+      next: pushUndeployedModelToProduction
+
+  next: return_invalid_deployment_path_error
+
+pushUndeployedModelToTesting:
+  call: reflect.mock
+  args: 
+    response:
+      success: true
+      message: "Model successfully pushed from undeployed to testing environment"
+  result: deployment_status
+  next: return_deployment_status
+
+
+pushUndeployedModelToProduction:
+  call: reflect.mock
+  args:
+    response:
+      success: true
+      message: "Model  successfully pushed from undeployed to production environment"
+  result: deployment_status
+  next: return_deployment_status
+
+pushTestingModelToProduction:
+  call: reflect.mock
+  args: 
+    response:
+      success: true
+      message: "Model successfully pushed from testing to production environment"
+  result: deployment_status
+  next: return_deployment_status
+
+pushProductionModelToTesting:
+  call: reflect.mock
+  args:
+    response:
+      success: true
+      message: "Model successfully pushed from production to testing environment"
+  result: deployment_status
+  next: return_deployment_status
+
+pushTestingModelToUndeployed:
+  call: reflect.mock
+  args:
+    response:
+      success: true
+      message: "Model successfully pushed from testing to undeployed environment"
+  result: deployment_status
+  next: return_deployment_status
+
+pushProductionModelToUndeployed:
+  call: reflect.mock
+  args:
+    response:
+      success: true
+      message: "Model successfully pushed from production to undeployed environment"
+  result: deployment_status
+  next: return_deployment_status
+
+
+
+return_invalid_deployment_path_error:
+  return: "Invalid deployment path. Supported transitions - undeployed to testing, testing to production, production to testing, testing to undeployed, production to undeployed, undeployed to production"
+  status: 400
+  next: end
+
+    
+validation_error:
+  return: "Invalid input. Required - model_id (number), current_env or target_env (undeployed|testing|production)"
+  status: 400
+  next: end
+
+same_environment_error:
+  return: "Current environment and target environment cannot be the same"
+  status: 400
+  next: end
+
+return_deployment_status:
+  return: ${deployment_status.response}
+  status: 200
+  next: end
+
+

@@ -1,7 +1,7 @@
 declaration:
   call: declare
   version: 0.1
-  description: "Callback endpoint for Global Classifier to indicate routing decisions"
+  description: "Primary text classification endpoint for Buerokratt chatbot services"
   method: post
   accepts: json
   returns: json
@@ -10,64 +10,122 @@ declaration:
     body:
       - field: chatId
         type: string
-        description: "Unique identifier of the chat session"
-      - field: inferenceId
+        description: "Unique identifier for the chat session"
+      - field: message
         type: string
-        description: "Unique identifier of the prediction attempt"
-      - field: targetAgencies
-        type: json
-        description: "Array of agency IDs with confidence scores for routing"
+        description: "Text message to be classified"
+      - field: authorId
+        type: string
+        description: "Identifier of the message author"
+      - field: url
+        type: string
+        description: "URL context for the chat session"
 
-extractDecisionData:
+extractClassificationData:
   assign:
     chatId: ${incoming.body.chatId}
-    inferenceId: ${incoming.body.inferenceId}
-    targetAgencies: ${incoming.body.targetAgencies ?? []}
-  next: validate_decision
+    message: ${incoming.body.message}
+    authorId: ${incoming.body.authorId}
+    url: ${incoming.body.url ?? ""}
+  next: validate_input
 
-validate_decision:
+validate_input:
   switch:
     - condition: ${!chatId}
       next: return_validation_error
-  next: log_classification
+    - condition: ${!message}
+      next: return_validation_error
+    - condition: ${!authorId}
+      next: return_validation_error
+  next: get_production_model
+
+get_production_model:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-production-model-id"
+    body: {}
+  result: model_result
+  next: check_model_availability
+  error: return_model_error
+
+check_model_availability:
+  switch:
+    - condition: ${!model_result.response.body || model_result.response.body.length == 0}
+      next: return_no_model_error
+  assign:
+    modelId: ${model_result.response.body[0].modelId}
+  next: prepare_inference_payload
+
+prepare_inference_payload:
+  assign:
+    ensembleModelName: ${modelId}-classifier-ensemble
+  next: call_triton_inference
+
+call_triton_inference:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_PRODUCTION_ENV_MODEL_SERVER]/v2/models/${ensembleModelName}/infer"
+    body:
+      inputs:
+        - name: "TEXT"
+          datatype: "BYTES"
+          shape: [1, 1]
+          data:
+            - ${message}
+    headers:
+      Content-Type: "application/json"
+  result: inference_result
+  next: process_classification_result
+  error: return_inference_error
+
+process_classification_result:
+  assign:
+    # Parse the JSON string output from Triton to get agency classification array
+    rawOutput: ${inference_result.response.body.outputs[0].data[0]}
+    parsedOutput: ${JSON.parse(rawOutput)}
+  next: log_inference_result
+
+log_inference_result:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-inference-log"
+    body:
+      chatId: ${chatId}
+      authorId: ${authorId}
+      url: ${url}
+      parsedOutput: ${JSON.stringify(parsedOutput)}
+  result: log_result
+  next: return_classification_success
+  error: return_log_inference_error
+
+return_classification_success:
+  status: 200
+  return: ${parsedOutput}
+  next: end
+
+
+return_log_inference_error:
+  status: 500
+  return: "Error logging inference result in PostgresDB"
+  next: end
+
 
 return_validation_error:
   status: 400
-  return: "Invalid classification payload. Chat ID is required."
+  return: "Invalid payload. chatId, message, and authorId are required."
   next: end
 
-log_classification:
-  log: "Classification received for the chat ${chatId}: ${JSON.stringify(targetAgencies)}"
-  next: store_classification_data
+return_no_model_error:
+  status: 503
+  return: "No production model available for classification"
+  next: end
 
-store_classification_data:
-  call: http.post
-  args:
-    url: "[#GLOBAL_CLASSIFIER_RESQL]/store-classification"
-    body:
-      chatId: ${chatId}
-      inferenceId: ${inferenceId}
-      targetAgencies: ${JSON.stringify(targetAgencies)}
-  result: store_result
-  error: handle_storage_error
-  next: check_storage_result
-
-check_storage_result:
-  switch:
-    - condition: ${200 <= store_result.response.statusCodeValue && store_result.response.statusCodeValue < 300}
-      next: return_success
-  next: handle_storage_error
-
-handle_storage_error:
-  log: "Error storing classification data: ${store_result.error}"
-  next: return_storage_error
-
-return_storage_error:
+return_model_error:
   status: 500
-  return: "Failed to store classification data. Please try again later."
+  return: "Failed to retrieve production model configuration"
   next: end
-  
-return_success:
-  status: 200
-  return: "Classification received and stored successfully"
+
+return_inference_error:
+  status: 500
+  return: "Classification service temporarily unavailable"
   next: end
