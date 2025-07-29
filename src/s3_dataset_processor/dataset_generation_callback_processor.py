@@ -98,6 +98,7 @@ def upload_csv_to_s3(local_csv_path: str, dataset_id: int) -> None:
     if response.status_code not in [200, 201]:
         raise RuntimeError(f"Failed to upload CSV to S3: {response.text}")
 
+
 def notify_progress_uploading_to_s3(session_id: int) -> None:
     """Notify progress update: New Dataset Uploading to S3."""
     payload = {
@@ -108,7 +109,9 @@ def notify_progress_uploading_to_s3(session_id: int) -> None:
         "processComplete": True,
     }
     try:
-        logger.info(f"Calling progress update endpoint: {PROGRESS_UPDATE_URL} with payload={payload}")
+        logger.info(
+            f"Calling progress update endpoint: {PROGRESS_UPDATE_URL} with payload={payload}"
+        )
         response = requests.post(
             PROGRESS_UPDATE_URL,
             json=payload,
@@ -122,6 +125,7 @@ def notify_progress_uploading_to_s3(session_id: int) -> None:
     except Exception as e:
         logger.error(f"Error calling progress update endpoint: {e}")
         traceback.print_exc()
+
 
 def notify_dataset_update(output_csv_path: str) -> None:
     """Notify local dataset update endpoint before uploading to S3."""
@@ -185,7 +189,9 @@ def send_status_update(dataset_id: int, encoded_results: str) -> None:
         traceback.print_exc()
 
 
-def process_callback_background(file_path: str, encoded_results: str, session_id: int) -> None:
+def process_callback_background(
+    file_path: str, encoded_results: str, session_id: int
+) -> None:
     """Process the dataset generation callback: upload CSV to S3 and send status update."""
     try:
         logger.info(f"Starting processing for: {file_path}")
@@ -268,7 +274,9 @@ def parse_args():
         "--encoded-results", required=True, help="Encoded results string"
     )
     parser.add_argument("--output-json", help="Output JSON file path for response")
-    parser.add_argument("--session-id", required=True, help="Session ID for the callback")
+    parser.add_argument(
+        "--session-id", required=True, help="Session ID for the callback"
+    )
     return parser.parse_args()
 
 
@@ -280,7 +288,9 @@ def main():
         logger.info(f"File path: {args.file_path}")
         logger.info(f"Encoded results length: {len(args.encoded_results)} characters")
 
-        process_callback_background(args.file_path, args.encoded_results, args.session_id)
+        process_callback_background(
+            args.file_path, args.encoded_results, args.session_id
+        )
 
         response = {
             "message": "Callback processing completed successfully",

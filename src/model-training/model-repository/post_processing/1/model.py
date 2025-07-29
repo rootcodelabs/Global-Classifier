@@ -27,7 +27,6 @@ class TritonPythonModel:
         self.logger = pb_utils.Logger
 
         try:
-
             self.ood_method = self.params.get("ood_method", None)
             self.ood_threshold = self.params.get("ood_threshold", 0.5)
             self.energy_temp = self.params.get("energy_temp", 1.0)
