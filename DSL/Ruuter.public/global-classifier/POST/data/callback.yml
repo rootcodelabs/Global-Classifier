@@ -73,6 +73,7 @@ execute_cron_manager:
   args:
     url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/callback_formatter/callback_format"
     query:
+      taskId: ${task_id}
       filePath: ${file_path}
       results: ${results}
   result: cron_res

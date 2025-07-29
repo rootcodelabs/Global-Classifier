@@ -1,4 +1,4 @@
-INSERT INTO "dataset_progress_sessions" (
+INSERT INTO public.dataset_progress_sessions (
     dataset_id,
     major_version,
     minor_version,
