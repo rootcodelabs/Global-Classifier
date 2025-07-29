@@ -1,40 +1,32 @@
-DATA_DOWNLOAD_ENDPOINT = "http://file-handler:8000/datasetgroup/data/download/json"
-
-GET_DATASET_METADATA_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datasetgroup/group/metadata"
-)
-
-GET_MODEL_METADATA_ENDPOINT = "http://ruuter-private:8088/classifier/datamodel/metadata"
-
 UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/update/training/status"
+    "http://ruuter-public:8086/classifier/datamodel/update/training/status"
 )
 
 CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/progress/create"
+    "http://ruuter-public:8086/classifier/datamodel/progress/create"
 )
 
 UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/progress/update"
+    "http://ruuter-public:8086/classifier/datamodel/progress/update"
 )
 
 TEST_DEPLOYMENT_ENDPOINT = (
     "http://deployment-service:8003/classifier/datamodel/deployment/testing/update"
 )
 
-TRAINING_LOGS_PATH = "/app/model_trainer/training_logs.log"
+TRAINING_LOGS_PATH = "/app/src/training/training_logs.log"
 
-MODEL_RESULTS_PATH = "/shared/model_trainer/results"  # stored in the shared folder which is connected to s3-ferry
+MODEL_RESULTS_PATH = "/app/shared/model_trainer/results"  # stored in the shared folder which is connected to s3-ferry
 
-LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH = "/shared/model_trainer/results/{model_id}/trained_base_model_layers"  # stored in the shared folder which is connected to s3-ferry
+LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/trained_base_model_layers"  # stored in the shared folder which is connected to s3-ferry
 
-LOCAL_CLASSIFICATION_LAYER_SAVE_PATH = "/shared/model_trainer/results/{model_id}/classifier_layers"  # stored in the shared folder which is connected to s3-ferry
+LOCAL_CLASSIFICATION_LAYER_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/classifier_layers"  # stored in the shared folder which is connected to s3-ferry
 
-LOCAL_LABEL_ENCODER_SAVE_PATH = "/shared/model_trainer/results/{model_id}/label_encoders"  # stored in the shared folder which is connected to s3-ferry
+LOCAL_LABEL_ENCODER_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/label_encoders"  # stored in the shared folder which is connected to s3-ferry
 
-S3_FERRY_MODEL_STORAGE_PATH = "/models"  # folder path in s3 bucket
+S3_FERRY_MODEL_STORAGE_PATH = "/models/undeployed"  # folder path in s3 bucket
 
-S3_FERRY_ENDPOINT = "http://s3-ferry:3000/v1/files/copy"
+S3_FERRY_ENDPOINT = "http://gc-s3-ferry:3000/v1/files/copy"
 
 BASE_MODEL_FILENAME = "base_model_trainable_layers_{model_id}"
 
@@ -45,7 +37,6 @@ MODEL_TRAINING_IN_PROGRESS = "training in-progress"
 MODEL_TRAINING_SUCCESSFUL = "trained"
 
 MODEL_TRAINING_FAILED = "not trained"
-
 
 # MODEL TRAINING PROGRESS SESSION CONSTANTS
 

@@ -123,7 +123,7 @@ fi
 # Activate existing virtualenv
 echo "✅ Activating existing virtualenv at /app/python_virtual_env"
 source /app/python_virtual_env/bin/activate || { echo "❌ Failed to activate virtualenv"; exit 1; }
-export PYTHONPATH="/app:/app/src:/app/src/training:/app/src/training/scripts:/app/src/s3_dataset_processor:$PYTHONPATH"
+export PYTHONPATH="/app:/app/src:/app/src/training:/app/src/s3_dataset_processor:$PYTHONPATH"
 echo "🔍 [DEBUG] PYTHONPATH set to: $PYTHONPATH"
 # Add these debug commands
 echo "🔍 [DEBUG] Virtual environment debugging:"
@@ -161,15 +161,15 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
         echo "✅ uv already installed."
     fi
 
-    if [ ! -f /app/src/model_training/requirements-gpu.txt ]; then
-        echo "❌ /app/src/model_training/requirements-gpu.txt not found!"
+    if [ ! -f /app/src/training/requirements-gpu.txt ]; then
+        echo "❌ /app/src/training/requirements-gpu.txt not found!"
         exit 1
     fi
 
-    echo "📦 [INSTALL] Installing from /app/src/model_training/requirements-gpu.txt using uv..."
-    uv pip install -r /app/src/model_training/requirements-gpu.txt || {
+    echo "📦 [INSTALL] Installing from /app/src/training/requirements-gpu.txt using uv..."
+    uv pip install -r /app/src/training/requirements-gpu.txt || {
         echo "⚠️ uv install failed — trying pip as fallback..."
-        pip install -r /app/src/model_training/requirements-gpu.txt || {
+        pip install -r /app/src/training/requirements-gpu.txt || {
             echo "❌ Both uv and pip install failed inside virtualenv"
             exit 1
         }
@@ -183,7 +183,7 @@ echo "✅ [VIRTUALENV] All checks passed, proceeding with training script..."
 echo "🚀 [TRAINING] Starting training for Model ID: $model_id, Dataset ID: $dataset_id, Model Major Version: $major_version, Model Minor Version: $minor_version, Model Name: $model_name"
 
 # Set up training parameters
-TRAINING_SCRIPT="/app/src/model_training/model_trainer.py"
+TRAINING_SCRIPT="/app/src/training/model_trainer.py"
 TRAINING_OUTPUT_DIR="/app/models"
 MLFLOW_TRACKING_URI="${MLFLOW_TRACKING_URI:-http://mlflow:5000}"
 PROCESSED_DATA_DIR="/app/data/processed"
