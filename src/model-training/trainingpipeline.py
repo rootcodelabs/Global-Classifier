@@ -20,10 +20,9 @@ import torch.nn.functional as F
 import shutil
 from pathlib import Path
 import pandas as pd
-from constants import MODEL_RESULTS_PATH
 import numpy as np
 import sys
-from typing import Union
+from typing import Counter, Union
 from constants import (
     MODEL_CONFIGS,
     SUPPORTED_BASE_MODELS,
@@ -33,6 +32,7 @@ from constants import (
     MIN_SAMPLES_PER_CLASS,
     TARGET_SAMPLES_FOR_SMALL_DATASETS,
     TEST_SIZE_RATIO,
+    SEQUENCE_LENGTH,
 )
 from loguru import logger
 import os
@@ -241,10 +241,19 @@ class EnhancedModel(nn.Module):
         """
         save_directory = Path(save_directory)
         save_directory.mkdir(parents=True, exist_ok=True)
-
+        if hasattr(self.base_model, "distilbert"):
+            backbone = self.base_model.distilbert
+        elif hasattr(self.base_model, "bert"):
+            backbone = self.base_model.bert
+        elif hasattr(self.base_model, "roberta"):
+            backbone = self.base_model.roberta
+        else:
+            # Fallback: save the whole base model but this might cause issues
+            backbone = self.base_model
+            logger.warning("Could not extract backbone - saving full base model")
         # Save the base model first
         base_model_dir = save_directory / "base_model"
-        self.base_model.save_pretrained(base_model_dir, **kwargs)
+        backbone.save_pretrained(base_model_dir, **kwargs)
 
         # Save the enhanced model state dict
         if safe_serialization:
@@ -388,11 +397,51 @@ class EnhancedModelInference(nn.Module):
             nn.Linear(hidden_dim, num_labels),
         )
 
-    def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
+    def _model_supports_token_type_ids(self):
+        """
+        Check if the base model supports token_type_ids
+        """
+        if hasattr(self.base_model, "config") and hasattr(
+            self.base_model.config, "model_type"
+        ):
+            model_type = self.base_model.config.model_type
+
+            # Models that explicitly reject token_type_ids
+            if model_type in ["distilbert"]:
+                return False
+
+            # Models that use token_type_ids
+            if model_type in ["bert"]:
+                return True
+
+            # Models that accept but ignore token_type_ids (like xlm-roberta, roberta)
+            if model_type in ["xlm-roberta", "roberta"]:
+                return True  # They accept it even though they ignore it
+
+        # Fallback: check if model has type_vocab_size > 1
+        if hasattr(self.base_model, "config") and hasattr(
+            self.base_model.config, "type_vocab_size"
+        ):
+            return self.base_model.config.type_vocab_size > 1
+
+        # Default: try to pass it (most models accept it)
+        return True
+
+    def forward(
+        self, input_ids, attention_mask, token_type_ids=None, labels=None, **kwargs
+    ):
         # Get outputs from base model
-        outputs = self.base_model(
-            input_ids=input_ids, attention_mask=attention_mask, **kwargs
-        )
+
+        if self._model_supports_token_type_ids():
+            outputs = self.base_model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids,
+            )
+        else:
+            outputs = self.base_model(
+                input_ids=input_ids, attention_mask=attention_mask
+            )
 
         # Extract hidden representation
         if hasattr(outputs, "pooler_output") and outputs.pooler_output is not None:
@@ -409,7 +458,13 @@ class EnhancedModelInference(nn.Module):
         # Apply uncertainty head (weights are already spectrally normalized!)
         logits = self.uncertainty_head(hidden_state)
 
-        return type(outputs)(logits=logits)
+        from transformers.modeling_outputs import SequenceClassifierOutput
+
+        return SequenceClassifierOutput(
+            logits=logits,
+            hidden_states=getattr(outputs, "hidden_states", None),
+            attentions=getattr(outputs, "attentions", None),
+        )
 
     def save_pretrained(self, save_directory, tokenizer=None, **kwargs):
         """Save inference model"""
@@ -460,9 +515,9 @@ class EnhancedModelInference(nn.Module):
 
         # Load base model
         base_model_dir = pretrained_model_path / "base_model"
-        from transformers import AutoModelForSequenceClassification
+        from transformers import AutoModel
 
-        base_model = AutoModelForSequenceClassification.from_pretrained(base_model_dir)
+        base_model = AutoModel.from_pretrained(base_model_dir)
 
         # Create inference model instance
         model = cls(
@@ -502,29 +557,64 @@ def export_inference_model_to_onnx(model_dir: str):
         dummy_input = tokenizer(
             "This is a sample text for ONNX export.",
             return_tensors="pt",
+            return_token_type_ids=True,
+            return_attention_mask=True,
             padding=True,
             truncation=True,
-            max_length=512,
+            max_length=SEQUENCE_LENGTH,
         )
-
         output_path = model_dir / "model.onnx"
 
         # Export to ONNX (should work smoothly now!)
-        torch.onnx.export(
-            inference_model,
-            (dummy_input["input_ids"], dummy_input["attention_mask"]),
-            str(output_path),
-            input_names=["input_ids", "attention_mask"],
-            output_names=["logits"],
-            dynamic_axes={
-                "input_ids": {0: "batch_size", 1: "sequence_length"},
-                "attention_mask": {0: "batch_size", 1: "sequence_length"},
-                "logits": {0: "batch_size"},
-            },
-            opset_version=11,
-            do_constant_folding=True,
-            export_params=True,
-        )
+        if inference_model._model_supports_token_type_ids():
+            torch.onnx.export(
+                inference_model,
+                (
+                    dummy_input["input_ids"],
+                    dummy_input["attention_mask"],
+                    dummy_input["token_type_ids"],
+                ),
+                str(output_path),
+                input_names=["input_ids", "attention_mask", "token_type_ids"],
+                output_names=["logits"],
+                dynamic_axes={
+                    "input_ids": {0: "batch_size", 1: "sequence_length"},
+                    "attention_mask": {0: "batch_size", 1: "sequence_length"},
+                    "token_type_ids": {0: "batch_size", 1: "sequence_length"},
+                    "logits": {0: "batch_size"},
+                },
+                opset_version=14,
+                do_constant_folding=True,
+                export_params=True,
+            )
+        else:
+            torch.onnx.export(
+                inference_model,
+                (
+                    dummy_input["input_ids"],
+                    dummy_input["attention_mask"],
+                ),
+                str(output_path),
+                input_names=["input_ids", "attention_mask"],
+                output_names=["logits"],
+                dynamic_axes={
+                    "input_ids": {0: "batch_size", 1: "sequence_length"},
+                    "attention_mask": {0: "batch_size", 1: "sequence_length"},
+                    "logits": {0: "batch_size"},
+                },
+                opset_version=13,
+                do_constant_folding=True,
+                export_params=True,
+            )
+
+        with torch.no_grad():
+            test_output = inference_model(
+                dummy_input["input_ids"],
+                dummy_input["attention_mask"],
+                dummy_input["token_type_ids"],
+            )
+            print(test_output)
+            print("Forward pass successful")
 
         if output_path.exists():
             logger.info(f"ONNX export successful: {output_path}")
@@ -542,10 +632,13 @@ logger.info(f"TRAINING HARDWARE {device}")
 
 
 class TrainingPipeline:
-    def __init__(self, dfs, model_name, ood_method=None, ood_config=None):
+    def __init__(
+        self, dfs, model_name, full_name=None, ood_method=None, ood_config=None
+    ):
         self.model_name = model_name
         self.dfs = dfs
         self.ood_method = ood_method
+        self.full_name = full_name
         self.ood_config = ood_config or {}
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -695,7 +788,7 @@ class TrainingPipeline:
             processed_data,
             truncation=True,
             padding=True,
-            max_length=512,
+            max_length=SEQUENCE_LENGTH,
             return_token_type_ids=False,
             return_attention_mask=True,
             return_tensors="pt",
@@ -932,7 +1025,24 @@ class TrainingPipeline:
             label_encoder = LabelEncoder()
             train_labels = label_encoder.fit_transform(train_df["target"])
             test_labels = label_encoder.transform(test_df["target"])
+            self.model_label2id = {}
 
+            for idx, label in enumerate(label_encoder.classes_):
+                self.model_label2id[label] = idx
+            self.model_id2label = {v: k for k, v in self.model_label2id.items()}
+            self.agency_label2id = {}
+            agency_ids_column = "agency_id"
+            for i, row in train_df.iterrows():
+                agency_id = row[agency_ids_column]
+                if agency_id not in self.agency_label2id:
+                    self.agency_label2id[agency_id] = row["target"]
+            self.agency_id2label = {v: k for k, v in self.agency_label2id.items()}
+            print(
+                self.agency_label2id,
+                self.agency_id2label,
+                self.model_label2id,
+                self.model_id2label,
+            )
             # Get model and tokenizer
             model, tokenizer = self.get_tokenizer_and_model_for_training(
                 self.model_name, len(label_encoder.classes_)
@@ -961,6 +1071,7 @@ class TrainingPipeline:
             train_dataset = CustomDataset(
                 train_encodings, train_labels, train_ood_labels
             )
+
             test_dataset = CustomDataset(test_encodings, test_labels, test_ood_labels)
 
             # Setup training arguments
@@ -990,6 +1101,7 @@ class TrainingPipeline:
 
             trainer.train()
             # save the model
+            from constants import MODEL_RESULTS_PATH
 
             # save the model
             model_dir = f"{MODEL_RESULTS_PATH}/{method_name}"
@@ -1033,6 +1145,26 @@ class TrainingPipeline:
             inference_model.save_pretrained(model_dir, tokenizer=tokenizer)
             tokenizer.save_pretrained(model_dir)
             logger.info(f"Model saved to {model_dir}")
+            # save labelmappings, ood config to config.json
+            config = {
+                "num_labels": len(label_encoder.classes_),
+                "model_name": self.full_name,
+                "hidden_dim": model.hidden_dim,
+                "dropout_rate": model.dropout_rate,
+                "sequence_length": SEQUENCE_LENGTH,
+                "ood_method": self.ood_method,
+                "ood_config": self.ood_config,
+                "base_model_name": self.model_name,
+                "base_model_type": model.base_model.__class__.__name__,
+                "model_label2id": self.model_label2id,
+                "model_id2label": self.model_id2label,
+                "agency_label2id": self.agency_label2id,
+                "agency_id2label": self.agency_id2label,
+            }
+            import json
+
+            with open(os.path.join(model_dir, "config.json"), "w") as f:
+                json.dump(config, f, indent=2)
 
             # Evaluate model
             predictions, labels, _ = trainer.predict(test_dataset)
@@ -1122,7 +1254,9 @@ class TrainingPipeline:
         )
 
 
-def create_training_pipeline(dfs, model_name, ood_method=None, **ood_config):
+def create_training_pipeline(
+    dfs, model_name, full_name=None, ood_method=None, **ood_config
+):
     """
     Factory function to create training pipelines.
 
@@ -1141,5 +1275,9 @@ def create_training_pipeline(dfs, model_name, ood_method=None, **ood_config):
         )
 
     return TrainingPipeline(
-        dfs=dfs, model_name=model_name, ood_method=ood_method, ood_config=ood_config
+        dfs=dfs,
+        model_name=model_name,
+        full_name=full_name,
+        ood_method=ood_method,
+        ood_config=ood_config,
     )
