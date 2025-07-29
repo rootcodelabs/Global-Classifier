@@ -1,0 +1,110 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Unload a model from NVIDIA Triton test server"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: string
+        description: "Identifier of the model to unload from Triton server"
+
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+  next: validateInput
+
+validateInput:
+  switch:
+    - condition: ${!modelId}
+      next: return_validation_error
+  next: prepareModelNames
+
+prepareModelNames:
+  assign:
+    # Generate the model names based on the modelId
+    preProcessingModel: ${modelId}-pre-processing
+    textClassifierModel: ${modelId}-text-classifier
+    postProcessingModel: ${modelId}-post-processing
+    ensembleModel: ${modelId}-classifier-ensemble
+  next: unloadEnsembleModel
+
+unloadEnsembleModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${ensembleModel}/unload"
+    timeout: 600000
+    body:
+      unload_dependents: true
+  result: ensembleUnloadResult
+  next: checkEnsembleUnload
+  error: unloadPostProcessingModel
+
+checkEnsembleUnload:
+  switch:
+    - condition: ${ensembleUnloadResult.response.statusCodeValue !== 200 && ensembleUnloadResult.response.statusCodeValue !== 201}
+      next: unloadPostProcessingModel
+  next: unloadPostProcessingModel
+
+unloadPostProcessingModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${postProcessingModel}/unload"
+    timeout: 600000
+  result: postProcessingUnloadResult
+  next: checkPostProcessingUnload
+  error: unloadTextClassifierModel
+
+checkPostProcessingUnload:
+  switch:
+    - condition: ${postProcessingUnloadResult.response.statusCodeValue !== 200 && postProcessingUnloadResult.response.statusCodeValue !== 201}
+      next: unloadTextClassifierModel
+  next: unloadTextClassifierModel
+
+unloadTextClassifierModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${textClassifierModel}/unload"
+    timeout: 600000
+  result: textClassifierUnloadResult
+  next: checkTextClassifierUnload
+  error: unloadPreProcessingModel
+
+checkTextClassifierUnload:
+  switch:
+    - condition: ${textClassifierUnloadResult.response.statusCodeValue !== 200 && textClassifierUnloadResult.response.statusCodeValue !== 201}
+      next: unloadPreProcessingModel
+  next: unloadPreProcessingModel
+
+unloadPreProcessingModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${preProcessingModel}/unload"
+    timeout: 600000
+  result: preProcessingUnloadResult
+  next: checkPreProcessingUnload
+  error: return_success
+
+checkPreProcessingUnload:
+  switch:
+    - condition: ${preProcessingUnloadResult.response.statusCodeValue !== 200 && preProcessingUnloadResult.response.statusCodeValue !== 201}
+      next: return_success
+  next: return_success
+
+return_success:
+  status: 200
+  return: "Model unloaded successfully from Triton test server"
+  next: end
+
+return_validation_error:
+  status: 400
+  return: "Invalid request - modelId is required"
+  next: end
+
+return_server_unavailable:
+  status: 503
+  return: "Server unavailable - Triton test server is not ready or unavailable"
+  next: end
