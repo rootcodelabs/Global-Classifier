@@ -36,7 +36,7 @@ const ViewDataset = () => {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
   const [originalDataset, setOriginalDataset] = useState<any[]>([]);
 
-  const { data: metadata, isLoading:isMetadataLoading } = useQuery({
+  const { data: metadata, isLoading: isMetadataLoading } = useQuery({
     queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
     queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
@@ -223,13 +223,13 @@ const ViewDataset = () => {
             <div className="flex-between">
               <div>
                 <p>
-                  {t('datasets.detailedView.version') ?? ''} : {`V${metadata?.major}.${metadata?.minor}`}
+                  <b>{t('datasets.detailedView.version') ?? ''} :</b>  {`V${metadata?.major}.${metadata?.minor}`}
                 </p>
+                <div className='flex'>
+                  <div style={{width: '80%'}}>
+                <p><b>{t('datasets.detailedView.connectedModels') ?? ''} :</b></p></div><p>{metadata?.connectedModels?.join(', ') ?? ''}</p></div>
                 <p>
-                  {t('datasets.detailedView.connectedModels') ?? ''} : {metadata?.connectedModels?.join(', ') ?? ''}
-                </p>
-                <p>
-                  {t('datasets.detailedView.noOfItems') ?? ''} : {metadata?.totalDataCount ?? "-"}
+                  <b>{t('datasets.detailedView.noOfItems') ?? ''} :</b> {metadata?.totalDataCount ?? "-"}
                 </p>
               </div>
               <div>
