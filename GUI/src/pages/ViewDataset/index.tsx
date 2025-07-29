@@ -198,8 +198,8 @@ const ViewDataset = () => {
     const payload = {
       updatedDataItems,
       deletedRows: deletedRowIds,
-      updatedRowsLength: updatedDataItems?.length,
-      deletedRowsLength: deletedRowIds?.length,
+      updatedRowsLength: updatedDataItems.length,
+      deletedRowsLength: deletedRowIds.length,
     };
     console.log(payload, 'minorUpdatePayload');
   };
@@ -293,6 +293,7 @@ const ViewDataset = () => {
           </Button>
           <Button
             onClick={minorUpdate}
+            disabled={editedRows.length === 0 && deletedRowIds.length === 0}
           >
             {t('global.save') ?? ''}
           </Button>
