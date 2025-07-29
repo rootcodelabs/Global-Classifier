@@ -198,8 +198,8 @@ const ViewDataset = () => {
     const payload = {
       updatedDataItems,
       deletedRows: deletedRowIds,
-      updatedRowsLength: updatedDataItems?.length,
-      deletedRowsLength: deletedRowIds?.length,
+      updatedRowsLength: updatedDataItems.length,
+      deletedRowsLength: deletedRowIds.length,
     };
     console.log(payload, 'minorUpdatePayload');
   };
