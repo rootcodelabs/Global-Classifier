@@ -8,7 +8,7 @@ declaration:
   namespace: global-classifier
   allowlist:
     params:
-      - field: page
+      - field: pageNum
         type: number
         description: "Page number for pagination"
       - field: pageSize
@@ -20,7 +20,7 @@ declaration:
 
 extractRequestData:
   assign:
-    page: ${Number(incoming.params.page) || 1}
+    page: ${Number(incoming.params.pageNum) || 1}
     pageSize: ${Number(incoming.params.pageSize) || 10}
     datasetVersionId: ${Number(incoming.params.datasetVersionId) || 0}
 

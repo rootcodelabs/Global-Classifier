@@ -1,4 +1,4 @@
-SELECT *
+SELECT major, model_id
 FROM public.data_models
 WHERE model_group_key = :modelGroupKey
   AND major = (
