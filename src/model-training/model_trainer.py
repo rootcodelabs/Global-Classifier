@@ -6,6 +6,7 @@ import shutil
 import json
 from datetime import datetime, timezone
 from s3_ferry import S3Ferry
+from create_triton_configs import generate_all_triton_configs
 from constants import (
     MODEL_RESULTS_PATH,
     S3_FERRY_MODEL_STORAGE_PATH,
@@ -103,11 +104,13 @@ class ModelTrainer:
             model_variants = []
 
             # Add standard models
-            for base_model in model_types:
+            for base_model in self.model_types.keys():
+
                 model_variants.append(
                     {
                         "name": base_model + "-sngp",
                         "base_model": base_model,
+                        "full_model_name": self.model_types[base_model]["model_name"],
                         "ood_method": "sngp",
                         "type": "ood",
                         "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
@@ -139,10 +142,11 @@ class ModelTrainer:
                         training_pipeline = create_training_pipeline(
                             dfs=dfs,
                             model_name=variant["base_model"],
+                            full_name=variant["full_model_name"],
                             ood_method=variant["ood_method"],
                         )
                     else:
-                        training_pipeline = TrainingPipeline(dfs, variant["base_model"])
+                        training_pipeline = TrainingPipeline(dfs, variant["base_model"],full_name=variant["full_model_name"],)
 
                     # Train the variant
                     model_dir, metrics = training_pipeline.train()
@@ -217,7 +221,7 @@ class ModelTrainer:
             logger.info(f"ONNX MODEL SAVED AT: {onnx_path}")
 
             # create model-id folder and copy model-repository directory contents there
-            new_model_repo_path = f"{MODEL_RESULTS_PATH}/modelId-{self.model_id}"
+            new_model_repo_path = f"{MODEL_RESULTS_PATH}/{self.model_id}"
             if not os.path.exists(new_model_repo_path):
                 os.makedirs(new_model_repo_path)
             # this is the pre-defined model-repository path
@@ -234,11 +238,11 @@ class ModelTrainer:
             if not os.path.exists(label_mappings_path):
                 os.makedirs(label_mappings_path)
             shutil.copy(
-                src=f"{best_result['model_path']}/base_model/config.json",
+                src=f"{best_result['model_path']}/config.json",
                 dst=f"{label_mappings_path}/label_mappings.json",
             )
             shutil.copy(
-                src=f"{best_result['model_path']}/base_model/config.json",
+                src=f"{best_result['model_path']}/config.json",
                 dst=f"{new_model_repo_path}/post_processing/1/label_mappings.json",
             )
             top_level_dirs = [
@@ -249,16 +253,14 @@ class ModelTrainer:
             # add modelId-{model-id} to all folders inside the new_model_repo_path
             for dir_name in top_level_dirs:
                 old_path = os.path.join(new_model_repo_path, dir_name)
-                new_dir_name = f"modelId-{self.model_id}-{dir_name}"
+                new_dir_name = f"{self.model_id}-{dir_name}"
                 new_path = os.path.join(new_model_repo_path, new_dir_name)
 
                 logger.info(f"Renaming {dir_name} to {new_dir_name}")
                 os.rename(old_path, new_path)
 
             # move onnx model to the new model-id folder inside model-id/text_classifier/1/model.onnx
-            onnx_model_path = (
-                f"{new_model_repo_path}/modelId-{self.model_id}-text_classifier/1"
-            )
+            onnx_model_path = f"{new_model_repo_path}/{self.model_id}-text_classifier/1"
             if not os.path.exists(onnx_model_path):
                 os.makedirs(onnx_model_path)
             shutil.move(
@@ -266,43 +268,28 @@ class ModelTrainer:
                 dst=f"{onnx_model_path}/model.onnx",
             )
 
-            model_config = {
-                "model_name": best_variant["name"],
-                "sequence_length": SEQUENCE_LENGTH,
-                "ood_method": best_variant.get("ood_method", "standard"),
-                "ood_threshold": best_variant.get("ood_threshold", 0.5),
-                "energy_temp": best_variant.get("energy_temp", 1.0),
-                "softmax_temp": best_variant.get("softmax_temp", 1.0),
-                "uncertainty_strategy": best_variant.get(
-                    "uncertainty_strategy", "none"
+            triton_configs = generate_all_triton_configs(
+                model_id=str(self.model_id),
+                model_type=best_variant["base_model"],  # "distilbert", "bert", etc.
+                num_labels=len(best_result["metrics"][0]),
+                sequence_length=SEQUENCE_LENGTH,
+                max_batch_size=16,
+                ood_method=best_variant.get("ood_method"),  # "sngp", "energy", etc.
+                ood_threshold=0.5,
+                uncertainty_threshold=best_variant.get("uncertainty_strategy", "sngp"),
+                human_handoff_threshold=best_variant.get(
+                    "human_handoff_threshold", 0.8
                 ),
-                "human_handoff_threshold": best_variant.get(
-                    "human_handoff_threshold", 0.5
-                ),
-                "confidence_scaling": best_variant.get("confidence_scaling", "linear"),
-                "base_model_type": best_variant.get("base_model_type", "bert"),
-            }
-
-            for root, dirs, files in os.walk(new_model_repo_path):
-                for file_name in files:
-                    if file_name == "config.pbtxt":
-                        config_file_path = os.path.join(root, file_name)
-                        with open(config_file_path, "r") as f:
-                            config_content = f.read()
-
-                        # Add parameters section if not present
-                        if "parameters:" not in config_content:
-                            config_content += "\nparameters:\n["
-
-                        # Add each parameter
-                        for key, value in model_config.items():
-                            config_content += f'{key}: {{\n    value: "{value}"\n}}\n'
-                        config_content += "]\n"
-
-                        # Write back the updated content
-                        with open(config_file_path, "w") as f:
-                            f.write(config_content)
-
+                uncertainty_strategy="inject_class",  # or other strategies
+                confidence_scaling=best_variant.get("confidence_scaling", False),
+                base_model_type=best_variant.get("base_model_type", "bert"),
+            )
+            # Save Triton configs to model repository
+            for config_path, config_content in triton_configs.items():
+                config_full_path = os.path.join(new_model_repo_path, config_path)
+                os.makedirs(os.path.dirname(config_full_path), exist_ok=True)
+                with open(config_full_path, "w") as f:
+                    f.write(config_content)
             # Create model archive
             model_zip_path = new_model_repo_path
             shutil.make_archive(
