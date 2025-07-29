@@ -1,6 +1,6 @@
 UPDATE public.data_models
 SET 
-    training_status = 'trained'::training_status,
+    training_status = :trainingStatus::training_status,
     training_results = :trainingResults::jsonb,
     model_s3_location = :modelS3Location::text,
     last_trained = CURRENT_TIMESTAMP,
