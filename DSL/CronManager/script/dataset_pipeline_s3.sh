@@ -1,11 +1,8 @@
 #!/bin/bash
 
-echo "Started Shell Script for S3 DataSet Processing"
-PROGRESS_CREATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/create"
-
 # Check if environment variable is set
 if [ -z "$signedUrls" ] || [ -z "$datasetId" ] || [ -z "$majorVersion" ] || [ -z "$minorVersion" ]; then
-  echo "Please set the signedUrls, datasetId, majorVersion, and minorVersion environment variables."
+  echo "Please set the signedUrls, datasetId, majorVersion, minorVersion environment variables."
   exit 1
 fi
 
@@ -13,6 +10,34 @@ fi
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
+
+echo "Started Shell Script for S3 DataSet Processing"
+PROGRESS_CREATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/create"
+PROGRESS_UPDATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/update"
+
+# Send progress session creation request
+progress_payload=$(cat <<EOF
+{
+  "datasetId": $datasetId,
+  "majorVersion": $majorVersion,
+  "minorVersion": $minorVersion
+}
+EOF
+)
+
+progress_response=$(curl -s -X POST "$PROGRESS_CREATE_URL" \
+  -H "Content-Type: application/json" \
+  -d "$progress_payload")
+echo "Progress session creation response: $progress_response"
+
+if command -v jq >/dev/null 2>&1; then
+  sessionId=$(echo "$progress_response" | jq -r '.response.sessionId')
+else
+  # Fallback using grep/sed (works for simple JSON)
+  sessionId=$(echo "$progress_response" | grep -o '"sessionId":[ ]*[0-9]*' | grep -o '[0-9]*')
+fi
+
+echo "Extracted sessionId: $sessionId"
 
 data_generation_request="$signedUrls"
 chmod 777 /app/data
@@ -35,6 +60,23 @@ CURRENT_DATASET_ID=$(echo "$CURRENT_DATASET_ID" | tr -d '"')
 
 log "🔍 Calling direct Python script to download files..."
 
+# Update progress session with initial status
+progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Downloading Source Datasets",
+  "generationMessage": "Downloading Source Datasets from S3 for synthetic data generation",
+  "progressPercentage": 10,
+  "processComplete": false
+}
+EOF
+)
+
+progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+  -H "Content-Type: application/json" \
+  -d "$progress_update_payload")
+echo "Progress session update response: $progress_update_response"
+
 # Create temporary file for response
 temp_response="/tmp/download_response.json"
 
@@ -50,10 +92,14 @@ log "🔍 Python script exit code: $exit_code"
 if [ -f "$temp_response" ]; then
     log "📄 Contents of output JSON:"
     cat "$temp_response"
+    ls -l "$temp_response"
 else
     log "⚠️ No output JSON file was generated."
 fi
 
+echo "DEBUG: exit_code='$exit_code'"
+echo "DEBUG: temp_response='$temp_response'"
+ls -l "$temp_response"
 # Check if script execution was successful
 if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
     log "✅ Python script execution successful"
@@ -84,7 +130,19 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
         successful_downloads=$(echo "$response_body" | grep -o '"successful_downloads"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*' | tail -1)
         [ -z "$successful_downloads" ] && successful_downloads=0
         log "Successfully downloaded and extracted $successful_downloads files"
-        
+
+        # Update progress session with successful downloads
+        progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Downloading Source Datasets",
+  "generationMessage": "Downloading Source Datasets from S3 for synthetic data generation",
+  "progressPercentage": 40,
+  "processComplete": false
+}
+EOF
+)
+
         # Prepare dataset generation payload as a list
         log "🔄 Preparing dataset generation payload..."
         
