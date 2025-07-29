@@ -1,7 +1,6 @@
 services:
 
   triton-production-server:
-    image: nvcr.io/nvidia/tritonserver:25.06-py3
     container_name: triton-production-server
     command: tritonserver --model-repository=s3://minio:9000/production-model/model-repository --model-control-mode=explicit --log-verbose=1
     ports:

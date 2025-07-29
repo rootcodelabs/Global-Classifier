@@ -1,7 +1,7 @@
 declaration:
   call: declare
   version: 0.1
-  description: "Get dataset metadata by id with connected models"
+  description: "Get dataset metadata by id with connected models and total data count"
   method: get
   accepts: json
   returns: json
@@ -30,6 +30,15 @@ checkDatasetResult:
   switch:
     - condition: ${!dataset_res || !dataset_res.response.body || dataset_res.response.body.length === 0}
       next: return_not_found
+  next: getDatasetTotalCount
+
+getDatasetTotalCount:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-dataset-total-count"
+    body:
+      datasetVersionId: ${datasetId}
+  result: total_count_res
   next: getConnectedModels
 
 getConnectedModels:
@@ -55,11 +64,13 @@ formatConnectedModels:
 buildFinalResponse:
   assign:
     dataset: ${dataset_res.response.body[0]}
+    totalCount: ${total_count_res.response.body[0]?.totalCount || 0}
     finalResponse:
       response:
         - id: ${dataset.id}
           major: ${dataset.major}
           minor: ${dataset.minor}
+          totalDataCount: ${totalCount}
           connectedModels: ${formatted_models_res.response.body}
   next: return_result
 
