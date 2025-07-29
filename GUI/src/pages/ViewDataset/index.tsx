@@ -293,6 +293,7 @@ const ViewDataset = () => {
           </Button>
           <Button
             onClick={minorUpdate}
+            disabled={editedRows.length === 0 && deletedRowIds.length === 0}
           >
             {t('global.save') ?? ''}
           </Button>
