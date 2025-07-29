@@ -27,3 +27,5 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v14-dataset-progress-sessions.sql
   - include:
       file: changelog/global-classifier-script-v15-data-model-progress-sessions.sql
+  - include:
+      file: changelog/global-classifier-script-v16-inference-logs.sql
