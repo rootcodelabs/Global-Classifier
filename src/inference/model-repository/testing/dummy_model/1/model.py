@@ -1,6 +1,7 @@
 import numpy as np
 import triton_python_backend_utils as pb_utils
 
+
 class TritonPythonModel:
     """
     Dummy model that returns a static payload.
@@ -17,8 +18,10 @@ class TritonPythonModel:
         responses = []
         for request in requests:
             # Create a dummy output tensor with static values
-            output_tensor = pb_utils.Tensor.from_numpy("text_output", np.array([["Hello, world!"]], dtype=object))
+            output_tensor = pb_utils.Tensor.from_numpy(
+                "text_output", np.array([["Hello, world!"]], dtype=object)
+            )
             response = pb_utils.InferenceResponse(output_tensors=[output_tensor])
             responses.append(response)
-        
+
         return responses

@@ -3,8 +3,8 @@
 echo "Started Shell Script for Dataset Generation Callback Processing"
 
 # Check if environment variables are set
-if [ -z "$filePath" ] || [ -z "$results" ]; then
-  echo "Please set the filePath and results environment variables."
+if [ -z "$filePath" ] || [ -z "$results" ] || [ -z "$taskId" ]; then
+  echo "Please set the filePath, results, and taskId environment variables."
   exit 1
 fi
 
@@ -12,6 +12,7 @@ fi
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
+PROGRESS_UPDATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/update"
 # Debug: Check Python environment
 log "🔍 Python version: $(python3 --version)"
 log "🔍 Python path: $(which python3)"
@@ -39,10 +40,28 @@ log "🔍 Calling direct Python script to process generation callback..."
 # Create temporary file for response
 temp_response="/tmp/callback_response.json"
 
+# Update progress session with initial status
+progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$taskId",
+  "generationStatus": "New Dataset Uploading to s3",
+  "generationMessage": "Preparing to Upload New Dataset to S3",
+  "progressPercentage": 85,
+  "processComplete": false
+}
+EOF
+)
+
+progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+  -H "Content-Type: application/json" \
+  -d "$progress_update_payload")
+echo "Progress session update response: $progress_update_response"
+
 python3 "$CALLBACK_SCRIPT" \
   --file-path "$filePath" \
   --encoded-results "$results" \
   --output-json "$temp_response" \
+  --session-id "$taskId" \
   > /tmp/callback_stdout.log 2> /tmp/callback_stderr.log
 exit_code=$?
 
