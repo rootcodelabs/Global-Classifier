@@ -28,7 +28,6 @@ const ViewDataset = () => {
   });
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const { open, close } = useDialog();
-  const isMetadataLoading = false;
   const [deletedRowIds, setDeletedRowIds] = useState<(string | number)[]>([]);
   const [searchParams] = useSearchParams();
   const datasetVersionId = searchParams.get('datasetId');
@@ -37,8 +36,7 @@ const ViewDataset = () => {
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
   const [originalDataset, setOriginalDataset] = useState<any[]>([]);
 
-
-  const { data: metadata, isLoading } = useQuery({
+  const { data: metadata, isLoading:isMetadataLoading } = useQuery({
     queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
     queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
@@ -49,7 +47,7 @@ const ViewDataset = () => {
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
 
-useEffect(() => {
+  useEffect(() => {
     if (dataset) {
       setOriginalDataset(prev => {
         const newOriginal = [...prev];
@@ -65,7 +63,7 @@ useEffect(() => {
         const editedRow = editedRows.find((edited) => edited.itemId === row.itemId);
         return editedRow ? editedRow : row;
       });
-      
+
       setUpdatedDataset(mergedDataset);
     }
   }, [dataset, editedRows]);
@@ -123,51 +121,51 @@ useEffect(() => {
     </Button>
   );
 
-const dataColumns = useMemo(() => {
-  const columnHelper = createColumnHelper<any>();
-  
-  // Incremental ID column
-  const incrementalIdColumn = columnHelper.display({
-    id: 'rowNumber',
-    header: t('datasets.detailedView.table.id') || 'Item ID',
-    cell: ({ row }) => {
-      const rowNumber = (pagination.pageIndex * pagination.pageSize) + row.index + 1;
-      return <span>{rowNumber}</span>;
-    },
-    meta: { size: 60 },
-  });
+  const dataColumns = useMemo(() => {
+    const columnHelper = createColumnHelper<any>();
 
-  const questionColumn = columnHelper.accessor('dataItem', {
-    header: t('datasets.detailedView.table.data') || 'Data',
-    id: 'dataItem',
-  });
+    // Incremental ID column
+    const incrementalIdColumn = columnHelper.display({
+      id: 'rowNumber',
+      header: t('datasets.detailedView.table.id') || 'Item ID',
+      cell: ({ row }) => {
+        const rowNumber = (pagination.pageIndex * pagination.pageSize) + row.index + 1;
+        return <span>{rowNumber}</span>;
+      },
+      meta: { size: 60 },
+    });
 
-  const agencyColumn = columnHelper.accessor('agencyName', {
-    header: t('datasets.detailedView.table.client') || 'Client Name',
-    id: 'agencyName',
-  });
+    const questionColumn = columnHelper.accessor('dataItem', {
+      header: t('datasets.detailedView.table.data') || 'Data',
+      id: 'dataItem',
+    });
 
-  // Action columns
-  const editColumn = columnHelper.display({
-    id: 'edit',
-    cell: editView,
-    meta: { size: '1%' },
-  });
+    const agencyColumn = columnHelper.accessor('agencyName', {
+      header: t('datasets.detailedView.table.client') || 'Client Name',
+      id: 'agencyName',
+    });
 
-  const deleteColumn = columnHelper.display({
-    id: 'delete', 
-    cell: deleteView,
-    meta: { size: '1%' },
-  });
+    // Action columns
+    const editColumn = columnHelper.display({
+      id: 'edit',
+      cell: editView,
+      meta: { size: '1%' },
+    });
 
-  return [incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
-}, [editView, deleteView, pagination.pageIndex, pagination.pageSize, t]);
+    const deleteColumn = columnHelper.display({
+      id: 'delete',
+      cell: deleteView,
+      meta: { size: '1%' },
+    });
 
- const editDataRecord = (dataRow: SelectedRowPayload) => {
+    return [incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
+  }, [editView, deleteView, pagination.pageIndex, pagination.pageSize, t]);
+
+  const editDataRecord = (dataRow: SelectedRowPayload) => {
     const originalRow = originalDataset.find((row: any) => row.itemId === dataRow.itemId);
-    
+
     const hasChanges = originalRow && (
-      originalRow.dataItem !== dataRow.dataItem || 
+      originalRow.dataItem !== dataRow.dataItem ||
       originalRow.agencyId !== dataRow.agencyId
     );
 
@@ -177,7 +175,7 @@ const dataColumns = useMemo(() => {
         const newEditedRows = exists
           ? prev.map((row) => (row.itemId === dataRow.itemId ? dataRow : row))
           : [...prev, dataRow];
-        
+
         return newEditedRows;
       });
     }
@@ -192,31 +190,33 @@ const dataColumns = useMemo(() => {
     close();
   };
 
-const minorUpdate = () => {
-  const updatedDataItems: SelectedRowPayload[] = editedRows.filter((row) => {
-    return !deletedRowIds.includes(row.itemId);
-  });
+  const minorUpdate = () => {
+    const updatedDataItems: SelectedRowPayload[] = editedRows.filter((row) => {
+      return !deletedRowIds.includes(row.itemId);
+    });
 
-  const payload = {
-    updatedDataItems,
-    deletedRows: deletedRowIds,
+    const payload = {
+      updatedDataItems,
+      deletedRows: deletedRowIds,
+      updatedRowsLength: updatedDataItems?.length,
+      deletedRowsLength: deletedRowIds?.length,
+    };
+    console.log(payload, 'minorUpdatePayload');
   };
-  console.log(payload, 'minorUpdatePayload');
-};
-  
+
   return (
     <div className="container">
-      <div className="title_container">
-        <div className="flex-between">
-          <Link to={'/datasets'}>
-            <BackArrowButton />
-          </Link>
-          <div className="title">{t('datasets.detailedView.dataset')} {`V${metadata?.major}.${metadata?.minor}`}</div>
-        </div>
-      </div>
       {isMetadataLoading && <SkeletonTable rowCount={2} />}
       {metadata && !isMetadataLoading && (
         <div>
+          <div className="title_container">
+            <div className="flex-between">
+              <Link to={'/datasets'}>
+                <BackArrowButton />
+              </Link>
+              <div className="title">{t('datasets.detailedView.dataset')} {`V${metadata?.major}.${metadata?.minor}`}</div>
+            </div>
+          </div>
           <Card
             isHeaderLight={false}
           >
@@ -229,7 +229,7 @@ const minorUpdate = () => {
                   {t('datasets.detailedView.connectedModels') ?? ''} : {metadata?.connectedModels?.join(', ') ?? ''}
                 </p>
                 <p>
-                  {t('datasets.detailedView.noOfItems') ?? ''} : {20}
+                  {t('datasets.detailedView.noOfItems') ?? ''} : {metadata?.totalDataCount ?? "-"}
                 </p>
               </div>
               <div>
@@ -242,8 +242,8 @@ const minorUpdate = () => {
         </div>
       )}
       <div className="mb-20">
-        {isLoading && <SkeletonTable rowCount={5} />}
-        {!isLoading && updatedDataset && updatedDataset?.length > 0 && (
+        {datasetIsLoading && <SkeletonTable rowCount={10} />}
+        {!datasetIsLoading && updatedDataset && updatedDataset?.length > 0 && (
           <DataTable
             data={updatedDataset}
             columns={dataColumns as ColumnDef<string, string>[]}
@@ -280,7 +280,7 @@ const minorUpdate = () => {
         )}
         {
           updatedDataset?.length === 0 && (
-           <NoDataView text='No data available'/>
+            <NoDataView text='No data available' />
           )
         }
         <div className="button-container">
