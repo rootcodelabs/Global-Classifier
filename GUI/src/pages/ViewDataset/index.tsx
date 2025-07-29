@@ -11,7 +11,6 @@ import {
   SelectedRowPayload,
 } from 'types/datasets';
 import SkeletonTable from '../../components/molecules/TableSkeleton/TableSkeleton';
-import { sampleDatasetRows } from 'data/sampleDataset';
 import DynamicForm from 'components/FormElements/DynamicForm';
 import { datasetQueryKeys, integratedAgenciesQueryKeys } from 'utils/queryKeys';
 import { getDatasetData, getDatasetMetadata } from 'services/datasets';
@@ -30,14 +29,13 @@ const ViewDataset = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const { open, close } = useDialog();
   const isMetadataLoading = false;
-  // Sample data for demonstration purposes
-  const datasets = sampleDatasetRows;
   const [deletedRowIds, setDeletedRowIds] = useState<(string | number)[]>([]);
   const [searchParams] = useSearchParams();
   const datasetVersionId = searchParams.get('datasetId');
   const [selectedRow, setSelectedRow] = useState<SelectedRowPayload>();
   const [editedRows, setEditedRows] = useState<SelectedRowPayload[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
+  const [originalDataset, setOriginalDataset] = useState<any[]>([]);
 
 
   const { data: metadata, isLoading } = useQuery({
@@ -51,11 +49,26 @@ const ViewDataset = () => {
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
 
-  useEffect(() => {
+useEffect(() => {
     if (dataset) {
-      setUpdatedDataset(dataset);
+      setOriginalDataset(prev => {
+        const newOriginal = [...prev];
+        dataset.forEach((row: any) => {
+          if (!newOriginal.find(orig => orig.itemId === row.itemId)) {
+            newOriginal.push(row);
+          }
+        });
+        return newOriginal;
+      });
+
+      const mergedDataset = dataset.map((row: any) => {
+        const editedRow = editedRows.find((edited) => edited.itemId === row.itemId);
+        return editedRow ? editedRow : row;
+      });
+      
+      setUpdatedDataset(mergedDataset);
     }
-  }, [dataset]);  
+  }, [dataset, editedRows]);
 
   const { data: agencies } = useQuery({
     queryKey: integratedAgenciesQueryKeys.ALL_AGENCIES_LIST(),
@@ -150,39 +163,26 @@ const dataColumns = useMemo(() => {
   return [incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
 }, [editView, deleteView, pagination.pageIndex, pagination.pageSize, t]);
 
-  const editDataRecord = (dataRow: SelectedRowPayload) => {
-    const originalRow = dataset?.find(
-      (row: any) => row.itemId === dataRow.itemId
+ const editDataRecord = (dataRow: SelectedRowPayload) => {
+    const originalRow = originalDataset.find((row: any) => row.itemId === dataRow.itemId);
+    
+    const hasChanges = originalRow && (
+      originalRow.dataItem !== dataRow.dataItem || 
+      originalRow.agencyId !== dataRow.agencyId
     );
 
-    if (
-      originalRow &&
-      (originalRow.dataItem !== dataRow.dataItem || originalRow.agencyId !== dataRow.agencyId)
-    ) {
+    if (hasChanges) {
       setEditedRows((prev) => {
         const exists = prev.find((row) => row.itemId === dataRow.itemId);
         const newEditedRows = exists
           ? prev.map((row) => (row.itemId === dataRow.itemId ? dataRow : row))
           : [...prev, dataRow];
-        setIsUpdateModalOpen(false);
-
+        
         return newEditedRows;
       });
     }
 
-    // Update the table view
-    const payload = updatedDataset?.map((row: any) =>
-      row.itemId === selectedRow?.itemId
-        ? {
-          itemId: dataRow.itemId,
-          dataItem: (dataRow as any).dataItem,
-          agencyId: (dataRow as any).agencyId,
-          agencyName: (dataRow as any).agencyName,
-
-        }
-        : row
-    );
-    setUpdatedDataset(payload as { itemId: number; dataItem: string; agencyId: string; agencyName: string; }[]);
+    setIsUpdateModalOpen(false);
   };
 
   const deleteDataRecord = (dataRow: SelectedRowPayload) => {
@@ -193,21 +193,8 @@ const dataColumns = useMemo(() => {
   };
 
 const minorUpdate = () => {
-  const updatedDataItems: SelectedRowPayload[] = [];
-
-  editedRows.forEach((row) => {
-    // Skip if this row was deleted
-    if (deletedRowIds.includes(row.itemId)) {
-      return;
-    }
-
-    const original = dataset?.find((r: any) => r.itemId === row.itemId);
-    if (!original) return;
-    
-    // Check if anything changed
-    if (original.dataItem !== row.dataItem || original.agencyId !== row.agencyId) {
-      updatedDataItems.push(row);
-    }
+  const updatedDataItems: SelectedRowPayload[] = editedRows.filter((row) => {
+    return !deletedRowIds.includes(row.itemId);
   });
 
   const payload = {
@@ -287,7 +274,7 @@ const minorUpdate = () => {
                 return;
               setPagination(state);
             }}
-            pagesCount={dataset[0]?.totalPages ?? 0}
+            pagesCount={dataset?.[0]?.totalPages ?? 0}
             isClientSide={false}
           />
         )}
