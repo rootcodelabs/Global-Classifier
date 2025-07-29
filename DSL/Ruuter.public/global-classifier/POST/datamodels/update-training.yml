@@ -47,6 +47,7 @@ updateTrainingStatus:
       modelId: ${modelId}
       trainingResults: ${JSON.stringify(trainingResults)}
       modelS3Location: ${modelS3Location}
+      trainingStatus: "trained"
   result: update_result
   next: checkUpdateResult
 
