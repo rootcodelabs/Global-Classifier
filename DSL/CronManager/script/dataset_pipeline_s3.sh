@@ -135,13 +135,18 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
         progress_update_payload=$(cat <<EOF
 {
   "sessionId": "$sessionId",
-  "generationStatus": "Downloading Source Datasets",
-  "generationMessage": "Downloading Source Datasets from S3 for synthetic data generation",
+  "generationStatus": "Calling Dataset Generation",
+  "generationMessage": "Preparing dataset generation",
   "progressPercentage": 40,
   "processComplete": false
 }
 EOF
 )
+
+        progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+        -H "Content-Type: application/json" \
+        -d "$progress_update_payload")
+        echo "Progress session update response: $progress_update_response"
 
         # Prepare dataset generation payload as a list
         log "🔄 Preparing dataset generation payload..."
@@ -166,7 +171,8 @@ EOF
                     echo "      \"agency_name\": \"$agency_name\"," >> "$temp_payload"
                     echo "      \"data_path\": \"$folder_path\"," >> "$temp_payload"
                     echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
-                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
+                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
+                    echo "      \"session_id\": \"$sessionId\"" >> "$temp_payload"
                     echo "    }" >> "$temp_payload"
                     first_entry=false
                 fi
@@ -191,7 +197,8 @@ EOF
                     echo "      \"agency_name\": \"$agency_name\"," >> "$temp_payload"
                     echo "      \"data_path\": \"$folder_path\"," >> "$temp_payload"
                     echo "      \"output_filename\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
-                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"" >> "$temp_payload"
+                    echo "      \"version_id\": \"$CURRENT_DATASET_ID\"," >> "$temp_payload"
+                    echo "      \"session_id\": \"$sessionId\"" >> "$temp_payload"
                     echo "    }" >> "$temp_payload"
                     first_entry=false
                 fi
@@ -220,6 +227,21 @@ EOF
         log "🔍 Dataset Generation Response: $dataset_response_body"
         
         if [ "$dataset_http_code" = "200" ]; then
+            progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Dataset Generation In progress",
+  "generationMessage": "Dataset generation is in progress, please wait",
+  "progressPercentage": 60,
+  "processComplete": false
+}
+EOF
+)
+
+            progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+            -H "Content-Type: application/json" \
+            -d "$progress_update_payload")
+            echo "Progress session update response: $progress_update_response"
             log "✅ Dataset generation request submitted successfully"
             log "✅ Background task initiated for dataset processing"
             log "Response: $dataset_response_body"

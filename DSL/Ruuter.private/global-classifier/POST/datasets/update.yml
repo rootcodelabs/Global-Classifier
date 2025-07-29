@@ -1,0 +1,84 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Bulk update and delete datasets"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: updatedRowsLength
+        type: number
+        description: "Number of rows to update (required)"
+      - field: deletedRowsLength
+        type: number
+        description: "Number of rows to delete (required)"
+      - field: updatedRows
+        type: array
+        description: "Array of dataset rows to update"
+      - field: deletedRows
+        type: array
+        description: "Array of item_ids to delete"
+  next: extractRequestedData
+
+extractRequestedData:
+  assign:
+    updated_rows_length: ${incoming.body.updatedRowsLength}
+    deleted_rows_length: ${incoming.body.deletedRowsLength}
+  next: checkIfUpdatesNeeded
+
+checkIfUpdatesNeeded:
+  switch:
+    - condition: ${updated_rows_length > 0}
+      then: setUpdateIndex
+  next: checkIfDeletesNeeded
+
+setUpdateIndex:
+  assign:
+    updateIndex: 0
+  next: updateStep
+
+updateStep:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-dataset"
+    body:
+      agencyName: ${incoming.body.updatedRows[updateIndex].clientName}
+      agencyId: ${incoming.body.updatedRows[updateIndex].clientId}
+      dataItem: ${incoming.body.updatedRows[updateIndex].question}
+      itemId: ${incoming.body.updatedRows[updateIndex].id}     
+  maxRecursions: 1000
+  next: checkIfMoreUpdates
+  result: updateResult
+
+checkIfMoreUpdates:
+  switch:
+    - condition: ${updateIndex + 1 < updated_rows_length}
+      then: incrementUpdateIndex
+  next: checkIfDeletesNeeded
+
+incrementUpdateIndex:
+  assign:
+    updateIndex: ${updateIndex + 1}
+  next: updateStep
+
+checkIfDeletesNeeded:
+  switch:
+    - condition: ${deleted_rows_length > 0}
+      then: deleteRows
+  next: returnResult
+
+deleteRows:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-dataset-records"
+    body:
+      itemIds: ${incoming.body.deletedRows}
+  result: deleteResult
+  next: returnResult
+
+returnResult:
+  return: "Datasets updated and deleted successfully"
+  status: 200
+  next: end
