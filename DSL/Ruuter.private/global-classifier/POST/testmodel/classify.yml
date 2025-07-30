@@ -11,14 +11,14 @@ declaration:
       - field: modelId
         type: string
         description: "Identifier of the model to use for classification"
-      - field: message
+      - field: text
         type: string
-        description: "Text message to be classified"
+        description: "Text text to be classified"
 
 extractClassificationData:
   assign:
     modelId: ${incoming.body.modelId}
-    message: ${incoming.body.message}
+    text: ${incoming.body.text}
     startTime: ${Date.now()}
   next: validate_input
 
@@ -26,7 +26,7 @@ validate_input:
   switch:
     - condition: ${!modelId}
       next: return_validation_error
-    - condition: ${!message}
+    - condition: ${!text}
       next: return_validation_error
   next: prepare_inference_payload
 
@@ -45,7 +45,7 @@ call_triton_inference:
           datatype: "BYTES"
           shape: [1, 1]
           data:
-            - ${message}
+            - ${text}
     headers:
       Content-Type: "application/json"
   result: inference_result
@@ -65,7 +65,7 @@ log_testing_inference_result:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-testing-inference-log"
     body:
       modelId: ${modelId}
-      message: ${message}
+      text: ${text}
       inferenceTimeMs: ${Date.now() - startTime}
       parsedOutput: ${JSON.stringify(parsedOutput)}
   result: log_result
@@ -84,7 +84,7 @@ return_log_inference_error:
 
 return_validation_error:
   status: 400
-  return: "Invalid payload. modelId and message are required."
+  return: "Invalid payload. modelId and text are required."
   next: end
 
 return_inference_error:
