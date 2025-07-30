@@ -233,8 +233,22 @@ training_exit_code=$?
 if [ $training_exit_code -eq 0 ]; then
     echo "🎉 [SUCCESS] Training completed successfully"
     echo "📁 [OUTPUT] Training outputs saved to: $training_output_dir"
+
+    # Update job status to trained
+    echo "[UPDATE] Updating job status to trained..."
+    response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
+    -H "Content-Type: application/json" \
+    -d "{\"jobId\": $job_id, \"jobStatus\": \"trained\"}")
+        
+    echo "🔍 [DEBUG] Update job status to trained response: '$response_update_job_status_trained'"
 else
-    echo "❌ [FAILED] Training failed with exit code: $training_exit_code"
+    echo "[FAILED] Training failed with exit code: $training_exit_code"
+
+    echo "[UPDATE] Updating job status to training-failed..."
+    response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
+    -H "Content-Type: application/json" \
+    -d "{\"jobId\": $job_id, \"jobStatus\": \"training-failed\"}")
+
     exit 1
 fi
 
