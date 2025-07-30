@@ -452,10 +452,10 @@ def generate_all_triton_configs(
     """
 
     # Generate model names with model_id prefix
-    ensemble_name = f"{model_id}-classifier_ensemble"
-    preprocessing_name = f"{model_id}-pre_processing"
-    text_classifier_name = f"{model_id}-text_classifier"
-    postprocessing_name = f"{model_id}-post_processing"
+    ensemble_name = f"{model_id}-classifier-ensemble"
+    preprocessing_name = f"{model_id}-pre-processing"
+    text_classifier_name = f"{model_id}-text-classifier"
+    postprocessing_name = f"{model_id}-post-processing"
 
     configs = {
         f"{ensemble_name}/config.pbtxt": generate_ensemble_config(
