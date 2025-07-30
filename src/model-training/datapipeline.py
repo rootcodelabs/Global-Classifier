@@ -4,8 +4,9 @@ import sys
 from s3_ferry import S3Ferry
 import os
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
+
 
 
 class DataPipeline:

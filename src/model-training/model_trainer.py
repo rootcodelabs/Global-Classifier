@@ -19,8 +19,8 @@ from loguru import logger
 
 import argparse
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
 
 
 class ModelTrainer:
@@ -62,7 +62,7 @@ class ModelTrainer:
             for folder_path in folder_paths:
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
-            logger.success(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
+            logger.info(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
         except Exception as e:
             logger.error(f"FAILED TO CREATE MODEL FOLDER PATHS : {folder_paths}")
             raise RuntimeError(e)
