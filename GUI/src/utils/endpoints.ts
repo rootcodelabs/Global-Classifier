@@ -58,7 +58,7 @@ export const dataModelsEndpoints = {
   CREATE_MINOR_VERSION: (): string => '/global-classifier/datamodels/minor',
   DELETE_MODEL: (): string => '/global-classifier/datamodels/delete',
   GET_ALL_DATAMODELS_VERSIONS: (): string => '/global-classifier/datamodels/versions',
-  LOAD_MODEL: (): string => '/global-classifier/datamodels/load',
+  LOAD_MODEL: (): string => '/global-classifier/testmodel/load',
   GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodels/progress`,
   DEPLOY_MODEL: (): string => '/global-classifier/datamodels/deploy',
 
@@ -75,6 +75,6 @@ export const dataModelsEndpoints = {
 
 export const testModelsEndpoints = {
   GET_MODELS: (): string => `/global-classifier/testmodel/models`,
-  CLASSIFY_TEST_MODELS: (): string => `/global-classifier/testmodel/test-data`,
+  CLASSIFY_TEST_MODELS: (): string => `/global-classifier/testmodel/classify`,
 };
 
