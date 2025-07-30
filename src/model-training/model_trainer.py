@@ -14,13 +14,14 @@ from constants import (
     UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
     SEQUENCE_LENGTH,
+    MODEL_TRAINING_SOURCE_PATH,
 )
 from loguru import logger
 
 import argparse
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
 
 
 class ModelTrainer:
@@ -62,7 +63,7 @@ class ModelTrainer:
             for folder_path in folder_paths:
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
-            logger.success(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
+            logger.info(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
         except Exception as e:
             logger.error(f"FAILED TO CREATE MODEL FOLDER PATHS : {folder_paths}")
             raise RuntimeError(e)
@@ -225,7 +226,7 @@ class ModelTrainer:
             if not os.path.exists(new_model_repo_path):
                 os.makedirs(new_model_repo_path)
             # this is the pre-defined model-repository path
-            model_repository_path = "model-repository"
+            model_repository_path = f"{MODEL_TRAINING_SOURCE_PATH}/model-repository"
 
             # copy all contents and directories of model-repository to new_model_repo_path
             shutil.copytree(
@@ -298,9 +299,10 @@ class ModelTrainer:
 
             # Upload to S3
             s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}/{str(self.model_id)}.zip"
-            local_source_location = (
-                f"{MODEL_RESULTS_PATH.replace('/shared/', '')}/{str(self.model_id)}.zip"
-            )
+
+            # Removing /app from path since S3 Ferry will already add /app to the path as defined in the config.env
+            local_source_location =  f"{MODEL_RESULTS_PATH.replace('/app/', '')}/{str(self.model_id)}.zip"
+            
 
             logger.info("INITIATING MODEL UPLOAD TO S3")
             _ = s3_ferry.transfer_file(

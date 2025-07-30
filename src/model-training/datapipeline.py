@@ -4,8 +4,9 @@ import sys
 from s3_ferry import S3Ferry
 import os
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
+
 
 
 class DataPipeline:
@@ -55,7 +56,7 @@ class DataPipeline:
     def extract_input_columns(self):
         """Extract input columns from validation rules"""
         validation_rules = self.hierarchy["validationCriteria"]["validationRules"]
-        input_columns = [
+        input_columns: list[str | Unknown] = [
             key for key, value in validation_rules.items() if not value["isDataClass"]
         ]
         logger.info(f"Input columns identified: {input_columns}")
@@ -123,8 +124,11 @@ class DataPipeline:
             # Set target column
             df = df.rename(columns={target_column: "target"})
 
+            logger.info(f"Data frame before removing: {df}")
             # Keep only input and target columns, remove any NaN values
-            df = df[["input", "target"]].dropna()
+            df = df[["input", "target", "agency_id"]].dropna()
+
+            logger.info(f"Data frame after removing: {df}")
 
             # Validate the data
             if len(df) == 0:

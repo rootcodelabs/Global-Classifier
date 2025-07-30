@@ -4,9 +4,8 @@ from constants import S3_FERRY_ENDPOINT
 
 import sys
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
-
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer-s3-ferry")
 
 class S3Ferry:
     def __init__(self):
@@ -27,7 +26,14 @@ class S3Ferry:
             source_storage_type,
         )
 
+
+        logger.info(f"Transferring file with payload: {payload}")
         response = requests.post(self.url, json=payload)
+        if response.status_code != 200:
+            logger.error(f"Failed to transfer file: {response.text} to S3")
+            response.raise_for_status()
+        else:
+            logger.info(f"File transferred successfully: {response.json()}")
         return response
 
     def get_s3_ferry_payload(

@@ -14,6 +14,8 @@ TEST_DEPLOYMENT_ENDPOINT = (
     "http://deployment-service:8003/classifier/datamodel/deployment/testing/update"
 )
 
+MODEL_TRAINING_SOURCE_PATH = "/app/src/training" #path in container
+
 TRAINING_LOGS_PATH = "/app/src/training/training_logs.log"
 
 MODEL_RESULTS_PATH = "/app/shared/model_trainer/results"  # stored in the shared folder which is connected to s3-ferry

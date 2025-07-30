@@ -46,8 +46,8 @@ warnings.filterwarnings(
 transformers_logging.set_verbosity_error()
 
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
 
 
 class CustomDataset(Dataset):
