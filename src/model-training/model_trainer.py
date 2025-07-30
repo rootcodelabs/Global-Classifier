@@ -106,7 +106,7 @@ class ModelTrainer:
             "modelName": self.model_name,
             "majorVersion": self.major_version,
             "minorVersion": self.minor_version,
-            "latest": self.latest(),
+            "latest": self.latest,
         }
 
         logger.info(f"Prepared training progress session payload {payload}")
