@@ -6,7 +6,7 @@ SELECT
     major_version,
     minor_version,
     latest,
-    deployment_environment
+    deployment_environment,
     created_at
 FROM model_training_jobs 
 WHERE job_status = 'queued'
