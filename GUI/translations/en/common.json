@@ -64,7 +64,7 @@
       "progress": "Data Generation Progress"
     },
     "datasetGroups": "Dataset Groups",
-    "validationSessions": "Validation Sessions",
+    "validationSessions": "Data Generation Sessions",
     "dataModels": {
       "title": "Data Models",
       "overview": "Overview",

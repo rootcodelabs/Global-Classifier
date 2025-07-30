@@ -58,9 +58,9 @@ export const dataModelsEndpoints = {
   CREATE_MINOR_VERSION: (): string => '/global-classifier/datamodels/minor',
   DELETE_MODEL: (): string => '/global-classifier/datamodels/delete',
   GET_ALL_DATAMODELS_VERSIONS: (): string => '/global-classifier/datamodels/versions',
-  LOAD_MODEL: (): string => '/global-classifier/datamodels/load',
+  LOAD_MODEL: (): string => '/global-classifier/datamodels/inference/load-model',
   GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodels/progress`,
-  DEPLOY_MODEL: (): string => '/global-classifier/datamodels/deploy',
+  DEPLOY_MODEL: (): string => '/global-classifier/inference/deploy',
 
   
   GET_DATAMODELS_FILTERS: (): string =>

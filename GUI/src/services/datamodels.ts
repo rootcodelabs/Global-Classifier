@@ -1,5 +1,6 @@
 import { dataModelsEndpoints, testModelsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import apiPublic from './api-public';
 import { ClassifyTestModalPayloadType, ClassifyTestModalResponseType } from 'types/testModelTypes';
 import { OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
@@ -83,7 +84,7 @@ export async function deployDataModel(payload: {
   currentEnv: string;
   targetEnv: string;
 },) {
-  const { data } = await apiDev.post(dataModelsEndpoints.DEPLOY_MODEL(), payload);
+  const { data } = await apiPublic.post(dataModelsEndpoints.DEPLOY_MODEL(), payload);
   return data?.response ?? {};
 }
 
@@ -100,7 +101,7 @@ export async function getAllModelVersions() {
 }
 
 export async function loadModel(modelId: number | string | null) {
-  const { data } = await apiDev.post(dataModelsEndpoints.LOAD_MODEL(), {
+  const { data } = await apiPublic.post(dataModelsEndpoints.LOAD_MODEL(), {
     modelId,
   });
   return data?.response ?? [];
