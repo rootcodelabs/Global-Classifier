@@ -87,6 +87,20 @@
   margin-right: 15px;
 }
 
+.button-container-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+  padding: 20px 50px 20px 0px;
+  background-color: #fff;
+  z-index: 10;
+  margin-right: 15px;
+}
 .content-wrapper {
   padding-bottom: 60px;
 }
@@ -104,4 +118,17 @@
 
 .align-center{
   align-items: center;
+}
+
+.dataset-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+
+  .filter-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
 }

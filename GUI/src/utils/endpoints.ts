@@ -20,6 +20,9 @@ export const datasetsEndpoints = {
   GET_DATASETS_DATA: (): string => '/global-classifier/datasets/data',
   GET_ALL_DATASET_VERSIONS: (): string => '/global-classifier/datasets/versions',
   GET_DATA_GENERATION_PROGRESS: (): string => `/global-classifier/datasets/progress`,
+  UPDATE_DATASET: (): string => `/global-classifier/datasets/update`,
+  DELETE_DATASET: (): string => `/global-classifier/datasets/delete`,
+
 
 
   GET_DATASET_FILTERS: (): string =>
@@ -58,7 +61,7 @@ export const dataModelsEndpoints = {
   CREATE_MINOR_VERSION: (): string => '/global-classifier/datamodels/minor',
   DELETE_MODEL: (): string => '/global-classifier/datamodels/delete',
   GET_ALL_DATAMODELS_VERSIONS: (): string => '/global-classifier/datamodels/versions',
-  LOAD_MODEL: (): string => '/global-classifier/datamodels/inference/load-model',
+  LOAD_MODEL: (): string => '/global-classifier/testmodel/load-model',
   GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodels/progress`,
   DEPLOY_MODEL: (): string => '/global-classifier/inference/deploy',
 
@@ -75,6 +78,6 @@ export const dataModelsEndpoints = {
 
 export const testModelsEndpoints = {
   GET_MODELS: (): string => `/global-classifier/testmodel/models`,
-  CLASSIFY_TEST_MODELS: (): string => `/global-classifier/testmodel/test-data`,
+  CLASSIFY_TEST_MODELS: (): string => `/global-classifier/testmodel/classify`,
 };
 

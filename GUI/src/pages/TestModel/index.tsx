@@ -19,6 +19,7 @@ const TestModel: FC = () => {
   const [modelLoadingStatus, setModelLoadingStatus] = useState<string>("");
   const [color, setColor] = useState<string>("black");
   const [isClassifyEnabled, setIsClassifyEnabled] = useState<boolean>(false);
+  const [classificationResult, setClassificationResult] = useState<any>([]);
 
   const { open } = useDialog();
 
@@ -58,13 +59,36 @@ const TestModel: FC = () => {
 
   const classifyMutation = useMutation({
     mutationFn: classify,
-    onSuccess: () => {
-
+    onSuccess: (data) => {
+      setClassificationResult(data);
     },
     onError: () => {
-
+      open({
+        title: t('testModels.error'),
+        content: t('testModels.errorDesc'),
+      });
     },
   });
+
+  const processClassificationResult = (result: any) => {
+    if (!result || !Array.isArray(result) || result.length === 0) return [];
+
+    const resultData = result[0]; // Get the first (and likely only) object
+
+    return Object.entries(resultData).map(([key, value]: [string, any]) => {
+      const agencyName = Object.keys(value)[0];
+      const confidence = Object.values(value)[0] as number;
+
+      return {
+        rank: parseInt(key),
+        agencyName: agencyName.replace(/_/g, ' '), // Replace underscores with spaces
+        confidence: confidence
+      };
+    }).sort((a, b) => b.confidence - a.confidence); // Sort by confidence descending
+  };
+
+  const processedResults = classificationResult ? processClassificationResult(classificationResult) : [];
+
 
   return (
     <div>
@@ -89,7 +113,7 @@ const TestModel: FC = () => {
                 }}
                 value={testModel?.modelId === null ? t('testModels.errors.modelNotExist') : undefined} defaultValue={testModel?.modelId ?? undefined}
               />
-              <Button onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
+              <Button disabled={!testModel.modelId} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
                 Load Model
               </Button>
               <div style={{ width: "100%", color: color }} >{modelLoadingStatus}</div>
@@ -109,11 +133,66 @@ const TestModel: FC = () => {
           <div className="testModalClassifyButton">
             <Button
               onClick={() => { classifyMutation.mutate(testModel) }}
-              disabled={!isClassifyEnabled || !testModel.modelId || !testModel.text}
+            // disabled={!isClassifyEnabled || !testModel.modelId || !testModel.text}
             >
               {t('testModels.classify')}
             </Button>
           </div>
+
+          {processedResults.length > 0 && (
+            <div className="classification-results">
+              <h3>{t('testModels.results') || 'Classification Results'}</h3>
+              <div className="results-container">
+                <div className="top-prediction">
+                  <h4>{t('testModels.topPrediction') || 'Top Prediction'}</h4>
+                  <div className="prediction-card primary">
+                    <div className="agency-name">
+                      {processedResults[0].agencyName}
+                    </div>
+                    <div className="confidence-score">
+                      {(processedResults[0].confidence).toFixed(10)}
+                    </div>
+                  </div>
+                </div>
+                {processedResults.length > 1 && (
+                  <div className="all-predictions">
+                    <h4>{t('testModels.allPredictions') || 'All Predictions'}</h4>
+                    <div className="predictions-list">
+                      {processedResults.map((result, index) => (
+                        <div
+                          key={`${result.rank}-${result.agencyName}`}
+                          className={`prediction-item ${index === 0 ? 'highest' : ''}`}
+                        >
+                          <div className="rank">#{index + 1}</div>
+                          <div className="agency-info">
+                            <span className="agency-name">
+                              {result.agencyName}
+                            </span>
+                            <div className="confidence-bar-container">
+                              <div
+                                className="confidence-bar"
+                                style={{ width: `${result.confidence * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="confidence-percentage">
+                            {(result.confidence).toFixed(10)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {classifyMutation.isError && (
+            <div className="classification-error">
+              <p>{t('testModels.classificationFailed') || 'Classification failed. Please try again.'}</p>
+            </div>
+          )}
         </div>
       )}
     </div>

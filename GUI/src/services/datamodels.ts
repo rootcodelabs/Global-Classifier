@@ -101,7 +101,7 @@ export async function getAllModelVersions() {
 }
 
 export async function loadModel(modelId: number | string | null) {
-  const { data } = await apiPublic.post(dataModelsEndpoints.LOAD_MODEL(), {
+  const { data } = await apiDev.post(dataModelsEndpoints.LOAD_MODEL(), {
     modelId,
   });
   return data?.response ?? [];
@@ -112,7 +112,7 @@ export async function classify(data: ClassifyTestModalPayloadType) {
     testModelsEndpoints.CLASSIFY_TEST_MODELS(),
     { modelId: data.modelId, text: data.text },
   );
-  return response?.data?.response?.data as ClassifyTestModalResponseType ?? [];
+  return response?.data?.response as ClassifyTestModalResponseType ?? [];
 }
 export async function getDataModelsProgress() {
   const { data } = await apiDev.get(dataModelsEndpoints.GET_DATA_MODEL_PROGRESS());

@@ -18,7 +18,7 @@ deleteDatasets:
   args:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-datasets-by-version"
     body:
-      datasetVersionId: ${incoming.body.datasetVersionId}
+      datasetVersionId: ${Number(incoming.body.datasetVersionId)}
   result: deleteDatasetsResult
   next: deleteDatasetVersion
 
@@ -27,7 +27,7 @@ deleteDatasetVersion:
   args:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-dataset-version"
     body:
-      datasetVersionId: ${incoming.body.datasetVersionId}
+      datasetVersionId: ${Number(incoming.body.datasetVersionId)}
   result: deleteVersionResult
   next: checkDeleteResult
 

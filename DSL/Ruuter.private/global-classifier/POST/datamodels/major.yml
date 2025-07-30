@@ -59,7 +59,7 @@ validateEnumValues:
   switch:
     - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
       next: return_invalid_deployment_env
-    - condition: ${!baseModels.every(model => ["bert", "roberta", "xlm"].includes(model))}
+    - condition: ${!baseModels.every(model => ["estbert", "xlm-roberta", "multilingual-distilbert"].includes(model))}
       next: return_invalid_base_model
   next: checkProductionDeployment
 
@@ -219,7 +219,7 @@ return_invalid_deployment_env:
   next: end
 
 return_invalid_base_model:
-  return: "error: invalid baseModels. Each model must be one of: bert, roberta, xlm"
+  return: "error: invalid baseModels"
   status: 400
   next: end
 

@@ -9,7 +9,6 @@ import BackArrowButton from 'assets/BackArrowButton';
 import DataModelForm from 'components/molecules/DataModelForm';
 import { ButtonAppearanceTypes } from 'enums/commonEnums';
 import {
-  CreateDataModelPayload,
   DataModel,
   ErrorsType,
 } from 'types/dataModels';
@@ -30,10 +29,10 @@ const CreateDataModel: FC = () => {
     version: 'V1.0',
   });
 
-   const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
-        queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
-        queryFn: () => getProductionDataModel(),
-      });
+  const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
+    queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
+    queryFn: () => getProductionDataModel(),
+  });
 
   const handleDataModelAttributesChange = (name: string, value: string) => {
     setDataModel((prevFilters) => ({
@@ -74,13 +73,13 @@ const CreateDataModel: FC = () => {
       open({
         title: t('dataModels.createDataModel.successTitle'),
         content: t('dataModels.createDataModel.successDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=> {navigate('/data-models'),close()}}>View all Data Models</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
       });
-     
+
     },
     onError: () => {
       open({
-         title: t('dataModels.createDataModel.errorTitle'),
+        title: t('dataModels.createDataModel.errorTitle'),
         content: t('dataModels.createDataModel.errorDesc'),
       });
     },
@@ -97,15 +96,15 @@ const CreateDataModel: FC = () => {
       connectedDsMinorVersion: Number(dataModel?.version?.split('.')[1]) ?? "",
     }
 
-    if (prodDataModel && dataModel.deploymentEnvironment==="production") {
-        open({
+    if (prodDataModel && dataModel.deploymentEnvironment === "production") {
+      open({
         title: t('dataModels.createDataModel.replaceTitle'),
         content: t('dataModels.createDataModel.replaceDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={()=> {close()}}>Close</Button><Button onClick={()=>mutation.mutate(paylod)}>Replace</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => mutation.mutate(paylod)}>Replace</Button></div>)
       });
-      } else {
-    mutation.mutate(paylod);
-      }
+    } else {
+      mutation.mutate(paylod);
+    }
   };
 
   const isCreateDisabled = () => {
@@ -137,7 +136,10 @@ const CreateDataModel: FC = () => {
         />
       </div>
       <div className="flex data-model-buttons">
-        <Button onClick={() => handleCreate()} disabled={isCreateDisabled()} appearance={ButtonAppearanceTypes.PRIMARY}>
+        <Button onClick={() => handleCreate()} 
+        disabled={isCreateDisabled() || mutation.isLoading} 
+        appearance={ButtonAppearanceTypes.PRIMARY}
+        showLoadingIcon={mutation.isLoading}>
           {t('dataModels.createDataModel.title')}
         </Button>
         <Button appearance="secondary" onClick={() => navigate('/data-models')}>
