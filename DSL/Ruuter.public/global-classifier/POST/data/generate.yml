@@ -10,7 +10,10 @@ declaration:
     body:
       - field: datasetId
         type: string
-        description: "Unique identifier for the dataset generation request"
+      - field: majorVersion
+        description: "Major version number for the dataset generation request"
+      - field: minorVersion
+        description: "Minor version number for the dataset generation request"
       - field: presignedUrls
         type: json
         description: "Request body containing dataset generation details with set of signed URLs and agencyId"
@@ -59,6 +62,8 @@ handle_empty_urls:
 extract_request_data:
   assign:
     dataset_id: ${JSON.stringify(incoming.body.datasetId)}
+    major_version: ${incoming.body.majorVersion}
+    minor_version: ${incoming.body.minorVersion}
     url_list: ${incoming.body.presignedUrls}
     encoded_urls: ${encodeURIComponent(JSON.stringify(url_list))}
   next: log_request
@@ -74,6 +79,8 @@ execute_cron_manager:
     query:
         signedUrls: ${encoded_urls}
         datasetId: ${dataset_id}
+        majorVersion: ${major_version}
+        minorVersion: ${minor_version}
   result: cron_res
   error: handle_cron_error
   next: validate_cron_response

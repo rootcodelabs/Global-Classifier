@@ -23,9 +23,9 @@ declaration:
       - field: latest
         type: boolean
         description: "Body field 'latest'"
-      - field: deploymentEnvironment
+      - field: deploymentEnv
         type: string
-        description: "Body field 'deploymentEnvironment'"
+        description: "Body field 'deploymentEnv'"
 
 extract_request_data:
   assign:
@@ -34,7 +34,7 @@ extract_request_data:
     major_version: ${incoming.body.majorVersion}
     minor_version: ${incoming.body.minorVersion}
     latest: ${incoming.body.latest}
-    deployment_environment: ${incoming.body.deploymentEnvironment}
+    deployment_environment: ${incoming.body.deploymentEnv}
     next: check_for_request_data
 
 check_for_request_data:
@@ -52,7 +52,7 @@ create_training_job_in_queue:
       model_name: ${model_name}
       major_version: ${major_version}
       minor_version: ${minor_version}
-      latest: ${latest}
+      latest: ${incoming.body.latest === true || incoming.body.latest === 'true'}
       deployment_environment: ${deployment_environment}
   result: res_model
   next: log_result

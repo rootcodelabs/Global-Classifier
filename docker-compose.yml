@@ -156,14 +156,12 @@ services:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config
-      - ./src/model_training:/app/src/training
+      - ./src/model-training:/app/src/training
       - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
       - ./data/processed:/app/data/processed
-      - shared-volume:/shared
+      - shared-volume:/app/shared
       - cron_data:/app/data
-      - ./src/model_training/dataset_artifacts:/app/src/training/dataset_artifacts
       - ./models:/app/models
-      - ./src/model_training/logs:/app/src/training/logs
     runtime: nvidia  
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -241,7 +239,7 @@ services:
     container_name: gc-s3-ferry
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
-      - ./src/training/dataset_artifacts:/app/src/training/dataset_artifacts
+      - shared-volume:/app/shared
       - ./models:/app/models
     env_file:
       - config.env
@@ -251,22 +249,22 @@ services:
     networks:
       - bykstack
 
-  dataset-file-handler:
-    container_name: dataset-file-handler
-    build: ./src/dataset_file_handler
-    ports:
-      - "8001:8001"
-    volumes:
-      - cron_data:/app/data  # Same volume as cron-manager
-    environment:
-      - PORT=8001
-    networks:
-      - bykstack
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # dataset-file-handler:
+  #   container_name: dataset-file-handler
+  #   build: ./src/dataset_file_handler
+  #   ports:
+  #     - "8001:8001"
+  #   volumes:
+  #     - cron_data:/app/data  # Same volume as cron-manager
+  #   environment:
+  #     - PORT=8001
+  #   networks:
+  #     - bykstack
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
   opensearch-node:
     image: opensearchproject/opensearch:2.11.1

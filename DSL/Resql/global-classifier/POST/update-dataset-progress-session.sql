@@ -4,4 +4,4 @@ SET
     generation_message = :generation_message,
     progress_percentage = :progress_percentage,
     process_complete = :process_complete
-WHERE id = :id;
+WHERE id = :id::bigint;

@@ -17,7 +17,7 @@ declaration:
         description: "Deployment environment: production, testing, undeployed (required)"
       - field: baseModels
         type: array
-        description: "Array of base models: ['bert', 'roberta', 'xlm'] (required)"
+        description: "Array of base models: ['estbert', 'xlm-roberta', 'multilingual-distilbert'] (required)"
       - field: connectedDsId
         type: number
         description: "Connected dataset ID (required)"
@@ -56,7 +56,7 @@ validateEnumValues:
   switch:
     - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
       next: return_invalid_deployment_env
-    - condition: ${!baseModels.every(model => ["bert", "roberta", "xlm"].includes(model))}
+    - condition: ${!baseModels.every(model => ["estbert", "xlm-roberta", "multilingual-distilbert"].includes(model))}
       next: return_invalid_base_model
   next: checkProductionDeployment
 
