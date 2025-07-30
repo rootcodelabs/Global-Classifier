@@ -14,9 +14,14 @@ from constants import (
     UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
     SEQUENCE_LENGTH,
-    MODEL_TRAINING_SOURCE_PATH,
+    MODEL_TRAINING_SOURCE_PATH,    
+    DEPLOYMENT_ENDPOINT, 
+    CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT, 
+    UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT
 )
+
 from loguru import logger
+import requests
 
 import argparse
 
@@ -54,7 +59,6 @@ class ModelTrainer:
 
         except Exception as e:
             logger.error(f"EXCEPTION IN MODEL_TRAINER INIT : {e}")
-            self.send_error_progress_session(str(e))
 
     @staticmethod
     def create_training_folders(folder_paths):
@@ -82,6 +86,15 @@ class ModelTrainer:
 
         combined_score = (ACCURACY_WEIGHT * avg_accuracy) + (F1_WEIGHT * avg_f1)
         return combined_score
+
+    def deploy_model(self, deployment_environment) :
+        """Deploy the model to the specified environment"""
+        logger.info(f"DEPLOYING MODEL TO {deployment_environment}")
+        # Placeholder for deployment logic
+        # This could involve calling a deployment service, updating configs, etc.
+        # For now, just log the action
+
+        logger.info(f"MODEL {self.model_name} (ID: {self.model_id}) deployed to {deployment_environment}")
 
     def train(self):
         """UNIFIED TRAINING METHOD - TRAINS ALL VARIANTS"""
@@ -358,10 +371,73 @@ class ModelTrainer:
 
             logger.error(f"EXCEPTION IN UNIFIED MODEL TRAINER: {e}")
             logger.error(traceback.format_exc())
-            self.send_error_progress_session(
-                f"UNIFIED TRAINING CRASHED - ERROR - {str(e)}"
-            )
             raise
+    
+    def deploy(self):
+
+        """
+        Deploy a model from current environment to target environment using Ruuter endpoint.
+        
+        Args:
+            model_id: The ID of the model to deploy
+            current_env: Current deployment environment (e.g., 'testing', 'production')
+            target_env: Target deployment environment to deploy to
+            first_deployment: Whether this is the first deployment (default: False)
+            
+        """
+        
+
+
+        logger.info("Starting model deployment")
+        
+        # Prepare request payload
+        payload = {
+            "modelId": self.model_id,
+            "currentEnv": self.current_deployment_platform,
+            "targetEnv": self.target_deployment_platform,
+            "firstDeployment": True
+        }
+
+        logger.info(f"Prepared deployment payload {payload}")
+        
+        try:
+            # Make request to deployment endpoint
+            response = requests.post(
+                DEPLOYMENT_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for deployment operations
+            )
+            
+            logger.info(f"Deployment endpoint response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+            
+            logger.info("Model deployment completed successfully")
+            
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during model deployment: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, 
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform,
+                        status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+
+ 
 
 
 # ----------------------TODO: Uncomment the CLI section when needed----------------------
@@ -425,3 +501,4 @@ if __name__ == "__main__":
         target_deployment_platform=target_deployment_platform,
     )
     trainer.train()
+    trainer.deploy()

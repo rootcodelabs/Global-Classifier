@@ -1,18 +1,10 @@
-UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = (
-    "http://ruuter-public:8086/classifier/datamodel/update/training/status"
-)
+UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
 
-CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-public:8086/classifier/datamodel/progress/create"
-)
+CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-private:8088/global-classifier/datamodels/progress/create"
 
-UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-public:8086/classifier/datamodel/progress/update"
-)
+UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-private:8088/global-classifier/datamodels/progress/update"
 
-TEST_DEPLOYMENT_ENDPOINT = (
-    "http://deployment-service:8003/classifier/datamodel/deployment/testing/update"
-)
+DEPLOYMENT_ENDPOINT = "http://ruuter-public:8086/global-classifier/inference/deploy"
 
 MODEL_TRAINING_SOURCE_PATH = "/app/src/training" #path in container
 

@@ -448,6 +448,7 @@ services:
 
   triton-production-server:
     container_name: triton-production-server
+    runtime: nvidia
     build:
       context: ./src/inference
       dockerfile: Dockerfile
@@ -485,6 +486,7 @@ services:
 
   triton-test-server:
     container_name: triton-test-server
+    runtime: nvidia
     build:
       context: ./src/inference
       dockerfile: Dockerfile
