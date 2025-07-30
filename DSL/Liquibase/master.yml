@@ -37,3 +37,5 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v20-add-model-id-and-inference-time.sql
   - include:
       file: changelog/global-classifier-script-v21-rename-inference-time-to-milliseconds.sql
+  - include:
+      file: changelog/global-classifier-script-v22-model-training-jobs.sql
