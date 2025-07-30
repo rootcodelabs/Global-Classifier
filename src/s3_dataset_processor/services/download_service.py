@@ -40,25 +40,17 @@ class DownloadService:
             True if download successful, False otherwise
         """
         try:
-            logger.info(1)
             response = requests.get(url, stream=True, timeout=self.timeout)
-            logger.info(2)
             response.raise_for_status()
-            logger.info(3)
             logger.info(f"resonse_payload:{response}")
 
             # Ensure directory exists
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            logger.info(4)
 
             with open(local_path, "wb") as f:
-                logger.info(5)
                 for chunk in response.iter_content(chunk_size=self.chunk_size):
-                    logger.info(6)
                     if chunk:
-                        logger.info(7)
                         f.write(chunk)
-            logger.info(8)
 
             return True
         except Exception as e:
