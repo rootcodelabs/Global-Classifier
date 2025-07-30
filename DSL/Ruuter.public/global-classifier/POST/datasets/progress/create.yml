@@ -18,16 +18,16 @@ declaration:
       - field: minorVersion
         type: number
         description: "Body field 'minorVersion'"
-      - field: latest
-        type: boolean
-        description: "Body field 'latest'"
+      # - field: latest
+      #   type: boolean
+      #   description: "Body field 'latest'"
 
 extract_request_data:
   assign:
     dataset_id: ${incoming.body.datasetId}
     major_version: ${incoming.body.majorVersion}
     minor_version: ${incoming.body.minorVersion}
-    latest: ${incoming.body.latest}
+    # latest: ${incoming.body.latest}
   next: check_for_request_data
 
 check_for_request_data:
@@ -64,7 +64,7 @@ create_dataset_progress_session:
       dataset_id: ${dataset_id}
       major_version: ${major_version}
       minor_version: ${minor_version}
-      latest: ${latest}
+      latest: true
       progressPercentage: 0
       generation_status: 'Initiating Dataset Generation'
   result: res
