@@ -14,6 +14,7 @@ from constants import (
     UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
     SEQUENCE_LENGTH,
+    MODEL_TRAINING_SOURCE_PATH,
 )
 from loguru import logger
 
@@ -225,7 +226,7 @@ class ModelTrainer:
             if not os.path.exists(new_model_repo_path):
                 os.makedirs(new_model_repo_path)
             # this is the pre-defined model-repository path
-            model_repository_path = "model-repository"
+            model_repository_path = f"{MODEL_TRAINING_SOURCE_PATH}/model-repository"
 
             # copy all contents and directories of model-repository to new_model_repo_path
             shutil.copytree(
