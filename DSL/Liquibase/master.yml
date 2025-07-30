@@ -29,3 +29,11 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v15-data-model-progress-sessions.sql
   - include:
       file: changelog/global-classifier-script-v16-inference-logs.sql
+  - include:
+      file: changelog/global-classifier-script-v17-remove-author-id.sql
+  - include:
+      file: changelog/global-classifier-script-v18-testing-inference-logs.sql
+  - include:
+      file: changelog/global-classifier-script-v20-add-model-id-and-inference-time.sql
+  - include:
+      file: changelog/global-classifier-script-v21-rename-inference-time-to-milliseconds.sql
