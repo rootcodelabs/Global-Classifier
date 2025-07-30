@@ -234,7 +234,7 @@ class ModelTrainer:
                 dirs_exist_ok=True,
             )
             # add labels-mapping.json to new_model_repo_path pre-processing and post-processing directories
-            label_mappings_path = f"{new_model_repo_path}/pre_processing/1"
+            label_mappings_path = f"{new_model_repo_path}/pre-processing/1"
             if not os.path.exists(label_mappings_path):
                 os.makedirs(label_mappings_path)
             shutil.copy(
@@ -243,7 +243,7 @@ class ModelTrainer:
             )
             shutil.copy(
                 src=f"{best_result['model_path']}/config.json",
-                dst=f"{new_model_repo_path}/post_processing/1/label_mappings.json",
+                dst=f"{new_model_repo_path}/post-processing/1/label_mappings.json",
             )
             top_level_dirs = [
                 d
@@ -259,8 +259,8 @@ class ModelTrainer:
                 logger.info(f"Renaming {dir_name} to {new_dir_name}")
                 os.rename(old_path, new_path)
 
-            # move onnx model to the new model-id folder inside model-id/text_classifier/1/model.onnx
-            onnx_model_path = f"{new_model_repo_path}/{self.model_id}-text_classifier/1"
+            # move onnx model to the new model-id folder inside model-id/text-classifier/1/model.onnx
+            onnx_model_path = f"{new_model_repo_path}/{self.model_id}-text-classifier/1"
             if not os.path.exists(onnx_model_path):
                 os.makedirs(onnx_model_path)
             shutil.move(
