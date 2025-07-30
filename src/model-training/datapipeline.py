@@ -124,9 +124,12 @@ class DataPipeline:
             # Set target column
             df = df.rename(columns={target_column: "target"})
 
+            logger.info(f"Data frame before removing: {df}}")
             # Keep only input and target columns, remove any NaN values
-            df = df[["input", "target"]].dropna()
+            df = df[["input", "target", "agency_id"]].dropna()
 
+            logger.info(f"Data frame after removing: {df}")
+            
             # Validate the data
             if len(df) == 0:
                 raise ValueError("No valid data samples after preprocessing")
