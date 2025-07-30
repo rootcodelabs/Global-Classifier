@@ -299,7 +299,9 @@ class ModelTrainer:
 
             # Upload to S3
             s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}/{str(self.model_id)}.zip"
-            local_source_location = f"{MODEL_RESULTS_PATH}/{str(self.model_id)}.zip"
+
+            # Removing /app from path since S3 Ferry will already add /app to the path as defined in the config.env
+            local_source_location =  f"{MODEL_RESULTS_PATH.replace('/app/', '')}/{str(self.model_id)}.zip"
             
 
             logger.info("INITIATING MODEL UPLOAD TO S3")
