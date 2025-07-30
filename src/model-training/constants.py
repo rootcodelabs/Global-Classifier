@@ -1,8 +1,8 @@
 UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
 
-CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-private:8088/global-classifier/datamodels/progress/create"
+CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/create"
 
-UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-private:8088/global-classifier/datamodels/progress/update"
+UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/update"
 
 DEPLOYMENT_ENDPOINT = "http://ruuter-public:8086/global-classifier/inference/deploy"
 
@@ -26,11 +26,6 @@ BASE_MODEL_FILENAME = "base_model_trainable_layers_{model_id}"
 
 CLASSIFIER_MODEL_FILENAME = "classifier_{model_id}.pth"
 
-MODEL_TRAINING_IN_PROGRESS = "training in-progress"
-
-MODEL_TRAINING_SUCCESSFUL = "trained"
-
-MODEL_TRAINING_FAILED = "not trained"
 
 # MODEL TRAINING PROGRESS SESSION CONSTANTS
 
@@ -42,22 +37,22 @@ DEPLOYING_MODEL_PROGRESS_STATUS = "Deploying Model"
 
 MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS = "Model Trained And Deployed"
 
+TRAINING_FAILED_STATUS= "Training Failed"
+
+DEPLOYMENT_FAILED_STATUS = "Deployment Failed"
+
 
 INITIATING_TRAINING_PROGRESS_MESSAGE = "Download and preparing dataset"
 
-TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = (
-    "The dataset is being trained on all selected models"
-)
+TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = "The dataset is being trained on all selected models"
 
-DEPLOYING_MODEL_PROGRESS_MESSAGE = (
-    "Model training complete. The trained model is now being deployed"
-)
 
-MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = (
-    "The model was trained and deployed successfully to the environment"
-)
+DEPLOYING_MODEL_PROGRESS_MESSAGE = "Model training complete. The trained model is now being deployed"
 
-MODEL_TRAINING_FAILED_ERROR = "Training Failed"
+MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = "The model was trained and deployed successfully to the environment"
+
+
+TRAINING_FAILED_STATUS_MESSAGE = "Model training has failed"
 
 
 INITIATING_TRAINING_PROGRESS_PERCENTAGE = 30
@@ -67,6 +62,8 @@ TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE = 50
 DEPLOYING_MODEL_PROGRESS_PERCENTAGE = 80
 
 MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE = 100
+
+TRAINING_FAILED_PROGRESS_PERCENTAGE = 100
 
 
 # Supported Models for Testing
