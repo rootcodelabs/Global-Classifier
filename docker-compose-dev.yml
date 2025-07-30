@@ -343,6 +343,49 @@ services:
     cpus: "0.5"
     mem_limit: "1G"
 
+  dataset-gen-service:
+    image: synthesisai/dataset-generator:latest
+    container_name: dataset-gen-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PROVIDER_API_URL=http://dataset-gen-ollama:11434
+      - SERVICE_DEBUG=false
+      - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
+    volumes:
+      - ./DSL/DatasetGenerator/config:/app/config
+      - ./DSL/DatasetGenerator/templates:/app/templates
+      - ./DSL/DatasetGenerator/user_configs:/app/user_configs
+      - cron_data:/app/data
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./DSL/DatasetGenerator/logs:/app/logs
+    depends_on:
+      - dataset-gen-ollama
+    networks:
+      - bykstack
+  
+  dataset-gen-ollama:
+    image: synthesisai/dataset-generator-ollama:latest
+    container_name: dataset-gen-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - OLLAMA_USE_GPU=1
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - dataset_gen_ollama_models:/root/.ollama
+      - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
+    entrypoint: ["bash", "/ollama-entrypoint.sh"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - bykstack
 
   #temporarary container to initialize S3 storage with necessary buckets and models  
   init-storage:

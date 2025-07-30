@@ -104,13 +104,13 @@ class ModelTrainer:
             model_variants = []
 
             # Add standard models
-            for base_model in self.model_types.keys():
+            for base_model in self.model_types:
 
                 model_variants.append(
                     {
                         "name": base_model + "-sngp",
                         "base_model": base_model,
-                        "full_model_name": self.model_types[base_model]["model_name"],
+                        "full_model_name": base_model,
                         "ood_method": "sngp",
                         "type": "ood",
                         "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
