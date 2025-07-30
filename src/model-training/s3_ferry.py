@@ -29,6 +29,8 @@ class S3Ferry:
 
         logger.info(f"Transferring file with payload: {payload}")
         response = requests.post(self.url, json=payload)
+
+        logger.info(f"S3 FERRY STATUS RESPONSE: {response.text}")
         if response.status_code != 200:
             logger.error(f"Failed to transfer file: {response.text} to S3")
             response.raise_for_status()
