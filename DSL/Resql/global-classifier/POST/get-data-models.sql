@@ -15,6 +15,7 @@ SELECT
     last_trained,
     model_status,
     training_status,
+    training_results,
     CEIL(COUNT(*) OVER() / :page_size::DECIMAL) AS total_pages
 FROM
     data_models

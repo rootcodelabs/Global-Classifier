@@ -14,7 +14,7 @@ declaration:
       - field: deletedRowsLength
         type: number
         description: "Number of rows to delete (required)"
-      - field: updatedRows
+      - field: updatedDataItems
         type: array
         description: "Array of dataset rows to update"
       - field: deletedRows
@@ -44,10 +44,10 @@ updateStep:
   args:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/update-dataset"
     body:
-      agencyName: ${incoming.body.updatedRows[updateIndex].clientName}
-      agencyId: ${incoming.body.updatedRows[updateIndex].clientId}
-      dataItem: ${incoming.body.updatedRows[updateIndex].question}
-      itemId: ${incoming.body.updatedRows[updateIndex].id}     
+      agencyName: ${incoming.body.updatedDataItems[updateIndex].agencyName}
+      agencyId: ${incoming.body.updatedDataItems[updateIndex].agencyId}
+      dataItem: ${incoming.body.updatedDataItems[updateIndex].dataItem}
+      itemId: ${incoming.body.updatedDataItems[updateIndex].itemId}     
   maxRecursions: 1000
   next: checkIfMoreUpdates
   result: updateResult
