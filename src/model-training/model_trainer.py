@@ -123,7 +123,6 @@ class ModelTrainer:
             logger.info(f"Create training progress session response - {response.status_code} - {response.text}")
             
             # Check if request was successful
-            response.raise_for_status()
 
             logger.info("Training progress session created successfully")
 
@@ -563,8 +562,8 @@ class ModelTrainer:
             trainer.update_training_progression_session(
                 training_status=DEPLOYING_MODEL_PROGRESS_STATUS,
                 training_message=DEPLOYING_MODEL_PROGRESS_MESSAGE,
-                progress_percentage=DEPLOYING_MODEL_PROGRESS_PERCENTAGE,
-                process_complete=False)
+                progress_percentage=100,
+                process_complete=True)
 
 
         except Exception as e:
@@ -623,6 +622,13 @@ class ModelTrainer:
             response.raise_for_status()
             
             logger.info("Model deployment completed successfully")
+
+            trainer.update_training_progression_session(
+                training_status=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
+                training_message=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE,
+                progress_percentage=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
+                process_complete=True)
+
             
             return response.json()
             

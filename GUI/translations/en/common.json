@@ -53,7 +53,8 @@
     "proceed":"Proceed",
     "maxFileSize":"File size should not exceed 20 MB.",
     "select": "-Select-",
-    "replace": "Replace"
+    "replace": "Replace",
+    "clearFilters": "Clear Filters"
   },
   "menu": {
     "userManagement": "User Management",
@@ -64,7 +65,7 @@
       "progress": "Data Generation Progress"
     },
     "datasetGroups": "Dataset Groups",
-    "validationSessions": "Validation Sessions",
+    "validationSessions": "Data Generation Sessions",
     "dataModels": {
       "title": "Data Models",
       "overview": "Overview",
@@ -116,12 +117,12 @@
     "title": "Integrated Clients",
     "search": "Search client",
     "sortOptions": {
-      "agencyAsc": "Agency Name A-Z",
-      "agencyDesc": "Agency Name Z-A",
-      "createdDateAsc": "Client Created Date Oldest First",
-      "createdDateDesc": "Client Created Date Latest First",
-      "lastUpdatedDateAsc": "Last Updated Date Oldest First",
-      "lastUpdatedDateDesc": "Last Updated Date Latest First"
+      "agencyAsc": "Client Name: A-Z",
+      "agencyDesc": "Client Name: Z-A",
+      "createdDateAsc": "Created: Oldest First",
+      "createdDateDesc": "Created: Newest First",
+      "lastUpdatedDateAsc": "Updated: Oldest First",
+      "lastUpdatedDateDesc": "Updated: Newest First"
     },
     "agencyCard": {
       "lastModelTrained": "Last Model Trained",
@@ -187,8 +188,8 @@
     "title": "Datasets",
     "noDatasets": "No data sets available",
     "sortOptions": {
-      "createdDateAsc": "Created Date Oldest First",
-      "createdDateDesc": "Created Date Latest First"
+      "createdDateAsc": "Created: Oldest First",
+      "createdDateDesc": "Created: Newest First"
     },
     "datasetCard": {
       "inProgress": "Data Generation in Progress",
@@ -215,14 +216,25 @@
       "data": "Data",
       "clientName": "Client Name",
       "patchUpdateBanner": "You have edited individual items in the dataset which are not saved. Please save the changes to apply",
-      "confirmPatchUpdatesTitle": "Confirm patch update",
-      "confirmPatchUpdatesDesc": "Changed data rows will be updated in the dataset",
-      "patchDataUnsuccessfulTitle": "Patch data update unsuccessful",
-      "patchDataUnsuccessfulDesc": "Something went wrong. Please try again.",
+      "confirmUpdateDatasetTitle": "Confirm dataset update",
+      "confirmUpdateDatasetDesc": "Changed data rows will be updated in the dataset",
+      "confirmDeleteDatasetTitle": "Confirm dataset deletion",
+      "confirmDeleteDatasetDesc": "Deleted data rows will be removed from the dataset",
+      "datasetUpdateUnsuccessfulTitle": "Dataset update unsuccessful",
+      "datasetUpdateUnsuccessfulDesc": "Something went wrong while updating the dataset. Please try again.",
+      "datasetUpdateSuccessfulTitle": "Dataset update successful",
+      "datasetUpdateSuccessfulDesc": "The dataset has been successfully updated.",
+      "datasetDeleteUnsuccessfulTitle": "Dataset delete unsuccessful",
+      "datasetDeleteUnsuccessfulDesc": "Something went wrong while deleting the dataset. Please try again.",
+      "datasetDeleteSuccessfulTitle": "Dataset delete successful",
+      "datasetDeleteSuccessfulDesc": "The dataset has been successfully deleted.",
       "exportDataSuccessTitle": "Data export was successful",
       "exportDataSuccessDesc": "Your data has been successfully exported.",
       "exportDataUnsucessTitle": "Dataset export unsuccessful",
       "exportDataUnsucessDesc": "Something went wrong. Please try again.",
+      "itemsUpdated": "items updated",
+      "itemsDeleted": "items deleted",
+      "dataBeingUpdated": "Data is being updated...",
       "table": {
         "id": "Item ID",
         "data": "Data",
@@ -303,10 +315,10 @@
     }
   },
   "validationSessions": {
-    "title": "Validation Sessions",
-    "inprogress": "Validation in-Progress",
-    "fail": "Validation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
-    "noSessions": "No ongoing validation sessions available"
+    "title": "Data Generation Sessions",
+    "inprogress": "Data Generation in-Progress",
+    "fail": "Data Generation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
+    "noSessions": "No ongoing Data Generation sessions available"
   },
   "correctedTexts": {
     "title": "Corrected Texts",
@@ -335,10 +347,10 @@
     "noProdModels": "No production models available",
     "noModels": "No models available",
     "sortOptions": {
-      "dataModelAsc": "Data Model Name A-Z",
-      "dataModelDesc": "Data Model Name Z-A",
-      "createdDateAsc": "Created Date Oldest First",
-      "createdDateDesc": "Created Date Latest First"
+      "dataModelAsc": "Data Model Name: A-Z",
+      "dataModelDesc": "Data Model Name: Z-A",
+      "createdDateAsc": "Created: Oldest First",
+      "createdDateDesc": "Created: Newest First"
     },
     "filters": {
       "modelName": "Model Name",
@@ -445,7 +457,14 @@
     "classify": "Classify",
     "predictedHierarchy": "Predicted Class Hierarchy : ",
     "averageConfidence": "Average Confidence : ",
-    "classProbabilities": "Class Probabilities : "
+    "classProbabilities": "Class Probabilities : ",
+    "error": "Classification Error",
+    "errorDesc": "There was an issue classifying the text. Please try again. If the problem persists, contact support for assistance.",
+    "results": "Classification Results",
+    "topPrediction": "Top Prediction",
+    "allPredictions": "All Predictions",
+    "classificationFailed": "Classification failed. Please try again."
+  
   },
   "optionLists": {
     "text": "Text",

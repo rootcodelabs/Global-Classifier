@@ -51,25 +51,15 @@ forwardToFormatting:
       next: end
   next: initiateDataGeneration
 
-# formatDataUrlsResponse:
-#   call: http.post
-#   args:
-#     url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_data_urls"
-#     headers:
-#       type: json
-#     body:
-#       agencies: ${importResult.response.body.response}
-#       datasetId: ${datasetResponse.response.body.response[0].id}
-#   result: dataUrlsResponse
-#   next: returnImportResult
-
 initiateDataGeneration:
   call: http.post
   args:
     url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/data/generate"
     body:
-      datasetId: ${datasetResponse.response.body.response[0].id}
       presignedUrls: ${importResult.response.body.response}
+      datasetId: ${datasetResponse.response.body.response[0].id}
+      majorVersion: ${datasetResponse.response.body.response[0].major}
+      minorVersion: ${datasetResponse.response.body.response[0].minor}
   result: dataGenerationResponse
   next: returnImportResult
 
