@@ -21,14 +21,12 @@ const Datasets: FC = () => {
   const [sortOption, setSortOption] = useState("created_at desc");
   const [searchTerm, setSearchTerm] = useState<string>('all');
 
-
   const { data: datasets, isLoading } = useQuery({
     queryKey: datasetQueryKeys.DATASET_OVERVIEW(pageIndex, sortOption),
     queryFn: () => getDatasetsOverview(pageIndex, sortOption),
   });
 
   const pageCount = datasets?.[0]?.totalPages ?? 1;
-
 
   const handleSearch = (term: string) => {
     // Set the search term to 'all' if empty, otherwise use the provided term
@@ -113,8 +111,8 @@ const Datasets: FC = () => {
               </div>
             )}
 
-            {!isLoading && datasets?.response?.data?.length === 0 && (
-              <NoDataView text={t('datasetGroups.noDatasets') ?? ''} />
+            {!isLoading && datasets?.length === 0 && (
+              <NoDataView text={t('datasets.noDatasets') ?? ''} />
             )}
 
             <Pagination
