@@ -1,11 +1,13 @@
 INSERT INTO public.inference_logs (
     chat_id,
-    author_id,
     url,
+    model_id,
+    inference_time_ms,
     parsed_output
 ) VALUES (
     :chatId,
-    :authorId,
     :url,
+    :modelId,
+    :inferenceTimeMs,
     :parsedOutput::jsonb
-) RETURNING inference_id, chat_id, author_id, url, parsed_output, created_timestamp;
+) RETURNING inference_id, chat_id, url, model_id, inference_time_ms, parsed_output, created_timestamp;

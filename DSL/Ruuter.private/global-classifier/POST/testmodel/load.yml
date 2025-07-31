@@ -1,0 +1,133 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Load a model into NVIDIA Triton test server for testing"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: string
+        description: "Identifier of the model to load into Triton server"
+
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+  next: validateInput
+
+validateInput:
+  switch:
+    - condition: ${!modelId}
+      next: return_validation_error
+  next: prepareModelNames
+
+prepareModelNames:
+  assign:
+    # Generate the model names based on the modelId
+    preProcessingModel: ${modelId}-pre-processing
+    textClassifierModel: ${modelId}-text-classifier
+    postProcessingModel: ${modelId}-post-processing
+    ensembleModel: ${modelId}-classifier-ensemble
+  next: loadPreProcessingModel
+
+loadPreProcessingModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${preProcessingModel}/load"
+    timeout: 600000
+  result: preProcessingLoadResult
+  next: checkPreProcessingLoad
+  error: return_model_load_error
+
+checkPreProcessingLoad:
+  switch:
+    - condition: ${preProcessingLoadResult.response.statusCodeValue !== 200 && preProcessingLoadResult.response.statusCodeValue !== 201}
+      next: return_model_load_error
+  next: loadTextClassifierModel
+
+loadTextClassifierModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${textClassifierModel}/load"
+    timeout: 600000
+  result: textClassifierLoadResult
+  next: checkTextClassifierLoad
+  error: return_model_load_error
+
+checkTextClassifierLoad:
+  switch:
+    - condition: ${textClassifierLoadResult.response.statusCodeValue !== 200 && textClassifierLoadResult.response.statusCodeValue !== 201}
+      next: return_model_load_error
+  next: loadPostProcessingModel
+
+loadPostProcessingModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${postProcessingModel}/load"
+    timeout: 600000
+  result: postProcessingLoadResult
+  next: checkPostProcessingLoad
+  error: return_model_load_error
+
+checkPostProcessingLoad:
+  switch:
+    - condition: ${postProcessingLoadResult.response.statusCodeValue !== 200 && postProcessingLoadResult.response.statusCodeValue !== 201}
+      next: return_model_load_error
+  next: loadEnsembleModel
+
+loadEnsembleModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/repository/models/${ensembleModel}/load"
+    timeout: 600000
+  result: ensembleLoadResult
+  next: checkEnsembleLoad
+  error: return_model_load_error
+
+checkEnsembleLoad:
+  switch:
+    - condition: ${ensembleLoadResult.response.statusCodeValue !== 200 && ensembleLoadResult.response.statusCodeValue !== 201}
+      next: return_model_load_error
+  next: verifyModelReady
+
+verifyModelReady:
+  call: http.get
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/models/${ensembleModel}/ready"
+    timeout: 600000
+  result: readyCheck
+  next: checkModelReady
+  error: return_model_verification_error
+
+checkModelReady:
+  switch:
+    - condition: ${readyCheck.response.statusCodeValue !== 200}
+      next: return_model_verification_error
+  next: return_success
+
+return_success:
+  status: 200
+  return: "Model loaded successfully into Triton test server"
+  next: end
+
+return_validation_error:
+  status: 400
+  return: "Invalid request - modelId is required"
+  next: end
+
+return_server_unavailable:
+  status: 503
+  return: "Server unavailable - Triton test server is not ready or unavailable"
+  next: end
+
+return_model_load_error:
+  status: 500
+  return: "Model load failed - Failed to load one or more model components into Triton server"
+  next: end
+
+return_model_verification_error:
+  status: 500
+  return: "Model verification failed - Model loaded but verification failed, ensemble model not ready"
+  next: end
