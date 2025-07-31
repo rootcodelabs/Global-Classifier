@@ -70,22 +70,24 @@ const TestModel: FC = () => {
     },
   });
 
-  const processClassificationResult = (result: any) => {
-    if (!result || !Array.isArray(result) || result.length === 0) return [];
+const processClassificationResult = (result: any) => {
+  if (!result || !Array.isArray(result) || result.length === 0) return [];
 
-    const resultData = result[0]; // Get the first (and likely only) object
+  // Get the first array (which contains the classification results)
+  const resultData = result[0];
+  
+  // Check if resultData is an array of classification objects
+  if (!Array.isArray(resultData)) return [];
 
-    return Object.entries(resultData).map(([key, value]: [string, any]) => {
-      const agencyName = Object.keys(value)[0];
-      const confidence = Object.values(value)[0] as number;
-
-      return {
-        rank: parseInt(key),
-        agencyName: agencyName.replace(/_/g, ' '), // Replace underscores with spaces
-        confidence: confidence
-      };
-    }).sort((a, b) => b.confidence - a.confidence); // Sort by confidence descending
-  };
+  return resultData.map((item: any, index: number) => {
+    return {
+      rank: index + 1,
+      agencyId: item.agency_id,
+      agencyName: item.agency_name?.replace(/_/g, ' ') || `Agency ${item.agency_id}`,
+      confidence: item.confidence || 0
+    };
+  }).sort((a, b) => b.confidence - a.confidence); // Sort by confidence descending
+};
 
   const processedResults = classificationResult ? processClassificationResult(classificationResult) : [];
 
