@@ -14,9 +14,32 @@ from constants import (
     UNCERTAINTY_CONFIGS,
     F1_WEIGHT,
     SEQUENCE_LENGTH,
-    MODEL_TRAINING_SOURCE_PATH,
+    MODEL_TRAINING_SOURCE_PATH,    
+    DEPLOYMENT_ENDPOINT, 
+    CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT, 
+    UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+    UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
+    INITIATING_TRAINING_PROGRESS_STATUS,
+    TRAINING_IN_PROGRESS_PROGRESS_STATUS,
+    DEPLOYING_MODEL_PROGRESS_STATUS,
+    MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
+    TRAINING_FAILED_STATUS,
+    DEPLOYMENT_FAILED_STATUS,
+    INITIATING_TRAINING_PROGRESS_PERCENTAGE,
+    TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
+    DEPLOYING_MODEL_PROGRESS_PERCENTAGE,
+    MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
+    INITIATING_TRAINING_PROGRESS_MESSAGE,
+    TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
+    DEPLOYING_MODEL_PROGRESS_MESSAGE,
+    MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE,
+    TRAINING_FAILED_STATUS_MESSAGE,
+    TRAINING_FAILED_PROGRESS_PERCENTAGE
+
 )
+
 from loguru import logger
+import requests
 
 import argparse
 
@@ -50,11 +73,10 @@ class ModelTrainer:
             self.current_deployment_platform = current_deployment_env
             self.target_deployment_platform = target_deployment_platform
 
-            self.progress_session_id = int(progress_session_id)
+            self.progress_session_id = ""
 
         except Exception as e:
             logger.error(f"EXCEPTION IN MODEL_TRAINER INIT : {e}")
-            self.send_error_progress_session(str(e))
 
     @staticmethod
     def create_training_folders(folder_paths):
@@ -72,6 +94,168 @@ class ModelTrainer:
         current_timestamp = int(datetime.now(timezone.utc).timestamp())
         return current_timestamp
 
+    def create_training_progress_session(self):
+        """
+        Create a training progress session in the database.
+        This function should be implemented to create a training progress session in the database.
+        """
+        logger.info("Creating training progress session")
+        
+        payload = {
+            "modelId": int(self.model_id),
+            "modelName": self.model_name,
+            "majorVersion": self.major_version,
+            "minorVersion": self.minor_version,
+            "latest": self.latest,
+        }
+
+        logger.info(f"Prepared training progress session payload {payload}")
+        
+        try:
+            # Make request to create training progress session endpoint
+            response = requests.post(
+                url=CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for creating progress session
+            )
+            
+            logger.info(f"Create training progress session response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+
+            logger.info("Training progress session created successfully")
+
+            session_data = response.json()
+            session_id = session_data["response"]["sessionId"]
+            
+            self.progress_session_id = session_id
+        
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during creating training progress session: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during creating training progress session: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during creating training progress session: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id)
+            raise   
+
+    def update_training_progression_session(self,training_status:str, training_message:str, progress_percentage:int, process_complete:bool):
+        """
+        Update the training progress session in the database.
+        This function should be implemented to update the training progress session in the database.
+        """
+        logger.info("Updating training progress session")
+        
+        if not self.progress_session_id:
+            logger.error("Progress session ID is not set. Cannot update training progress session.")
+            raise ValueError("Progress session ID is required to update the training progress session.")
+        
+        else:
+
+            payload = {
+                "sessionId": self.progress_session_id,
+                "trainingStatus": training_status,
+                "trainingMessage": training_message,
+                "progressPercentage": progress_percentage,
+                "processComplete": process_complete
+            }
+
+            logger.info(f"Prepared training progress session update payload {payload}")
+            
+            try:
+                # Make request to update training progress session endpoint
+                response = requests.post(
+                    url=UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=300  # 5 minute timeout for updating progress session
+                )
+                
+                logger.info(f"Update training progress session response - {response.status_code} - {response.text}")
+                
+                # Check if request was successful
+                response.raise_for_status()
+                
+                logger.info("Training progress session updated successfully")
+                
+                return response.json()
+                
+            except requests.HTTPError as e:
+                error_msg = f"HTTP error during updating training progress session: {e.response.status_code} - {e.response.text}"
+                logger.error(error_msg, model_id=self.model_id, status_code=e.response.status_code)
+                raise
+                
+            except requests.RequestException as e:
+                error_msg = f"Network error during updating training progress session: {str(e)}"
+                logger.error(error_msg, model_id=self.model_id)
+                raise
+                
+            except Exception as e:
+                error_msg = f"Unexpected error during updating training progress session: {str(e)}"
+                logger.error(error_msg, model_id=self.model_id)
+                raise
+
+    def update_training_results(self, training_results, model_s3_location):
+        """
+        Update training results in the database.
+        This function should be implemented to update the training results in the database.
+        """
+        logger.info("Updating training results in the database")
+        
+        payload = {
+            "modelId": self.model_id,
+            "trainingResults": training_results,
+            "modelS3Location": model_s3_location
+        }
+
+        logger.info(f"Prepared deployment payload {payload}")
+        
+        try:
+            # Make request to deployment endpoint
+            response = requests.post(
+                url=UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"})
+            
+            logger.info(f"Update model endpoint response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+            
+            logger.info("Model training data pushed to database successfully")
+            
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during model deployment: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, 
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform,
+                        status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+
+
     def calculate_combined_score(self, accuracies, f1_scores):
         """Calculate combined score using weighted average"""
         if not accuracies or not f1_scores:
@@ -83,11 +267,27 @@ class ModelTrainer:
         combined_score = (ACCURACY_WEIGHT * avg_accuracy) + (F1_WEIGHT * avg_f1)
         return combined_score
 
+    def deploy_model(self, deployment_environment) :
+        """Deploy the model to the specified environment"""
+        logger.info(f"DEPLOYING MODEL TO {deployment_environment}")
+        # Placeholder for deployment logic
+        # This could involve calling a deployment service, updating configs, etc.
+        # For now, just log the action
+
+        logger.info(f"MODEL {self.model_name} (ID: {self.model_id}) deployed to {deployment_environment}")
+
     def train(self):
         """UNIFIED TRAINING METHOD - TRAINS ALL VARIANTS"""
         try:
             logger.info("ENTERING UNIFIED TRAINING FUNCTION")
             logger.info(f"DEPLOYMENT PLATFORM - {self.current_deployment_platform}")
+
+            trainer.update_training_progression_session(
+                training_status=INITIATING_TRAINING_PROGRESS_STATUS,
+                training_message=INITIATING_TRAINING_PROGRESS_MESSAGE,
+                progress_percentage=INITIATING_TRAINING_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
 
             # Initialize services
             s3_ferry = S3Ferry()
@@ -103,6 +303,12 @@ class ModelTrainer:
 
             # Generate all model variants to train
             model_variants = []
+
+            trainer.update_training_progression_session(
+                training_status=TRAINING_IN_PROGRESS_PROGRESS_STATUS,
+                training_message=TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
+                progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
+                process_complete=False)
 
             # Add standard models
             for base_model in self.model_types:
@@ -298,7 +504,7 @@ class ModelTrainer:
             )
 
             # Upload to S3
-            s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}/{str(self.model_id)}.zip"
+            s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}.zip"
 
             # Removing /app from path since S3 Ferry will already add /app to the path as defined in the config.env
             local_source_location =  f"{MODEL_RESULTS_PATH.replace('/app/', '')}/{str(self.model_id)}.zip"
@@ -340,11 +546,7 @@ class ModelTrainer:
                 logger.info(
                     f"INITIATING DEPLOYMENT OF {best_variant['name']} TO {self.current_deployment_platform}"
                 )
-                # self.deploy_model(
-                #     best_model_info=best_variant,
-                #     progress_session_id=session_id,
-                #     dg_id=dg_id,
-                # )
+
 
             logger.info("=" * 60)
             logger.info("UNIFIED TRAINING COMPLETED SUCCESSFULLY")
@@ -353,15 +555,97 @@ class ModelTrainer:
             logger.info(f"VARIANTS TRAINED: {len(all_results)}")
             logger.info("=" * 60)
 
+            logger.info("Updating training results to database")
+            self.update_training_results(
+                training_results=all_results, 
+                model_s3_location=s3_save_location)
+
+            trainer.update_training_progression_session(
+                training_status=DEPLOYING_MODEL_PROGRESS_STATUS,
+                training_message=DEPLOYING_MODEL_PROGRESS_MESSAGE,
+                progress_percentage=DEPLOYING_MODEL_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
+
         except Exception as e:
             import traceback
 
             logger.error(f"EXCEPTION IN UNIFIED MODEL TRAINER: {e}")
             logger.error(traceback.format_exc())
-            self.send_error_progress_session(
-                f"UNIFIED TRAINING CRASHED - ERROR - {str(e)}"
-            )
+
+            trainer.update_training_progression_session(
+                training_status=TRAINING_FAILED_STATUS,
+                training_message=TRAINING_FAILED_STATUS_MESSAGE,
+                progress_percentage=TRAINING_FAILED_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
             raise
+    
+    def deploy(self):
+
+        """
+        Deploy a model from current environment to target environment using Ruuter endpoint.
+        
+        Args:
+            model_id: The ID of the model to deploy
+            current_env: Current deployment environment (e.g., 'testing', 'production')
+            target_env: Target deployment environment to deploy to
+            first_deployment: Whether this is the first deployment (default: False)
+            
+        """
+        
+
+        #TODO - Add sessionId here to pass session ID to the deployment endpoint
+        logger.info("Starting model deployment")
+        
+        # Prepare request payload
+        payload = {
+            "modelId": self.model_id,
+            "currentEnv": self.current_deployment_platform,
+            "targetEnv": self.target_deployment_platform,
+            "firstDeployment": True
+        }
+
+        logger.info(f"Prepared deployment payload {payload}")
+        
+        try:
+            # Make request to deployment endpoint
+            response = requests.post(
+                DEPLOYMENT_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for deployment operations
+            )
+            
+            logger.info(f"Deployment endpoint response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+            
+            logger.info("Model deployment completed successfully")
+            
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during model deployment: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, 
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform,
+                        status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+
+ 
 
 
 # ----------------------TODO: Uncomment the CLI section when needed----------------------
@@ -424,4 +708,7 @@ if __name__ == "__main__":
         progress_session_id=progress_session_id,
         target_deployment_platform=target_deployment_platform,
     )
+
+    trainer.create_training_progress_session()
     trainer.train()
+    trainer.deploy()
