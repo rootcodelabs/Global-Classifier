@@ -116,6 +116,7 @@
   "integratedAgencies": {
     "title": "Integrated Clients",
     "search": "Search client",
+    "noClients": "No clients found",
     "sortOptions": {
       "agencyAsc": "Client Name: A-Z",
       "agencyDesc": "Client Name: Z-A",

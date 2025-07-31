@@ -137,8 +137,8 @@ const IntegratedAgencies: FC = () => {
               </div>
             ) }
 
-              {!isLoading && agencies?.response?.data?.length===0 && (
-              <NoDataView text={t('datasetGroups.noDatasets') ?? ''} />
+              {!isLoading && agencies?.length===0 && (
+              <NoDataView text={t('integratedAgencies.noClients') ?? ''} />
             )}
 
             <Pagination

@@ -36,13 +36,19 @@ const ViewDataset = () => {
   const [editedRows, setEditedRows] = useState<SelectedRowPayload[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
   const [originalDataset, setOriginalDataset] = useState<any[]>([]);
+   const [updatePayload, setUpdatePayload] = useState<{
+    updatedDataItems: SelectedRowPayload[];
+    deletedRows: (string | number)[];
+    updatedRowsLength: number;
+    deletedRowsLength: number;
+  } | null>(null);
   const navigate = useNavigate();
-  const { data: metadata, isLoading: isMetadataLoading } = useQuery({
+  const { data: metadata, isLoading: isMetadataLoading,refetch: refetchMetadata } = useQuery({
     queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
     queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
 
-  const { data: dataset, isLoading: datasetIsLoading } = useQuery({
+  const { data: dataset, isLoading: datasetIsLoading, refetch: refetchDataset } = useQuery({
     queryKey: datasetQueryKeys.GET_DATA_SETS(
       datasetVersionId ?? 0,
       selectedAgencyId,
@@ -228,66 +234,48 @@ const ViewDataset = () => {
 
   const updateMutation = useMutation({
     mutationFn: updateDataset,
-    onSuccess: () => {
-
-      // Set a 3-second timeout to show the loading message
+    onSuccess: async () => {
       setTimeout(() => {
-
-        // Show the success dialog after 3 seconds
-        // open({
-        //   title: t('datasets.detailedView.datasetUpdateSuccessfulTitle'),
-        //   content: t('datasets.detailedView.datasetUpdateSuccessfulDesc'),
-        //   footer: (
-        //     <div className='flex-grid'>
-        //       <Button 
-        //         appearance={ButtonAppearanceTypes.SECONDARY} 
-        //         onClick={() => { close() }}
-        //       >
-        //         Close
-        //       </Button>
-        //     </div>
-        //   )
-        // });
         setIsUpdating(false);
         setIsProgressModalOpen(false);
         setEditedRows([]);
         setDeletedRowIds([]);
-      }, 3000); // 3 seconds delay
-
-
+      }, 3000);
+      await Promise.all([
+          refetchMetadata(),
+          refetchDataset()
+        ]);
     },
     onError: () => {
       setIsUpdating(false);
       setIsProgressModalOpen(false);
       setEditedRows([]);
-      setDeletedRowIds([]); open({
+      setDeletedRowIds([]);
+      open({
         title: t('datasets.detailedView.datasetUpdateUnsuccessfulTitle'),
         content: t('datasets.detailedView.datasetUpdateUnsuccessfulDesc'),
       });
     },
   });
 
-  let payload: {
-    updatedDataItems: SelectedRowPayload[];
-    deletedRows: (string | number)[];
-    updatedRowsLength: number;
-    deletedRowsLength: number;
-  } = { updatedDataItems: [], deletedRows: [], updatedRowsLength: 0, deletedRowsLength: 0 };
-
-  const minorUpdate = () => {
+ 
+ const minorUpdate = () => {
     setIsProgressModalOpen(true);
 
+    // Create payload inside the function
     const updatedDataItems: SelectedRowPayload[] = editedRows.filter((row) => {
       return !deletedRowIds.includes(row.itemId);
     });
 
-    payload = {
+    const updatePayload = {
       updatedDataItems,
       deletedRows: deletedRowIds,
       updatedRowsLength: updatedDataItems.length,
       deletedRowsLength: deletedRowIds.length,
     };
 
+    // Store payload in a ref or state if you need to access it in the dialog
+    setUpdatePayload(updatePayload);
   };
 
   const handleDeleteDataset = () => {
@@ -442,42 +430,55 @@ const ViewDataset = () => {
           />
         </Dialog>
       )}
-      {isProgressModalOpen && (
+   {isProgressModalOpen && (
         <Dialog
-          title={t('datasets.detailedView.editDataRowTitle')}
-          onClose={() => setIsUpdateModalOpen(false)}
-          isOpen={
-            isProgressModalOpen
+          title={t('datasets.detailedView.confirmUpdateDatasetTitle')}
+          onClose={() => setIsProgressModalOpen(false)}
+          isOpen={isProgressModalOpen}
+          footer={
+            <div className="button-wrapper">
+              <Button
+                appearance={ButtonAppearanceTypes.SECONDARY}
+                onClick={() => setIsProgressModalOpen(false)}
+              >
+                {t('global.cancel')}
+              </Button>
+              <Button
+                appearance={ButtonAppearanceTypes.PRIMARY}
+                onClick={() => {
+                  if (updatePayload) {
+                    updateMutation.mutate(updatePayload);
+                    setIsUpdating(true);
+                  }
+                }}
+                disabled={isUpdating || !updatePayload}
+              >
+                {t('global.confirm')}
+              </Button>
+            </div>
           }
-          footer={<div className="button-wrapper">
-            <Button
-              appearance={ButtonAppearanceTypes.SECONDARY}
-              onClick={() => close()}
-            >
-              {t('global.cancel')}
-            </Button>
-            <Button
-              appearance={ButtonAppearanceTypes.PRIMARY}
-              onClick={() => {
-                updateMutation.mutate(payload);
-                setIsUpdating(true);
-
-              }}
-              // showLoadingIcon={isUpdating}
-              disabled={isUpdating}
-            >
-              {t('global.confirm')}
-            </Button>
-          </div>}
-        >
-          {isUpdating ? <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>
-            <p>{t('datasets.detailedView.dataBeingUpdated')}</p>
-            <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>            <div
-              className="spinner"
-              style={{ width: 30, height: 30, borderWidth: 5 }}
-            ></div></div>
-          </div> : <p>{t('datasets.detailedView.editDataRowDesc')}</p>}
-
+           >
+          {isUpdating ? (
+            <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>
+              <p>{t('datasets.detailedView.dataBeingUpdated')}</p>
+              <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>
+                <div
+                  className="spinner"
+                  style={{ width: 30, height: 30, borderWidth: 5 }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p>{t('datasets.detailedView.confirmUpdateDatasetDesc')}</p>
+              {updatePayload && (
+                <div>
+                  <p>Items to update: {updatePayload.updatedRowsLength}</p>
+                  <p>Items to delete: {updatePayload.deletedRowsLength}</p>
+                </div>
+              )}
+            </div>
+          )}
         </Dialog>
       )}
     </div>
