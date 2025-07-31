@@ -49,20 +49,20 @@ forwardToFormatting:
   switch:
     - condition: ${datasetResponse.response.body.response.length === 0}
       next: end
-  next: formatDataUrlsResponse
+  next: initiateDataGeneration
 
-formatDataUrlsResponse:
+initiateDataGeneration:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_data_urls"
-    headers:
-      type: json
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/data/generate"
     body:
-      agencies: ${importResult.response.body.response}
+      presignedUrls: ${importResult.response.body.response}
       datasetId: ${datasetResponse.response.body.response[0].id}
-  result: dataUrlsResponse
+      majorVersion: ${datasetResponse.response.body.response[0].major}
+      minorVersion: ${datasetResponse.response.body.response[0].minor}
+  result: dataGenerationResponse
   next: returnImportResult
 
 returnImportResult:
-  return: ${dataUrlsResponse.response.body}
+  return: ${dataGenerationResponse.response.body}
   next: end

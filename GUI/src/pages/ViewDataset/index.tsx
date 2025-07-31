@@ -3,8 +3,7 @@ import { Button, Card, DataTable, Dialog, Icon, Label, Switch } from 'components
 import { ButtonAppearanceTypes, LabelType } from 'enums/commonEnums';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
-import { generateDynamicColumns } from 'utils/dataTableUtils';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MdOutlineDeleteOutline, MdOutlineEdit } from 'react-icons/md';
 import { CellContext, ColumnDef, createColumnHelper, PaginationState } from '@tanstack/react-table';
 import {
@@ -13,12 +12,14 @@ import {
 import SkeletonTable from '../../components/molecules/TableSkeleton/TableSkeleton';
 import DynamicForm from 'components/FormElements/DynamicForm';
 import { datasetQueryKeys, integratedAgenciesQueryKeys } from 'utils/queryKeys';
-import { getDatasetData, getDatasetMetadata } from 'services/datasets';
-import { useQuery } from '@tanstack/react-query';
+import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset } from 'services/datasets';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
 import NoDataView from 'components/molecules/NoDataView';
 import { DATASET_PAGE_SIZE } from 'utils/constants';
+import { is } from 'date-fns/locale';
+import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
 
 const ViewDataset = () => {
   const { t } = useTranslation();
@@ -35,17 +36,27 @@ const ViewDataset = () => {
   const [editedRows, setEditedRows] = useState<SelectedRowPayload[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
   const [originalDataset, setOriginalDataset] = useState<any[]>([]);
-
+  const navigate = useNavigate();
   const { data: metadata, isLoading: isMetadataLoading } = useQuery({
     queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
     queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
 
   const { data: dataset, isLoading: datasetIsLoading } = useQuery({
-    queryKey: datasetQueryKeys.GET_DATA_SETS(datasetVersionId ?? 0, selectedAgencyId, pagination.pageIndex + 1),
-    queryFn: () => getDatasetData(datasetVersionId ?? 0, pagination.pageIndex + 1),
+    queryKey: datasetQueryKeys.GET_DATA_SETS(
+      datasetVersionId ?? 0,
+      selectedAgencyId,
+      pagination.pageIndex + 1
+    ),
+    queryFn: () => getDatasetData(
+      datasetVersionId ?? 0,
+      pagination.pageIndex + 1,
+      selectedAgencyId === "all" ? "all" : selectedAgencyId.toString()
+    ),
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (dataset) {
@@ -59,7 +70,7 @@ const ViewDataset = () => {
         return newOriginal;
       });
 
-      const mergedDataset = dataset.map((row: any) => {
+      const mergedDataset = dataset?.map((row: any) => {
         const editedRow = editedRows.find((edited) => edited.itemId === row.itemId);
         return editedRow ? editedRow : row;
       });
@@ -72,6 +83,17 @@ const ViewDataset = () => {
     queryKey: integratedAgenciesQueryKeys.ALL_AGENCIES_LIST(),
     queryFn: () => fetchAllAgencies(),
   });
+
+  const handleClearFilters = () => {
+    setSelectedAgencyId("all");
+    setPagination({
+      pageIndex: 0,
+      pageSize: DATASET_PAGE_SIZE,
+    });
+    setUpdatedDataset([]);
+  };
+
+  const hasActiveFilters = selectedAgencyId !== "all";
 
   const editView = (props: CellContext<any, unknown>) => {
     return (
@@ -190,18 +212,108 @@ const ViewDataset = () => {
     close();
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteDataset,
+    onSuccess: () => {
+      navigate('/datasets');
+
+    },
+    onError: () => {
+      open({
+        title: t('datasets.detailedView.datasetUpdateUnsuccessfulTitle'),
+        content: t('datasets.detailedView.datasetUpdateUnsuccessfulDesc'),
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateDataset,
+    onSuccess: () => {
+
+      // Set a 3-second timeout to show the loading message
+      setTimeout(() => {
+
+        // Show the success dialog after 3 seconds
+        // open({
+        //   title: t('datasets.detailedView.datasetUpdateSuccessfulTitle'),
+        //   content: t('datasets.detailedView.datasetUpdateSuccessfulDesc'),
+        //   footer: (
+        //     <div className='flex-grid'>
+        //       <Button 
+        //         appearance={ButtonAppearanceTypes.SECONDARY} 
+        //         onClick={() => { close() }}
+        //       >
+        //         Close
+        //       </Button>
+        //     </div>
+        //   )
+        // });
+        setIsUpdating(false);
+        setIsProgressModalOpen(false);
+        setEditedRows([]);
+        setDeletedRowIds([]);
+      }, 3000); // 3 seconds delay
+
+
+    },
+    onError: () => {
+      setIsUpdating(false);
+      setIsProgressModalOpen(false);
+      setEditedRows([]);
+      setDeletedRowIds([]); open({
+        title: t('datasets.detailedView.datasetUpdateUnsuccessfulTitle'),
+        content: t('datasets.detailedView.datasetUpdateUnsuccessfulDesc'),
+      });
+    },
+  });
+
+  let payload: {
+    updatedDataItems: SelectedRowPayload[];
+    deletedRows: (string | number)[];
+    updatedRowsLength: number;
+    deletedRowsLength: number;
+  } = { updatedDataItems: [], deletedRows: [], updatedRowsLength: 0, deletedRowsLength: 0 };
+
   const minorUpdate = () => {
+    setIsProgressModalOpen(true);
+
     const updatedDataItems: SelectedRowPayload[] = editedRows.filter((row) => {
       return !deletedRowIds.includes(row.itemId);
     });
 
-    const payload = {
+    payload = {
       updatedDataItems,
       deletedRows: deletedRowIds,
       updatedRowsLength: updatedDataItems.length,
       deletedRowsLength: deletedRowIds.length,
     };
-    console.log(payload, 'minorUpdatePayload');
+
+  };
+
+  const handleDeleteDataset = () => {
+    open({
+      title: t('datasets.detailedView.confirmDeleteDatasetTitle'),
+      content: t('datasets.detailedView.confirmDeleteDatasetDesc'),
+      footer: (
+        <div className="button-wrapper">
+          <Button
+            appearance={ButtonAppearanceTypes.SECONDARY}
+            onClick={() => close()}
+          >
+            {t('global.cancel')}
+          </Button>
+          <Button
+            appearance={ButtonAppearanceTypes.ERROR}
+            onClick={() => {
+              deleteMutation.mutate(datasetVersionId ?? 0);
+              close();
+            }}
+          >
+            {t('global.delete')}
+          </Button>
+        </div>
+      ),
+    });
   };
 
   return (
@@ -226,22 +338,31 @@ const ViewDataset = () => {
                   <b>{t('datasets.detailedView.version') ?? ''} :</b>  {`V${metadata?.major}.${metadata?.minor}`}
                 </p>
                 <div className='flex'>
-                  <div style={{width: '80%'}}>
-                <p><b>{t('datasets.detailedView.connectedModels') ?? ''} :</b></p></div><p>{metadata?.connectedModels?.join(', ') ?? ''}</p></div>
+                  <div style={{ minWidth: 'fit-content' }}>
+                    <p><b>{t('datasets.detailedView.connectedModels') ?? ''} : </b></p></div><p>{metadata?.connectedModels?.join(', ') ?? ''}</p></div>
                 <p>
                   <b>{t('datasets.detailedView.noOfItems') ?? ''} :</b> {metadata?.totalDataCount ?? "-"}
                 </p>
               </div>
-              <div>
-                <Button appearance='secondary' size='s'>
-                  Export Dataset
-                </Button>
-              </div>
+
             </div>
           </Card>
         </div>
       )}
       <div className="mb-20">
+        <div className="dataset-controls">
+          <div className="filter-controls">
+            {hasActiveFilters && (
+              <Button
+                appearance={ButtonAppearanceTypes.SECONDARY}
+                onClick={handleClearFilters}
+                size="s"
+              >
+                {t('global.clearFilters') || 'Clear Filters'}
+              </Button>
+            )}
+          </div>
+        </div>
         {datasetIsLoading && <SkeletonTable rowCount={10} />}
         {!datasetIsLoading && updatedDataset && updatedDataset?.length > 0 && (
           <DataTable
@@ -283,11 +404,10 @@ const ViewDataset = () => {
             <NoDataView text='No data available' />
           )
         }
-        <div className="button-container">
+        <div className="button-container-bottom">
           <Button
             appearance={ButtonAppearanceTypes.ERROR}
-            onClick={() => { }
-            }
+            onClick={handleDeleteDataset}
           >
             {t('datasets.detailedView.delete') ?? ''}
           </Button>
@@ -320,6 +440,44 @@ const ViewDataset = () => {
             onSubmit={editDataRecord as (data: SelectedRowPayload) => void}
             setPatchUpdateModalOpen={setIsUpdateModalOpen as React.Dispatch<React.SetStateAction<boolean>>}
           />
+        </Dialog>
+      )}
+      {isProgressModalOpen && (
+        <Dialog
+          title={t('datasets.detailedView.editDataRowTitle')}
+          onClose={() => setIsUpdateModalOpen(false)}
+          isOpen={
+            isProgressModalOpen
+          }
+          footer={<div className="button-wrapper">
+            <Button
+              appearance={ButtonAppearanceTypes.SECONDARY}
+              onClick={() => close()}
+            >
+              {t('global.cancel')}
+            </Button>
+            <Button
+              appearance={ButtonAppearanceTypes.PRIMARY}
+              onClick={() => {
+                updateMutation.mutate(payload);
+                setIsUpdating(true);
+
+              }}
+              // showLoadingIcon={isUpdating}
+              disabled={isUpdating}
+            >
+              {t('global.confirm')}
+            </Button>
+          </div>}
+        >
+          {isUpdating ? <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>
+            <p>{t('datasets.detailedView.dataBeingUpdated')}</p>
+            <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>            <div
+              className="spinner"
+              style={{ width: 30, height: 30, borderWidth: 5 }}
+            ></div></div>
+          </div> : <p>{t('datasets.detailedView.editDataRowDesc')}</p>}
+
         </Dialog>
       )}
     </div>

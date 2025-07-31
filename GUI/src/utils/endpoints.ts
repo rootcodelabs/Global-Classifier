@@ -20,6 +20,9 @@ export const datasetsEndpoints = {
   GET_DATASETS_DATA: (): string => '/global-classifier/datasets/data',
   GET_ALL_DATASET_VERSIONS: (): string => '/global-classifier/datasets/versions',
   GET_DATA_GENERATION_PROGRESS: (): string => `/global-classifier/datasets/progress`,
+  UPDATE_DATASET: (): string => `/global-classifier/datasets/update`,
+  DELETE_DATASET: (): string => `/global-classifier/datasets/delete`,
+
 
 
   GET_DATASET_FILTERS: (): string =>
@@ -60,7 +63,7 @@ export const dataModelsEndpoints = {
   GET_ALL_DATAMODELS_VERSIONS: (): string => '/global-classifier/datamodels/versions',
   LOAD_MODEL: (): string => '/global-classifier/testmodel/load',
   GET_DATA_MODEL_PROGRESS: (): string => `global-classifier/datamodels/progress`,
-  DEPLOY_MODEL: (): string => '/global-classifier/datamodels/deploy',
+  DEPLOY_MODEL: (): string => '/global-classifier/inference/deploy',
 
   
   GET_DATAMODELS_FILTERS: (): string =>

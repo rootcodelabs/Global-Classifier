@@ -1,5 +1,6 @@
 import { dataModelsEndpoints, testModelsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
+import apiPublic from './api-public';
 import { ClassifyTestModalPayloadType, ClassifyTestModalResponseType } from 'types/testModelTypes';
 import { OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
@@ -83,7 +84,7 @@ export async function deployDataModel(payload: {
   currentEnv: string;
   targetEnv: string;
 },) {
-  const { data } = await apiDev.post(dataModelsEndpoints.DEPLOY_MODEL(), payload);
+  const { data } = await apiPublic.post(dataModelsEndpoints.DEPLOY_MODEL(), payload);
   return data?.response ?? {};
 }
 
@@ -111,7 +112,7 @@ export async function classify(data: ClassifyTestModalPayloadType) {
     testModelsEndpoints.CLASSIFY_TEST_MODELS(),
     { modelId: data.modelId, text: data.text },
   );
-  return response?.data?.response?.data as ClassifyTestModalResponseType ?? [];
+  return response?.data?.response as ClassifyTestModalResponseType ?? [];
 }
 export async function getDataModelsProgress() {
   const { data } = await apiDev.get(dataModelsEndpoints.GET_DATA_MODEL_PROGRESS());

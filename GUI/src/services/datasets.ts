@@ -10,7 +10,7 @@ export async function getDatasetsOverview(
     params: {
       page: pageNum,
       generationStatus: "all",
-      sortBy:sort?.split(" ")?.[0],
+      sortBy: sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
       pageSize: OVERVIEW_PAGE_SIZE,
     },
@@ -19,7 +19,7 @@ export async function getDatasetsOverview(
 }
 
 export async function getDatasetMetadata(
-  datasetId: number |string) {
+  datasetId: number | string) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_METADATA(), {
     params: {
       datasetId
@@ -29,14 +29,17 @@ export async function getDatasetMetadata(
 }
 
 export async function getDatasetData(
-  datasetVersionId: number |string,
+  datasetVersionId: number | string,
   pageNum?: number,
+    clientId?: string
+
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
       datasetVersionId,
-      pageNum : pageNum ?? 1,
-      pageSize:DATASET_PAGE_SIZE
+      pageNum: pageNum ?? 1,
+      pageSize: DATASET_PAGE_SIZE,
+      clientId: clientId ?? "all",
     },
   });
   return data?.response ?? [];
@@ -50,4 +53,19 @@ export async function getAllDatasetVersions() {
 export async function getDataGenerationProgress() {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATA_GENERATION_PROGRESS());
   return data?.response?.data;
+}
+
+export async function updateDataset(payload: {
+  updatedDataItems: any[];
+  deletedRows: (string | number)[];
+  updatedRowsLength: number;
+  deletedRowsLength: number;
+}) {
+  const { data } = await apiDev.post(datasetsEndpoints.UPDATE_DATASET(), payload);
+  return data?.response ?? {};
+}
+
+export async function deleteDataset(datasetVersionId: number | string) {
+  const { data } = await apiDev.post(datasetsEndpoints.DELETE_DATASET(), { datasetVersionId });
+  return data?.response ?? {};
 }
