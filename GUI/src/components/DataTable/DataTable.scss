@@ -21,6 +21,11 @@
     border: solid 1px get-color(black-coral-1);
   }
 
+  &__page-size-selector {
+    display: flex;
+    gap: .7rem;
+  }
+
   thead,
   tbody {
     width: 100%;

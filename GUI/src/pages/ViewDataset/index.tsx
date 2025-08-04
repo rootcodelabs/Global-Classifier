@@ -18,8 +18,6 @@ import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
 import NoDataView from 'components/molecules/NoDataView';
 import { DATASET_PAGE_SIZE } from 'utils/constants';
-import { is } from 'date-fns/locale';
-import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
 
 const ViewDataset = () => {
   const { t } = useTranslation();
@@ -57,7 +55,8 @@ const ViewDataset = () => {
     queryFn: () => getDatasetData(
       datasetVersionId ?? 0,
       pagination.pageIndex + 1,
-      selectedAgencyId === "all" ? "all" : selectedAgencyId.toString()
+      selectedAgencyId === "all" ? "all" : selectedAgencyId.toString(),
+      pagination.pageSize
     ),
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
@@ -84,6 +83,10 @@ const ViewDataset = () => {
       setUpdatedDataset(mergedDataset);
     }
   }, [dataset, editedRows]);
+
+  useEffect(() => {
+   refetchDataset();
+  }, [pagination]);
 
   const { data: agencies } = useQuery({
     queryKey: integratedAgenciesQueryKeys.ALL_AGENCIES_LIST(),
@@ -367,11 +370,12 @@ const ViewDataset = () => {
                 })) ?? [],
               },
             ]}
+            showPageSizeSelector={true}
             onSelect={(value) => {
               setSelectedAgencyId(value);
               setPagination({
                 pageIndex: 0,
-                pageSize: DATASET_PAGE_SIZE,
+                pageSize: pagination.pageSize,
               });
               setUpdatedDataset([]);
             }}

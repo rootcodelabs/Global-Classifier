@@ -31,14 +31,15 @@ export async function getDatasetMetadata(
 export async function getDatasetData(
   datasetVersionId: number | string,
   pageNum?: number,
-    clientId?: string
+  clientId?: string,
+  pageSize?: number
 
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_DATASETS_DATA(), {
     params: {
       datasetVersionId,
       pageNum: pageNum ?? 1,
-      pageSize: DATASET_PAGE_SIZE,
+      pageSize: pageSize ?? DATASET_PAGE_SIZE,
       clientId: clientId ?? "all",
     },
   });

@@ -54,7 +54,9 @@
     "maxFileSize":"File size should not exceed 20 MB.",
     "select": "-Select-",
     "replace": "Replace",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "showEntries": "Show",
+    "entries": "records"
   },
   "menu": {
     "userManagement": "User Management",

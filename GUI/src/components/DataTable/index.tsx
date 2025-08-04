@@ -52,7 +52,9 @@ type DataTableProps = {
   pagesCount?: number;
   meta?: TableMeta<any>;
   dropdownFilters?: DropdownFilterConfig[];
-  onSelect?: (value: string | number) => void | undefined// Callback for dropdown filter selection
+  onSelect?: (value: string | number) => void | undefined
+  showPageSizeSelector?: boolean; 
+  pageSizeOptions?: number[];
 
 };
 
@@ -116,7 +118,9 @@ const DataTable: FC<DataTableProps> = (
     pagesCount,
     meta,
     dropdownFilters,
-    onSelect
+    onSelect,
+    showPageSizeSelector = false,
+    pageSizeOptions = [10, 20, 50, 100]
   },
 ) => {
   const id = useId();
@@ -156,6 +160,15 @@ const DataTable: FC<DataTableProps> = (
     manualSorting: isClientSide ? undefined : true,
     pageCount: isClientSide ? undefined : pagesCount,
   });
+
+    const handlePageSizeChange = (newPageSize: number) => {
+    if (setPagination && pagination) {
+      setPagination({
+        pageIndex: 0, 
+        pageSize: newPageSize,
+      });
+    }
+  };  
 
   return (
     <div className='data-table__scrollWrapper'>
@@ -221,6 +234,27 @@ const DataTable: FC<DataTableProps> = (
       </table>
       {pagination && (
         <div className='data-table__pagination-wrapper'>
+           {showPageSizeSelector && (
+            <div className='data-table__page-size-selector'>
+              <span className='page-size-label'>
+                {t('global.showEntries') || 'Show'}
+              </span>
+              <select
+                className='page-size-select'
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <span className='page-size-label'>
+                {t('global.entries') || 'entries'}
+              </span>
+            </div>
+          )}
           {(table.getPageCount() * table.getState().pagination.pageSize) > table.getState().pagination.pageSize && (
             <div className='data-table__pagination'>
               <button
