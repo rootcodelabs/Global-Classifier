@@ -130,7 +130,7 @@ const DataModelForm: FC<DataModelFormType> = ({
                 </a>
               )}
             </div>
-            {showTrainingResults && trainingResults && <ModelResults models={trainingResults?.models_performance} />}
+            {showTrainingResults && trainingResults && <ModelResults models={trainingResults} />}
 
             <div className="title-sm">
               {t('dataModels.dataModelForm.deploymentPlatform')}{' '}

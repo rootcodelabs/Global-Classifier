@@ -146,7 +146,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
                 content: (
                   <div>
                     {results ? (
-                      <ModelResults models={trainingResults?.models_performance} />
+                      <ModelResults models={trainingResults} />
                     ) : (
                       <div className="text-center">
                         {t('dataModels.trainingResults.noResults') ?? ''}

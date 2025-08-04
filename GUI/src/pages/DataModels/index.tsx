@@ -41,7 +41,7 @@ const DataModels: FC = () => {
     queryFn: () => getDataModelsOverview(pageIndex, filters.modelStatus, filters.trainingStatus, filters.deploymentEnvironment, filters.sort),
   });
 
-   const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
+  const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
     queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
     queryFn: () => getProductionDataModel(),
   });
@@ -175,7 +175,7 @@ const DataModels: FC = () => {
                 </div>
 
               </div>
-             {prodDataModel != null &&  <div className="m-30-0">
+              {prodDataModel != null && <div className="m-30-0">
                 <p>Deployed Model</p>
                 <div className="grid-container m-30-0">
                   <DataModelCard
@@ -189,35 +189,38 @@ const DataModels: FC = () => {
                     trainingStatus={prodDataModel.trainingStatus}
                     modelStatus={prodDataModel?.modelStatus}
                     deploymentEnv={prodDataModel?.deploymentEnv}
-                   results={prodDataModel?.trainingResults ?? null}
+                    results={prodDataModel?.trainingResults ?? null}
 
                   /></div>
               </div>}
-              <p>Other Data Models</p>
 
               {dataModelsData?.length > 0 ? (
-                <div className="grid-container m-30-0">
-                  {dataModelsData?.map(
-                    (model: DataModelResponse, index: number) => {
-                      return (
-                        <DataModelCard
-                          key={model?.modelId}
-                          modelId={model?.modelId}
-                          dataModelName={model?.modelName}
-                          version={`V${model?.major}.${model?.minor}`}
-                          isLatest={model.latest}
-                          datasetVersion={`V${model?.connectedDsMajorVersion}.${model?.connectedDsMinorVersion}`}
-                          lastTrained={model?.lastTrained}
-                          trainingStatus={model.trainingStatus}
-                          modelStatus={model?.modelStatus}
-                          deploymentEnv={model?.deploymentEnv}
-                          // results={model?.trainingResults ?? null}
+                <div><p>Other Data Models</p>
+                  <div className="grid-container m-30-0">
 
-                        />
-                      );
-                    }
-                  )}
+                    {dataModelsData?.map(
+                      (model: DataModelResponse, index: number) => {
+                        return (
+                          <DataModelCard
+                            key={model?.modelId}
+                            modelId={model?.modelId}
+                            dataModelName={model?.modelName}
+                            version={`V${model?.major}.${model?.minor}`}
+                            isLatest={model.latest}
+                            datasetVersion={`V${model?.connectedDsMajorVersion}.${model?.connectedDsMinorVersion}`}
+                            lastTrained={model?.lastTrained}
+                            trainingStatus={model.trainingStatus}
+                            modelStatus={model?.modelStatus}
+                            deploymentEnv={model?.deploymentEnv}
+                            results={typeof model?.trainingResults === 'object' ? model.trainingResults : null}
+
+                          />
+                        );
+                      }
+                    )}
+                  </div>
                 </div>
+
               ) : (
                 <NoDataView text={t('dataModels.noModels') ?? ''} />
               )}
