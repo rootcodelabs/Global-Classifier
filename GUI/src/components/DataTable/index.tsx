@@ -13,7 +13,8 @@ import {
   PaginationState,
   TableMeta,
   Row,
-  RowData, ColumnFiltersState,
+  RowData, ColumnFiltersState, RowSelectionState,
+
 } from '@tanstack/react-table';
 import {
   RankingInfo,
@@ -55,7 +56,8 @@ type DataTableProps = {
   onSelect?: (value: string | number) => void | undefined
   showPageSizeSelector?: boolean; 
   pageSizeOptions?: number[];
-
+ rowSelection?: RowSelectionState;
+  setRowSelection?: (state: RowSelectionState) => void;
 };
 
 type ColumnMeta = {
@@ -120,13 +122,15 @@ const DataTable: FC<DataTableProps> = (
     dropdownFilters,
     onSelect,
     showPageSizeSelector = false,
-    pageSizeOptions = [10, 20, 50, 100]
+    pageSizeOptions = [10, 20, 50, 100],
+     rowSelection,
+    setRowSelection,
   },
 ) => {
   const id = useId();
   const { t } = useTranslation();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const table = useReactTable({
+const table = useReactTable({
     data,
     columns,
     filterFns: {
@@ -138,12 +142,23 @@ const DataTable: FC<DataTableProps> = (
       globalFilter,
       columnVisibility,
       ...{ pagination },
+      ...(rowSelection && { rowSelection }),
     },
     meta,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: fuzzyFilter,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection
+      ? (updaterOrValue) => {
+          if (typeof updaterOrValue === 'function') {
+            setRowSelection(updaterOrValue(table.getState().rowSelection));
+          } else {
+            setRowSelection(updaterOrValue);
+          }
+        }
+      : undefined,
     onSortingChange: (updater) => {
       if (typeof updater !== 'function') return;
       setSorting?.(updater(table.getState().sorting));
