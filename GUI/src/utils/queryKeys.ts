@@ -44,7 +44,7 @@ export const datasetQueryKeys = {
     );
   },
   GET_DATA_SETS: function (datasetId?: number|string, agencyId?:number|string, pageNum?: number, pageSize?: number) {
-    return ['datasets/data', datasetId, agencyId,pageNum].filter(
+    return ['datasets/data', datasetId, agencyId, pageNum, pageSize].filter(
       (val) => val !== undefined
     );
   },

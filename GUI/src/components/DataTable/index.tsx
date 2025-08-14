@@ -123,7 +123,7 @@ const DataTable: FC<DataTableProps> = (
     onSelect,
     showPageSizeSelector = false,
     pageSizeOptions = [10, 20, 50, 100],
-     rowSelection,
+    rowSelection,
     setRowSelection,
   },
 ) => {
@@ -149,7 +149,7 @@ const table = useReactTable({
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: fuzzyFilter,
-    enableRowSelection: true,
+    enableRowSelection: !!setRowSelection,
     onRowSelectionChange: setRowSelection
       ? (updaterOrValue) => {
           if (typeof updaterOrValue === 'function') {

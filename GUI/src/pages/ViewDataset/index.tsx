@@ -86,7 +86,7 @@ const ViewDataset = () => {
       content: (
         <div>
           <p>{t('datasets.detailedView.bulkDeleteDesc1') || 'Are you sure you want to delete the selected items?'}</p>
-          <p><strong>{t('datasets.detailedView.bulkDeleteDesc2') || 'items selected'}</strong> </p>
+          <p><strong>{t('datasets.detailedView.bulkDeleteDesc2') || 'Note : This deletion will not be affected in the original dataset until you click on Save Changes.'}</strong> </p>
         </div>
       ),
       footer: (
