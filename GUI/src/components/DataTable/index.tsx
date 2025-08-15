@@ -13,7 +13,8 @@ import {
   PaginationState,
   TableMeta,
   Row,
-  RowData, ColumnFiltersState,
+  RowData, ColumnFiltersState, RowSelectionState,
+
 } from '@tanstack/react-table';
 import {
   RankingInfo,
@@ -52,8 +53,11 @@ type DataTableProps = {
   pagesCount?: number;
   meta?: TableMeta<any>;
   dropdownFilters?: DropdownFilterConfig[];
-  onSelect?: (value: string | number) => void | undefined// Callback for dropdown filter selection
-
+  onSelect?: (value: string | number) => void | undefined
+  showPageSizeSelector?: boolean; 
+  pageSizeOptions?: number[];
+ rowSelection?: RowSelectionState;
+  setRowSelection?: (state: RowSelectionState) => void;
 };
 
 type ColumnMeta = {
@@ -116,13 +120,17 @@ const DataTable: FC<DataTableProps> = (
     pagesCount,
     meta,
     dropdownFilters,
-    onSelect
+    onSelect,
+    showPageSizeSelector = false,
+    pageSizeOptions = [10, 20, 50, 100],
+    rowSelection,
+    setRowSelection,
   },
 ) => {
   const id = useId();
   const { t } = useTranslation();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const table = useReactTable({
+const table = useReactTable({
     data,
     columns,
     filterFns: {
@@ -134,12 +142,23 @@ const DataTable: FC<DataTableProps> = (
       globalFilter,
       columnVisibility,
       ...{ pagination },
+      ...(rowSelection && { rowSelection }),
     },
     meta,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: fuzzyFilter,
+    enableRowSelection: !!setRowSelection,
+    onRowSelectionChange: setRowSelection
+      ? (updaterOrValue) => {
+          if (typeof updaterOrValue === 'function') {
+            setRowSelection(updaterOrValue(table.getState().rowSelection));
+          } else {
+            setRowSelection(updaterOrValue);
+          }
+        }
+      : undefined,
     onSortingChange: (updater) => {
       if (typeof updater !== 'function') return;
       setSorting?.(updater(table.getState().sorting));
@@ -156,6 +175,15 @@ const DataTable: FC<DataTableProps> = (
     manualSorting: isClientSide ? undefined : true,
     pageCount: isClientSide ? undefined : pagesCount,
   });
+
+    const handlePageSizeChange = (newPageSize: number) => {
+    if (setPagination && pagination) {
+      setPagination({
+        pageIndex: 0, 
+        pageSize: newPageSize,
+      });
+    }
+  };  
 
   return (
     <div className='data-table__scrollWrapper'>
@@ -221,6 +249,27 @@ const DataTable: FC<DataTableProps> = (
       </table>
       {pagination && (
         <div className='data-table__pagination-wrapper'>
+           {showPageSizeSelector && (
+            <div className='data-table__page-size-selector'>
+              <span className='page-size-label'>
+                {t('global.showEntries') || 'Show'}
+              </span>
+              <select
+                className='page-size-select'
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <span className='page-size-label'>
+                {t('global.entries') || 'entries'}
+              </span>
+            </div>
+          )}
           {(table.getPageCount() * table.getState().pagination.pageSize) > table.getState().pagination.pageSize && (
             <div className='data-table__pagination'>
               <button
