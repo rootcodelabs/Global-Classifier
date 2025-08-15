@@ -201,14 +201,14 @@ def process_callback_background(
         dataset_id = int(dataset_id_match.group(1)) if dataset_id_match else None
         if not dataset_id:
             logger.error("Could not extract dataset_id from file path.")
-            return
+            raise ValueError("Invalid file path format, could not extract dataset_id.")
 
         logger.info(f"Extracted dataset ID: {dataset_id}")
 
         current_csv_path = file_path
         output_csv_path = f"{OUTPUT_DATA_DIR}/{dataset_id}_aggregated.csv"
 
-        if dataset_id <= 2:
+        if dataset_id <= 1:
             logger.info("No previous dataset. Using current CSV only.")
             df = pd.read_csv(current_csv_path)
             df = update_item_ids(df, dataset_id)
@@ -261,7 +261,7 @@ def process_callback_background(
     except Exception as e:
         logger.error(f"Error in processing: {str(e)}")
         traceback.print_exc()
-        raise
+        raise RuntimeError(f"Callback processing failed: {str(e)}")
 
 
 def parse_args():
