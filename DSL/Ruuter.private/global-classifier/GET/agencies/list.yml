@@ -1,0 +1,50 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get all agencies from the integrated_agencies table with sorting and filtering"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: page
+        type: number
+        description: "Query parameter 'page' for pagination"
+      - field: pageSize
+        type: number
+        description: "Query parameter 'pageSize' for pagination"
+      - field: agencyName
+        type: string
+        description: "Query parameter 'agencyName' for filtering agencies by name"
+      - field: sortBy
+        type: string
+        description: "Query parameter 'sortBy' for sorting (agency_name, created_at, last_updated_timestamp)"
+      - field: sortType
+        type: string
+        description: "Query parameter 'sortType' for sort direction (asc, desc)"
+    
+extractRequestData:
+  assign:
+    page: ${Number(incoming.params.page) || 1}
+    pageSize: ${Number(incoming.params.pageSize) || 10}
+    agencyName: ${incoming.params.agencyName || 'all'}
+    sortBy: ${incoming.params.sortBy || ''}
+    sortType: ${incoming.params.sortType || 'desc'}
+
+getAllAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agencies"
+    body:
+      page: ${page}
+      page_size: ${pageSize}
+      agency_name: ${agencyName}
+      sort_by: ${sortBy}
+      sort_type: ${sortType}
+  result: agencies_res
+  next: return_result
+
+return_result:
+  return: ${agencies_res.response.body}
+  next: end

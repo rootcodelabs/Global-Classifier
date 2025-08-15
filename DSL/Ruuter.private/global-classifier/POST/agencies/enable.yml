@@ -1,0 +1,54 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Disable an agency in the integrated_agencies table"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencyId
+        type: string
+        description: "Agency ID to disable"
+
+extractRequestData:
+  assign:
+    agencyId: ${incoming.body.agencyId}
+
+validateInput:
+  switch:
+    - condition: ${!agencyId}
+      next: returnMissingAgencyId
+  next: enableAgency
+
+enableAgency:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency-enabled"
+    body:
+      agencyId: ${agencyId}
+      isEnabled: true
+  result: enableResult
+  next: checkEnableResult
+
+checkEnableResult:
+  switch:
+    - condition: ${!enableResult || enableResult.response.body.length===0}
+      next: returnEnableFailed
+  next: returnResult
+
+returnResult:
+  return: ${enableResult.response.body}
+  status: 200
+  next: end
+
+returnMissingAgencyId:
+  return: "missing agencyId"
+  status: 400
+  next: end
+
+returnEnableFailed:
+  return: "unable to enable agency"
+  status: 400
+  next: end

@@ -1,0 +1,50 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get all datasets from the datasets table with sorting and filtering"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: page
+        type: number
+        description: "Query parameter 'page' for pagination"
+      - field: pageSize
+        type: number
+        description: "Query parameter 'pageSize' for pagination"
+      - field: generationStatus
+        type: string
+        description: "Query parameter 'generationStatus' for filtering datasets by status"
+      - field: sortBy
+        type: string
+        description: "Query parameter 'sortBy' for sorting (created_at, major, minor, generation_status)"
+      - field: sortType
+        type: string
+        description: "Query parameter 'sortType' for sort direction (asc, desc)"
+
+extractRequestData:
+  assign:
+    page: ${Number(incoming.params.page) || 1}
+    pageSize: ${Number(incoming.params.pageSize) || 10}
+    generationStatus: ${incoming.params.generationStatus || 'all'}
+    sortBy: ${incoming.params.sortBy || ''}
+    sortType: ${incoming.params.sortType || 'desc'}
+
+getAllDatasets:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-datasets"
+    body:
+      page: ${page}
+      page_size: ${pageSize}
+      generation_status: ${generationStatus}
+      sort_by: ${sortBy}
+      sort_type: ${sortType}
+  result: datasets_res
+  next: return_result
+
+return_result:
+  return: ${datasets_res.response.body}
+  next: end

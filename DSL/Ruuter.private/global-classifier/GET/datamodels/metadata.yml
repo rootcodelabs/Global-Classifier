@@ -1,0 +1,30 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get metadata for a specific data model by modelId"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: modelId
+        type: number
+        description: "ID of the data model"
+
+extractRequestData:
+  assign:
+    modelId: ${Number(incoming.params.modelId)}
+
+getDataModelMetadata:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-data-model-by-id"
+    body:
+      model_id: ${modelId}
+  result: data_model_metadata
+  next: return_result
+
+return_result:
+  return: ${data_model_metadata.response.body}
+  next: end

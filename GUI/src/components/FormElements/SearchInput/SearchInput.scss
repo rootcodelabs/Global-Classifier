@@ -1,0 +1,36 @@
+@import 'src/styles/tools/spacing';
+@import 'src/styles/tools/color';
+@import 'src/styles/settings/variables/other';
+
+.search-input-container {
+  position: relative;
+  width: 100%;
+
+  .search-button {
+    position: absolute;
+    right: 0px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: get-color(black-coral-6);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    &:hover {
+      color: get-color(sapphire-blue-10);
+    }
+
+    &:disabled {
+      color: get-color(black-coral-3);
+      cursor: not-allowed;
+    }
+  }
+
+  // Add some padding to the right of the input to prevent text overlap with the icon
+  input {
+    padding-right: 40px !important;
+  }
+}

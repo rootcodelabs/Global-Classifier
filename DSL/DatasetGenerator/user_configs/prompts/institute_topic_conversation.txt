@@ -1,0 +1,41 @@
+Generate a natural and informative conversation in ${language_name} based on the given topic from the ${institute} curriculum.
+
+Topic: ${topic}
+Content:
+"""
+${topic_content}
+"""
+Difficulty: ${difficulty:-medium}
+Style: ${style:-clear and concise}
+Number of turns: ${num_turns:-4}
+
+Instructions:
+- Strictly reflect the information in the provided content.
+- Use a realistic and natural back-and-forth tone between a curious "user" and a helpful "assistant".
+- Ask and answer questions in a way that gradually explores the topic (e.g., starting from basic questions and going deeper).
+- Avoid generic filler; ensure each message is contextually specific and informative.
+
+Evaluation Criteria - Your conversation will be assessed on:
+
+    1. **Content Accuracy**: All information strictly adheres to the provided topic content
+    2. **Naturalness**: Conversation flows realistically with authentic user questions and assistant responses
+    3. **Progressive Depth**: Discussion starts with basic concepts and gradually explores more complex aspects
+    4. **Language Quality**: Proper grammar, vocabulary, and fluency in ${language_name}
+    5. **Educational Value**: Each exchange meaningfully contributes to understanding the topic
+    6. **Contextual Relevance**: Every message is specific to the topic, avoiding generic responses
+    7. **Appropriate Difficulty**: Conversation complexity matches the specified difficulty level
+    8. **Turn Management**: Effective use of the specified number of turns to cover the topic comprehensively
+
+Output Format:
+Return ONLY a raw JSON object with the structure:
+{
+  "messages": [
+    {"role": "user", "content": "First user message"},
+    {"role": "assistant", "content": "Assistant's specific and helpful reply"},
+    ...
+  ]
+}
+
+Do NOT include markdown formatting, code block markers, or explanatory text around the output.
+
+Additional Instructions: ${additional_instructions:-Ensure the dialogue stays on-topic, sounds natural in ${language_name}, and explains concepts clearly based on the content. Do not invent facts or go beyond the given topic material.}

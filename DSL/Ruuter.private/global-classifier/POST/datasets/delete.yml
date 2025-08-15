@@ -1,0 +1,48 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Delete all datasets with a dataset_version_id and then delete the dataset version"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: datasetVersionId
+        type: number
+        description: "dataset_version_id to delete (required)"
+  next: deleteDatasets
+
+deleteDatasets:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-datasets-by-version"
+    body:
+      datasetVersionId: ${Number(incoming.body.datasetVersionId)}
+  result: deleteDatasetsResult
+  next: deleteDatasetVersion
+
+deleteDatasetVersion:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/delete-dataset-version"
+    body:
+      datasetVersionId: ${Number(incoming.body.datasetVersionId)}
+  result: deleteVersionResult
+  next: checkDeleteResult
+
+checkDeleteResult:
+  switch:
+    - condition: ${!deleteVersionResult || !deleteVersionResult.response.body || deleteVersionResult.response.body.length === 0}
+      next: return_delete_failed
+  next: return_success
+
+return_success:
+  return: ${deleteVersionResult.response.body[0]}
+  status: 200
+  next: end
+
+return_delete_failed:
+  return: " Error : Delete failed or dataset_version_id not found"
+  status: 400
+  next: end

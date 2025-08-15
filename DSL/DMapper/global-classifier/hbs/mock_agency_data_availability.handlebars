@@ -1,0 +1,8 @@
+[
+  {{#each agencyIds}}
+    {
+      "agencyId": "{{this}}",
+      "isDataAvailable": "{{getAgencyDataAvailable this}}"
+    }{{#unless @last}},{{/unless}}
+  {{/each}}
+]

@@ -1,0 +1,43 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Deploy a data model in a specified environment"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  # Input Validation Schema
+  allowlist:
+    body:
+      - field: modelId
+        type: number
+        description: "Model identifier (integer)"
+  next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    modelId: ${incoming.body.modelId}
+  next: validate_input
+    
+# Required Field Validation
+validate_input:
+  switch:
+    - condition: ${!modelId}
+      next: validation_error
+  next: load_model
+
+load_model:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/deploy/deploy_model"
+    query:
+      modelId: ${modelId}
+  result: res
+  next: return_ok
+
+
+return_ok: 
+  status: 200
+  return: "load-model initiated successfully"
+  next: end

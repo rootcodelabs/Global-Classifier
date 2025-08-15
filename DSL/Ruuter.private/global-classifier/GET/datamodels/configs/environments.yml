@@ -1,0 +1,31 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Description placeholder for 'OPTIONS'"
+  method: get
+  accepts: json
+  returns: json
+  namespace: classifier
+
+get_data_model_options:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-data-model-options"
+  result: res_options
+  next: check_status
+
+check_status:
+  switch:
+    - condition: ${200 <= res_options.response.statusCodeValue && res_options.response.statusCodeValue < 300}
+      next: return_ok
+  next: return_bad_request
+
+return_ok:
+  status: 200
+  return: ${res_options.response.body}
+  next: end
+
+return_bad_request:
+  status: 400
+  return: "Bad Request"
+  next: end

@@ -1,0 +1,5 @@
+dataset_pipeline_schedule:
+  trigger: off
+  type: exec
+  command: "../app/scripts/dataset_pipeline_s3.sh"
+  allowedEnvs: ['signedUrls', 'datasetId', 'majorVersion', 'minorVersion']

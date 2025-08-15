@@ -1,4 +1,5 @@
 tim-db
+global-classifier-db
 .vscode/
 .idea/
 # Node modules
@@ -33,7 +34,7 @@ logs/
 test/logs/
 **/logs/
 *.log.*
-*.zip
+
 
 *.bkp
 *.dtmp
@@ -42,3 +43,14 @@ test/logs/
 __pycache__/
 .ruff_cache/
 .pytest_cache/
+
+models
+data
+output_datasets/
+venv
+dataset_artifacts/
+venv
+/signed.py
+/minio_presigned_urls.txt
+minio_data/
+temp_models/

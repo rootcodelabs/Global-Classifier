@@ -1,0 +1,250 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Create a new data model with incremented minor version"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelGroupKey
+        type: string
+        description: "Model group key to create new version for (required)"
+      - field: modelName
+        type: string
+        description: "Name of the model (required)"
+      - field: deploymentEnv
+        type: string
+        description: "Deployment environment: production, testing, undeployed (required)"
+      - field: baseModels
+        type: array
+        description: "Array of base models: ['bert', 'roberta', 'xlm'] (required)"
+      - field: connectedDsId
+        type: number
+        description: "Connected dataset ID (required)"
+      - field: connectedDsMajorVersion
+        type: number
+        description: "Connected dataset major version (required)"
+      - field: connectedDsMinorVersion
+        type: number
+        description: "Connected dataset minor version (required)"
+      - field: isTrainingNeeded
+        type: boolean
+        description: "Whether to initiate training after model creation (optional, defaults to false)"
+  next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    modelGroupKey: ${incoming.body.modelGroupKey}
+    modelName: ${incoming.body.modelName}
+    deploymentEnv: ${incoming.body.deploymentEnv}
+    baseModels: ${incoming.body.baseModels}
+    connectedDsId: ${incoming.body.connectedDsId}
+    connectedDsMajorVersion: ${incoming.body.connectedDsMajorVersion}
+    connectedDsMinorVersion: ${incoming.body.connectedDsMinorVersion}
+    isTrainingNeeded: ${incoming.body.isTrainingNeeded || false}
+  next: validateRequiredFields
+# Required Field Validation
+validateRequiredFields:
+  switch:
+    - condition: ${modelGroupKey === null || modelGroupKey === undefined || modelGroupKey === "" || modelName === null || modelName === undefined || modelName === "" || deploymentEnv === null || deploymentEnv === undefined || deploymentEnv === "" || baseModels === null || baseModels === undefined || connectedDsId === null || connectedDsId === undefined }
+      next: return_missing_required_fields
+    - condition: ${connectedDsMajorVersion === null || connectedDsMajorVersion === undefined || connectedDsMinorVersion === null || connectedDsMinorVersion === undefined}
+      next: return_missing_required_fields
+    - condition: ${!baseModels || baseModels.length === 0}
+      next: return_missing_required_fields
+  next: validateEnumValues
+
+# Enum Value Validation
+validateEnumValues:
+  switch:
+    - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
+      next: return_invalid_deployment_env
+    - condition: ${!baseModels.every(model => ["estbert", "xlm-roberta", "multilingual-distilbert"].includes(model))}
+      next: return_invalid_base_model
+  next: checkProductionDeployment
+
+# Check if Production Deployment
+checkProductionDeployment:
+  switch:
+    - condition: ${deploymentEnv === "production"}
+      next: updateExistingProductionModels
+  next: getLatestDataModel
+
+# Update Existing Production Models to Undeployed
+updateExistingProductionModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datamodel-deployment-env"
+  result: update_production_res
+  next: checkProductionUpdateResult
+
+# Check Production Update Result
+checkProductionUpdateResult:
+  switch:
+    - condition: ${!update_production_res || !update_production_res.response || !update_production_res.response.body}
+      next: return_production_update_failed
+  next: getLatestDataModel
+
+# Get Latest Data Model
+getLatestDataModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-latest-datamodel"
+    body:
+      modelGroupKey: ${modelGroupKey}
+  result: latestDataModelResult
+  next: createDataModel
+
+# Create Data Model Version
+createDataModel:
+  switch:
+    - condition: ${latestDataModelResult.response.body.length === 0}
+      next: end
+  next: computeNewVersion
+
+# Compute New Version (Increment Minor)
+computeNewVersion:
+  assign:
+    latestDataModel: ${latestDataModelResult.response.body[0]}
+    newMajor: ${latestDataModel?.major}
+    newMinor: ${latestDataModel?.minor + 1}
+    previousModelId: ${latestDataModel?.modelId}
+  next: switchLatestFlag
+
+# Switch Latest Flag to False for Previous Model
+switchLatestFlag:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datamodels-latest-state"
+    body:
+      modelId: ${previousModelId}
+  result: switchResult
+  next: insertDataModel
+
+# Insert New Data Model
+insertDataModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/create-datamodels-version"
+    body:
+      modelGroupKey: ${modelGroupKey}
+      modelName: ${modelName}
+      major: ${newMajor}
+      minor: ${newMinor}
+      deploymentEnv: ${deploymentEnv}
+      baseModels: ${JSON.stringify(baseModels)}
+      connectedDsId: ${connectedDsId}
+      connectedDsMajorVersion: ${connectedDsMajorVersion}
+      connectedDsMinorVersion: ${connectedDsMinorVersion}   
+  result: insertResult
+  next: checkInsertResult
+
+# Check Insert Result
+checkInsertResult:
+  switch:
+    - condition: ${!insertResult || !insertResult.response.body || insertResult.response.body.length === 0}
+      next: return_insert_failed
+  next: updateDatasetConnectedModels
+
+# Update Dataset Connected Models
+updateDatasetConnectedModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-datasets-connected-models"
+    body:
+      modelId: ${insertResult.response.body[0].modelId}
+      datasetId: ${connectedDsId}
+  result: updateDatasetResult
+  next: checkDatasetUpdateResult
+
+# Check Dataset Update Result
+checkDatasetUpdateResult:
+  switch:
+    - condition: ${!updateDatasetResult || !updateDatasetResult.response || !updateDatasetResult.response.body || updateDatasetResult.response.body.length === 0}
+      next: return_dataset_update_failed
+  next: checkTrainingRequired
+
+# Check if Training is Required
+checkTrainingRequired:
+  switch:
+    - condition: ${isTrainingNeeded === true}
+      next: initiateTraining
+  next: return_success_no_training
+
+# Initiate Training 
+initiateTraining:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/datamodels/train"
+    headers:
+      cookie: ${incoming.headers.cookie}
+    body:
+      modelId: ${insertResult.response.body[0].modelId}
+      modelName: ${modelName}
+      majorVersion: ${insertResult.response.body[0].major}
+      minorVersion: ${insertResult.response.body[0].minor}
+      latest: true
+      deploymentEnv: ${deploymentEnv}
+  result: training_res
+  next: logTrainingResult
+
+logTrainingResult:
+  log: "Initiate training response: ${training_res.response}"
+  next: checkTrainingResult
+
+# Check Training Result
+checkTrainingResult:
+  switch:
+    - condition: ${!training_res || !training_res.response}
+      next: return_training_failed
+    - condition: ${training_res.response.body.response.operationSuccessful !== true}
+      next: return_training_failed
+  next: return_success
+
+return_success:
+  return: "Data model created successfully and training initiated. Model ID: ${insertResult.response.body[0].modelId}  Job ID: ${training_res.response.body.response.jobId}"
+  status: 200
+  next: end
+
+return_success_no_training:
+  return: "Data model created successfully. Model ID: ${insertResult.response.body[0].modelId}"
+  status: 200
+  next: end
+
+return_missing_required_fields:
+  return: "error: missing required fields (modelGroupKey, modelName, deploymentEnv, baseModels as array, connectedDsId, connectedDsMajorVersion, connectedDsMinorVersion)"
+  status: 400
+  next: end
+
+return_invalid_deployment_env:
+  return: "error: invalid deploymentEnv. Must be one of: production, testing, undeployed"
+  status: 400
+  next: end
+
+return_invalid_base_model:
+  return: "error: invalid baseModels"
+  status: 400
+  next: end
+
+return_production_update_failed:
+  return: "error: failed to update existing production models to undeployed before creating new production model"
+  status: 500
+  next: end
+
+return_insert_failed:
+  return: "error: failed to create new model version"
+  status: 500
+  next: end
+
+return_dataset_update_failed:
+  return: "error: model created but failed to update dataset connected_models"
+  status: 500
+  next: end
+
+return_training_failed:
+  return: "error: model created and dataset updated but failed to initiate training"
+  status: 500
+  next: end

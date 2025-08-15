@@ -2,86 +2,81 @@ from datapipeline import DataPipeline
 from trainingpipeline import TrainingPipeline, create_training_pipeline
 import os
 import sys
-import requests
-import torch
-import pickle
 import shutil
 import json
 from datetime import datetime, timezone
 from s3_ferry import S3Ferry
+from create_triton_configs import generate_all_triton_configs
 from constants import (
-    TEST_DEPLOYMENT_ENDPOINT,
-    UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
-    UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
     MODEL_RESULTS_PATH,
-    LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH,
-    LOCAL_CLASSIFICATION_LAYER_SAVE_PATH,
-    LOCAL_LABEL_ENCODER_SAVE_PATH,
     S3_FERRY_MODEL_STORAGE_PATH,
-    MODEL_TRAINING_SUCCESSFUL,
+    ACCURACY_WEIGHT,
+    UNCERTAINTY_CONFIGS,
+    F1_WEIGHT,
+    SEQUENCE_LENGTH,
+    MODEL_TRAINING_SOURCE_PATH,    
+    DEPLOYMENT_ENDPOINT, 
+    CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT, 
+    UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+    UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
     INITIATING_TRAINING_PROGRESS_STATUS,
     TRAINING_IN_PROGRESS_PROGRESS_STATUS,
     DEPLOYING_MODEL_PROGRESS_STATUS,
     MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
-    INITIATING_TRAINING_PROGRESS_MESSAGE,
+    TRAINING_FAILED_STATUS,
+    DEPLOYMENT_FAILED_STATUS,
     INITIATING_TRAINING_PROGRESS_PERCENTAGE,
     TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
     DEPLOYING_MODEL_PROGRESS_PERCENTAGE,
     MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
-    MODEL_TRAINING_FAILED_ERROR,
-    MODEL_TRAINING_FAILED,
-    SUPPORTED_BASE_MODELS,
-    SUPPORTED_OOD_METHODS,
-    ACCURACY_WEIGHT,
-    F1_WEIGHT,
-)
-from loguru import logger
+    INITIATING_TRAINING_PROGRESS_MESSAGE,
+    TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
+    DEPLOYING_MODEL_PROGRESS_MESSAGE,
+    MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE,
+    TRAINING_FAILED_STATUS_MESSAGE,
+    TRAINING_FAILED_PROGRESS_PERCENTAGE
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+)
+
+from loguru import logger
+import requests
+
+import argparse
+
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
 
 
 class ModelTrainer:
     def __init__(
         self,
-        cookie,
-        new_model_id,
-        old_model_id,
-        prev_deployment_env,
-        update_type,
+        model_id,
+        model_name,
+        dataset_id,
+        model_types,
+        major_version,
+        minor_version,
+        latest,
+        current_deployment_env,
         progress_session_id,
-        model_details,
-        current_deployment_platform,
+        target_deployment_platform,
     ) -> None:
         try:
-            self.new_model_id = int(new_model_id)
-            self.old_model_id = int(old_model_id)
-            self.prev_deployment_env = prev_deployment_env
-            self.cookie = cookie
-            self.update_type = update_type
+            logger.info("INITIALIZING MODEL TRAINER")
+            self.model_id = model_id
+            self.model_name = model_name
+            self.dataset_id = dataset_id
+            self.model_types = model_types
+            self.major_version = major_version
+            self.minor_version = minor_version
+            self.latest = latest
+            self.current_deployment_platform = current_deployment_env
+            self.target_deployment_platform = target_deployment_platform
 
-            self.cookies_payload = {"customJwtCookie": cookie}
-            self.progress_session_id = int(progress_session_id)
-
-            logger.info(f"COOKIES PAYLOAD - {self.cookies_payload}")
-
-            if self.update_type == "retrain":
-                logger.info(
-                    f"ENTERING INTO RETRAIN SEQUENCE FOR MODELID - {self.new_model_id}"
-                )
-
-            # Determine if this is a replacement deployment
-            if self.old_model_id == self.new_model_id:
-                self.replace_deployment = False
-            else:
-                self.replace_deployment = True
-
-            self.model_details = model_details
-            self.current_deployment_platform = current_deployment_platform
+            self.progress_session_id = ""
 
         except Exception as e:
             logger.error(f"EXCEPTION IN MODEL_TRAINER INIT : {e}")
-            self.send_error_progress_session(str(e))
 
     @staticmethod
     def create_training_folders(folder_paths):
@@ -90,170 +85,175 @@ class ModelTrainer:
             for folder_path in folder_paths:
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
-            logger.success(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
+            logger.info(f"SUCCESSFULLY CREATED MODEL FOLDER PATHS : {folder_paths}")
         except Exception as e:
             logger.error(f"FAILED TO CREATE MODEL FOLDER PATHS : {folder_paths}")
             raise RuntimeError(e)
 
-    def update_model_db_training_status(
-        self,
-        training_status,
-        model_s3_location,
-        last_trained_time_stamp,
-        training_results,
-        inference_routes,
-    ):
-        training_results_payload = {"trainingResults": {}}
-
-        if len(training_results) == 3:
-            logger.info(
-                f"UPDATE TRAINING STATUS DB RESULTS PAYLOAD: {training_results}"
-            )
-            training_results_payload["trainingResults"]["classes"] = training_results[0]
-            training_results_payload["trainingResults"]["accuracy"] = training_results[
-                1
-            ]
-            training_results_payload["trainingResults"]["f1_score"] = training_results[
-                2
-            ]
-        else:
-            training_results_payload["trainingResults"]["classes"] = ""
-            training_results_payload["trainingResults"]["accuracy"] = "0.0"
-            training_results_payload["trainingResults"]["f1_score"] = "0"
-
-        payload = {
-            "modelId": self.new_model_id,
-            "trainingStatus": training_status,
-            "modelS3Location": model_s3_location,
-            "lastTrainedTimestamp": last_trained_time_stamp,
-            "trainingResults": training_results_payload,
-            "inferenceRoutes": {"inference_routes": inference_routes},
-        }
-
-        logger.info(f"{training_status} UPLOAD PAYLOAD - \n {payload}")
-
-        response = requests.post(
-            url=UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
-            json=payload,
-            cookies=self.cookies_payload,
-        )
-
-        if response.status_code == 200:
-            logger.info(
-                f"REQUEST TO UPDATE MODEL TRAINING STATUS TO {training_status} SUCCESSFUL"
-            )
-        else:
-            logger.error(
-                f"REQUEST TO UPDATE MODEL TRAINING STATUS TO {training_status} FAILED"
-            )
-            logger.error(f"ERROR RESPONSE {response.text}")
-            self.send_error_progress_session(f"Error :{str(response.text)}")
-            raise RuntimeError(response.text)
-
-    def send_error_progress_session(self, error_msg):
-        response = self.update_model_training_progress_session(
-            MODEL_TRAINING_FAILED_ERROR, error_msg, 100, True
-        )
-        current_timestamp = self.get_current_timestamp()
-        self.update_model_db_training_status(
-            training_status=MODEL_TRAINING_FAILED,
-            model_s3_location="",
-            last_trained_time_stamp=current_timestamp,
-            training_results=[],
-            inference_routes=[],
-        )
-        return response
-
-    def update_model_training_progress_session(
-        self,
-        training_status,
-        training_progress_update_message,
-        training_progress_percentage,
-        process_complete,
-    ):
-        payload = {
-            "sessionId": self.progress_session_id,
-            "trainingStatus": training_status,
-            "trainingMessage": training_progress_update_message,
-            "progressPercentage": training_progress_percentage,
-            "processComplete": process_complete,
-        }
-
-        logger.info(
-            f"Update training progress session for model id - {self.new_model_id} payload \n {payload}"
-        )
-
-        response = requests.post(
-            url=UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
-            json=payload,
-            cookies=self.cookies_payload,
-        )
-
-        if response.status_code == 200:
-            logger.info(
-                f"REQUEST TO UPDATE TRAINING PROGRESS SESSION FOR MODEL ID {self.new_model_id} SUCCESSFUL"
-            )
-            session_id = response.json()["response"]["sessionId"]
-        else:
-            logger.error(
-                f"REQUEST TO UPDATE TRAINING PROGRESS SESSION FOR MODEL ID {self.new_model_id} FAILED"
-            )
-            logger.error(f"ERROR RESPONSE {response.text}")
-            raise RuntimeError(response.text)
-
-        return session_id
-
-    def deploy_model(self, best_model_info, progress_session_id, dg_id):
-        payload = {
-            "modelId": self.new_model_id,
-            "oldModelId": self.old_model_id,
-            "replaceDeployment": self.replace_deployment,
-            "replaceDeploymentPlatform": self.prev_deployment_env,
-            "bestBaseModel": best_model_info["name"],
-            "bestModelType": best_model_info["type"],
-            "progressSessionId": progress_session_id,
-            "updateType": self.update_type,
-            "dgId": dg_id,
-        }
-
-        if self.update_type == "retrain":
-            payload["replaceDeploymentPlatform"] = self.current_deployment_platform
-
-        logger.info(
-            f"SENDING MODEL DEPLOYMENT REQUEST FOR MODEL ID - {self.new_model_id}"
-        )
-        logger.info(f"MODEL DEPLOYMENT PAYLOAD - {payload}")
-
-        if self.current_deployment_platform == "testing":
-            deployment_url = TEST_DEPLOYMENT_ENDPOINT
-        elif self.current_deployment_platform == "undeployed":
-            logger.info("DEPLOYMENT ENVIRONMENT IS UNDEPLOYED")
-            return None
-        else:
-            logger.error(
-                f"UNRECOGNIZED DEPLOYMENT PLATFORM - {self.current_deployment_platform}"
-            )
-            self.send_error_progress_session(
-                f"UNRECOGNIZED DEPLOYMENT PLATFORM - {str(self.current_deployment_platform)}"
-            )
-            raise RuntimeError(
-                f"RUNTIME ERROR - UNRECOGNIZED DEPLOYMENT PLATFORM - {self.current_deployment_platform}"
-            )
-
-        response = requests.post(
-            url=deployment_url, json=payload, cookies=self.cookies_payload
-        )
-
-        if response.status_code == 200:
-            logger.info(f"REQUEST TO DEPLOY MODEL ID {self.new_model_id} SUCCESSFUL")
-        else:
-            logger.error(f"REQUEST TO DEPLOY MODEL ID {self.new_model_id} FAILED")
-            logger.error(f"ERROR RESPONSE {response.text}")
-            raise RuntimeError(response.text)
-
     def get_current_timestamp(self):
         current_timestamp = int(datetime.now(timezone.utc).timestamp())
         return current_timestamp
+
+    def create_training_progress_session(self):
+        """
+        Create a training progress session in the database.
+        This function should be implemented to create a training progress session in the database.
+        """
+        logger.info("Creating training progress session")
+        
+        payload = {
+            "modelId": int(self.model_id),
+            "modelName": self.model_name,
+            "majorVersion": self.major_version,
+            "minorVersion": self.minor_version,
+            "latest": self.latest,
+        }
+
+        logger.info(f"Prepared training progress session payload {payload}")
+        
+        try:
+            # Make request to create training progress session endpoint
+            response = requests.post(
+                url=CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for creating progress session
+            )
+            
+            logger.info(f"Create training progress session response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+
+            logger.info("Training progress session created successfully")
+
+            session_data = response.json()
+            session_id = session_data["response"]["sessionId"]
+            
+            self.progress_session_id = session_id
+        
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during creating training progress session: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during creating training progress session: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during creating training progress session: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id)
+            raise   
+
+    def update_training_progression_session(self,training_status:str, training_message:str, progress_percentage:int, process_complete:bool):
+        """
+        Update the training progress session in the database.
+        This function should be implemented to update the training progress session in the database.
+        """
+        logger.info("Updating training progress session")
+        
+        if not self.progress_session_id:
+            logger.error("Progress session ID is not set. Cannot update training progress session.")
+            raise ValueError("Progress session ID is required to update the training progress session.")
+        
+        else:
+
+            payload = {
+                "sessionId": self.progress_session_id,
+                "trainingStatus": training_status,
+                "trainingMessage": training_message,
+                "progressPercentage": progress_percentage,
+                "processComplete": process_complete
+            }
+
+            logger.info(f"Prepared training progress session update payload {payload}")
+            
+            try:
+                # Make request to update training progress session endpoint
+                response = requests.post(
+                    url=UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=300  # 5 minute timeout for updating progress session
+                )
+                
+                logger.info(f"Update training progress session response - {response.status_code} - {response.text}")
+                
+                # Check if request was successful
+                response.raise_for_status()
+                
+                logger.info("Training progress session updated successfully")
+                
+                return response.json()
+                
+            except requests.HTTPError as e:
+                error_msg = f"HTTP error during updating training progress session: {e.response.status_code} - {e.response.text}"
+                logger.error(error_msg, model_id=self.model_id, status_code=e.response.status_code)
+                raise
+                
+            except requests.RequestException as e:
+                error_msg = f"Network error during updating training progress session: {str(e)}"
+                logger.error(error_msg, model_id=self.model_id)
+                raise
+                
+            except Exception as e:
+                error_msg = f"Unexpected error during updating training progress session: {str(e)}"
+                logger.error(error_msg, model_id=self.model_id)
+                raise
+
+    def update_training_results(self, training_results, model_s3_location):
+        """
+        Update training results in the database.
+        This function should be implemented to update the training results in the database.
+        """
+        logger.info("Updating training results in the database")
+        
+        payload = {
+            "modelId": self.model_id,
+            "trainingResults": training_results,
+            "modelS3Location": model_s3_location
+        }
+
+        logger.info(f"Prepared deployment payload {payload}")
+        
+        try:
+            # Make request to deployment endpoint
+            response = requests.post(
+                url=UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"})
+            
+            logger.info(f"Update model endpoint response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+            
+            logger.info("Model training data pushed to database successfully")
+            
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during model deployment: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, 
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform,
+                        status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+
 
     def calculate_combined_score(self, accuracies, f1_scores):
         """Calculate combined score using weighted average"""
@@ -266,98 +266,73 @@ class ModelTrainer:
         combined_score = (ACCURACY_WEIGHT * avg_accuracy) + (F1_WEIGHT * avg_f1)
         return combined_score
 
+    def deploy_model(self, deployment_environment) :
+        """Deploy the model to the specified environment"""
+        logger.info(f"DEPLOYING MODEL TO {deployment_environment}")
+        # Placeholder for deployment logic
+        # This could involve calling a deployment service, updating configs, etc.
+        # For now, just log the action
+
+        logger.info(f"MODEL {self.model_name} (ID: {self.model_id}) deployed to {deployment_environment}")
+
     def train(self):
         """UNIFIED TRAINING METHOD - TRAINS ALL VARIANTS"""
         try:
             logger.info("ENTERING UNIFIED TRAINING FUNCTION")
             logger.info(f"DEPLOYMENT PLATFORM - {self.current_deployment_platform}")
 
-            session_id = self.progress_session_id
-            logger.info(f"SESSION ID - {session_id}")
-
-            # Update initial progress
-            self.update_model_training_progress_session(
+            trainer.update_training_progression_session(
                 training_status=INITIATING_TRAINING_PROGRESS_STATUS,
-                training_progress_update_message=INITIATING_TRAINING_PROGRESS_MESSAGE,
-                training_progress_percentage=INITIATING_TRAINING_PROGRESS_PERCENTAGE,
-                process_complete=False,
-            )
+                training_message=INITIATING_TRAINING_PROGRESS_MESSAGE,
+                progress_percentage=INITIATING_TRAINING_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
 
             # Initialize services
             s3_ferry = S3Ferry()
-            dg_id = self.model_details["response"]["data"][0]["connectedDgId"]
 
             # Load data
-            data_pipeline = DataPipeline(dg_id, self.cookie)
+            data_pipeline = DataPipeline(self.dataset_id)
             dfs = data_pipeline.create_dataframes()
             models_inference_metadata, _ = data_pipeline.models_and_filters()
 
             logger.info(f"MODELS_INFERENCE_METADATA : {models_inference_metadata}")
 
             # Setup paths
-            local_basemodel_layers_save_path = (
-                LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH.format(
-                    model_id=self.new_model_id
-                )
-            )
-            local_classification_layer_save_path = (
-                LOCAL_CLASSIFICATION_LAYER_SAVE_PATH.format(model_id=self.new_model_id)
-            )
-            local_label_encoder_save_path = LOCAL_LABEL_ENCODER_SAVE_PATH.format(
-                model_id=self.new_model_id
-            )
-
-            self.create_training_folders(
-                [
-                    local_basemodel_layers_save_path,
-                    local_classification_layer_save_path,
-                    local_label_encoder_save_path,
-                ]
-            )
-
-            # Save inference metadata
-            with open(
-                f"{MODEL_RESULTS_PATH}/{self.new_model_id}/models_dets.pkl", "wb"
-            ) as file:
-                pickle.dump(models_inference_metadata, file)
 
             # Generate all model variants to train
             model_variants = []
 
+            trainer.update_training_progression_session(
+                training_status=TRAINING_IN_PROGRESS_PROGRESS_STATUS,
+                training_message=TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
+                progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
             # Add standard models
-            for base_model in SUPPORTED_BASE_MODELS:
+            for base_model in self.model_types:
+
                 model_variants.append(
                     {
-                        "name": base_model,
+                        "name": base_model + "-sngp",
                         "base_model": base_model,
-                        "ood_method": None,
-                        "type": "standard",
+                        "full_model_name": base_model,
+                        "ood_method": "sngp",
+                        "type": "ood",
+                        "uncertainty_strategy": UNCERTAINTY_CONFIGS.get(
+                            "uncertainty_strategy", None
+                        ),
+                        "human_handoff_threshold": UNCERTAINTY_CONFIGS.get(
+                            "human_handoff_threshold", 0.8
+                        ),
+                        "confidence_scaling": UNCERTAINTY_CONFIGS.get(
+                            "confidence_scaling", False
+                        ),
                     }
                 )
-
-            # Add OOD variants
-            for base_model in SUPPORTED_BASE_MODELS:
-                for ood_method in SUPPORTED_OOD_METHODS:
-                    model_variants.append(
-                        {
-                            "name": f"{base_model}-{ood_method}",
-                            "base_model": base_model,
-                            "ood_method": ood_method,
-                            "type": "ood",
-                        }
-                    )
-
             logger.info(f"TRAINING {len(model_variants)} MODEL VARIANTS:")
             for variant in model_variants:
                 logger.info(f"  - {variant['name']} ({variant['type']})")
-
-            # Update progress to training phase
-            self.update_model_training_progress_session(
-                training_status=TRAINING_IN_PROGRESS_PROGRESS_STATUS,
-                training_progress_update_message=f"Training {len(model_variants)} model variants (Standard + OOD)",
-                training_progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
-                process_complete=False,
-            )
 
             # Train all variants
             all_results = []
@@ -373,15 +348,14 @@ class ModelTrainer:
                         training_pipeline = create_training_pipeline(
                             dfs=dfs,
                             model_name=variant["base_model"],
+                            full_name=variant["full_model_name"],
                             ood_method=variant["ood_method"],
                         )
                     else:
-                        training_pipeline = TrainingPipeline(dfs, variant["base_model"])
+                        training_pipeline = TrainingPipeline(dfs, variant["base_model"],full_name=variant["full_model_name"],)
 
                     # Train the variant
-                    metrics, models, classifiers, label_encoders, basic_model = (
-                        training_pipeline.train()
-                    )
+                    model_dir, metrics = training_pipeline.train()
 
                     # Calculate combined score
                     _, accuracies, f1_scores = metrics
@@ -392,16 +366,13 @@ class ModelTrainer:
                     # Store results
                     result = {
                         "variant": variant,
+                        "model_path": model_dir,
                         "metrics": metrics,
-                        "models": models,
-                        "classifiers": classifiers,
-                        "label_encoders": label_encoders,
-                        "basic_model": basic_model,
-                        "combined_score": combined_score,
                         "avg_accuracy": (
                             sum(accuracies) / len(accuracies) if accuracies else 0
                         ),
                         "avg_f1": sum(f1_scores) / len(f1_scores) if f1_scores else 0,
+                        "combined_score": combined_score,  # <-- Add this line
                     }
 
                     all_results.append(result)
@@ -428,35 +399,6 @@ class ModelTrainer:
             logger.info(f"BEST COMBINED SCORE: {best_result['combined_score']:.4f}")
             logger.info(f"BEST MODEL TYPE: {best_variant['type']}")
 
-            # Save best model artifacts
-            for i, (model, classifier, label_encoder) in enumerate(
-                zip(
-                    best_result["models"],
-                    best_result["classifiers"],
-                    best_result["label_encoders"],
-                )
-            ):
-                torch.save(
-                    model,
-                    f"{local_basemodel_layers_save_path}/last_two_layers_dfs_{i}.pth",
-                )
-                torch.save(
-                    classifier,
-                    f"{local_classification_layer_save_path}/classifier_{i}.pth",
-                )
-
-                label_encoder_path = (
-                    f"{local_label_encoder_save_path}/label_encoder_{i}.pkl"
-                )
-                with open(label_encoder_path, "wb") as file:
-                    pickle.dump(label_encoder, file)
-
-            # Save basic model
-            torch.save(
-                best_result["basic_model"],
-                f"{MODEL_RESULTS_PATH}/{self.new_model_id}/model_state_dict.pth",
-            )
-
             # Save training summary
             training_summary = {
                 "best_model": best_variant,
@@ -474,20 +416,98 @@ class ModelTrainer:
                 "training_timestamp": self.get_current_timestamp(),
             }
 
-            with open(
-                f"{MODEL_RESULTS_PATH}/{self.new_model_id}/training_summary.json", "w"
-            ) as f:
+            with open(f"{MODEL_RESULTS_PATH}/training_summary.json", "w") as f:
                 json.dump(training_summary, f, indent=2)
+            from trainingpipeline import export_inference_model_to_onnx
 
+            # Convert best model to ONNX
+            # check if it is sngp
+            logger.info("CONVERTING SNGP MODEL TO ONNX")
+            onnx_path = export_inference_model_to_onnx(best_result["model_path"])
+            logger.info(f"ONNX MODEL SAVED AT: {onnx_path}")
+
+            # create model-id folder and copy model-repository directory contents there
+            new_model_repo_path = f"{MODEL_RESULTS_PATH}/{self.model_id}"
+            if not os.path.exists(new_model_repo_path):
+                os.makedirs(new_model_repo_path)
+            # this is the pre-defined model-repository path
+            model_repository_path = f"{MODEL_TRAINING_SOURCE_PATH}/model-repository"
+
+            # copy all contents and directories of model-repository to new_model_repo_path
+            shutil.copytree(
+                src=model_repository_path,
+                dst=new_model_repo_path,
+                dirs_exist_ok=True,
+            )
+            # add labels-mapping.json to new_model_repo_path pre-processing and post-processing directories
+            label_mappings_path = f"{new_model_repo_path}/pre-processing/1"
+            if not os.path.exists(label_mappings_path):
+                os.makedirs(label_mappings_path)
+            shutil.copy(
+                src=f"{best_result['model_path']}/config.json",
+                dst=f"{label_mappings_path}/label_mappings.json",
+            )
+            shutil.copy(
+                src=f"{best_result['model_path']}/config.json",
+                dst=f"{new_model_repo_path}/post-processing/1/label_mappings.json",
+            )
+            top_level_dirs = [
+                d
+                for d in os.listdir(new_model_repo_path)
+                if os.path.isdir(os.path.join(new_model_repo_path, d))
+            ]
+            # add modelId-{model-id} to all folders inside the new_model_repo_path
+            for dir_name in top_level_dirs:
+                old_path = os.path.join(new_model_repo_path, dir_name)
+                new_dir_name = f"{self.model_id}-{dir_name}"
+                new_path = os.path.join(new_model_repo_path, new_dir_name)
+
+                logger.info(f"Renaming {dir_name} to {new_dir_name}")
+                os.rename(old_path, new_path)
+
+            # move onnx model to the new model-id folder inside model-id/text-classifier/1/model.onnx
+            onnx_model_path = f"{new_model_repo_path}/{self.model_id}-text-classifier/1"
+            if not os.path.exists(onnx_model_path):
+                os.makedirs(onnx_model_path)
+            shutil.move(
+                src=f"{best_result['model_path']}/model.onnx",
+                dst=f"{onnx_model_path}/model.onnx",
+            )
+
+            triton_configs = generate_all_triton_configs(
+                model_id=str(self.model_id),
+                model_type=best_variant["base_model"],  # "distilbert", "bert", etc.
+                num_labels=len(best_result["metrics"][0]),
+                sequence_length=SEQUENCE_LENGTH,
+                max_batch_size=16,
+                ood_method=best_variant.get("ood_method"),  # "sngp", "energy", etc.
+                ood_threshold=0.5,
+                uncertainty_threshold=best_variant.get("uncertainty_strategy", "sngp"),
+                human_handoff_threshold=best_variant.get(
+                    "human_handoff_threshold", 0.8
+                ),
+                uncertainty_strategy="inject_class",  # or other strategies
+                confidence_scaling=best_variant.get("confidence_scaling", False),
+                base_model_type=best_variant.get("base_model_type", "bert"),
+            )
+            # Save Triton configs to model repository
+            for config_path, config_content in triton_configs.items():
+                config_full_path = os.path.join(new_model_repo_path, config_path)
+                os.makedirs(os.path.dirname(config_full_path), exist_ok=True)
+                with open(config_full_path, "w") as f:
+                    f.write(config_content)
             # Create model archive
-            model_zip_path = f"{MODEL_RESULTS_PATH}/{str(self.new_model_id)}"
+            model_zip_path = new_model_repo_path
             shutil.make_archive(
                 base_name=model_zip_path, root_dir=model_zip_path, format="zip"
             )
 
             # Upload to S3
-            s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.new_model_id)}/{str(self.new_model_id)}.zip"
-            local_source_location = f"{MODEL_RESULTS_PATH.replace('/shared/', '')}/{str(self.new_model_id)}.zip"
+            s3_save_location = f"{S3_FERRY_MODEL_STORAGE_PATH}/{str(self.model_id)}.zip"
+
+            # Removing /app from path since S3 Ferry will already add /app to the path as defined in the config.env
+            local_source_location =  f"{MODEL_RESULTS_PATH.replace('/app/', '')}/{str(self.model_id)}.zip"
+            
 
             logger.info("INITIATING MODEL UPLOAD TO S3")
             _ = s3_ferry.transfer_file(
@@ -495,8 +515,8 @@ class ModelTrainer:
             )
 
             # Cleanup local files
-            MODEL_RESULT_FOLDER = f"{MODEL_RESULTS_PATH}/{self.new_model_id}"
-            MODEL_RESULT_ZIP_FILE = f"{MODEL_RESULTS_PATH}/{self.new_model_id}.zip"
+            MODEL_RESULT_FOLDER = f"{MODEL_RESULTS_PATH}/{self.model_id}"
+            MODEL_RESULT_ZIP_FILE = f"{MODEL_RESULTS_PATH}/{self.model_id}.zip"
 
             if os.path.exists(MODEL_RESULT_FOLDER):
                 try:
@@ -516,50 +536,16 @@ class ModelTrainer:
                         f"Could not delete zip file '{MODEL_RESULT_ZIP_FILE}': {e}"
                     )
 
-            # Update database with best model results
-            current_timestamp = self.get_current_timestamp()
-            self.update_model_db_training_status(
-                training_status=MODEL_TRAINING_SUCCESSFUL,
-                model_s3_location=s3_save_location,
-                last_trained_time_stamp=current_timestamp,
-                training_results=best_result["metrics"],
-                inference_routes=models_inference_metadata,
-            )
-
-            # Update progress to deployment phase
-            self.update_model_training_progress_session(
-                training_status=DEPLOYING_MODEL_PROGRESS_STATUS,
-                training_progress_update_message=f"Deploying best model: {best_variant['name']}",
-                training_progress_percentage=DEPLOYING_MODEL_PROGRESS_PERCENTAGE,
-                process_complete=False,
-            )
-
             # Deploy the best model
             if self.current_deployment_platform == "undeployed":
                 logger.info("MODEL DEPLOYMENT PLATFORM IS UNDEPLOYED")
-                self.update_model_training_progress_session(
-                    training_status=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
-                    training_progress_update_message=f"Best model ({best_variant['name']}) trained successfully - No deployment",
-                    training_progress_percentage=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
-                    process_complete=True,
-                )
+
                 logger.info("UNIFIED TRAINING COMPLETED")
             else:
                 logger.info(
                     f"INITIATING DEPLOYMENT OF {best_variant['name']} TO {self.current_deployment_platform}"
                 )
-                self.deploy_model(
-                    best_model_info=best_variant,
-                    progress_session_id=session_id,
-                    dg_id=dg_id,
-                )
 
-                self.update_model_training_progress_session(
-                    training_status=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
-                    training_progress_update_message=f"Best model ({best_variant['name']}) trained and deployed successfully",
-                    training_progress_percentage=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
-                    process_complete=True,
-                )
 
             logger.info("=" * 60)
             logger.info("UNIFIED TRAINING COMPLETED SUCCESSFULLY")
@@ -568,12 +554,167 @@ class ModelTrainer:
             logger.info(f"VARIANTS TRAINED: {len(all_results)}")
             logger.info("=" * 60)
 
+            logger.info("Updating training results to database")
+            self.update_training_results(
+                training_results=all_results, 
+                model_s3_location=s3_save_location)
+
+            trainer.update_training_progression_session(
+                training_status=DEPLOYING_MODEL_PROGRESS_STATUS,
+                training_message=DEPLOYING_MODEL_PROGRESS_MESSAGE,
+                progress_percentage=100,
+                process_complete=True)
+
+
         except Exception as e:
             import traceback
 
             logger.error(f"EXCEPTION IN UNIFIED MODEL TRAINER: {e}")
             logger.error(traceback.format_exc())
-            self.send_error_progress_session(
-                f"UNIFIED TRAINING CRASHED - ERROR - {str(e)}"
-            )
+
+            trainer.update_training_progression_session(
+                training_status=TRAINING_FAILED_STATUS,
+                training_message=TRAINING_FAILED_STATUS_MESSAGE,
+                progress_percentage=TRAINING_FAILED_PROGRESS_PERCENTAGE,
+                process_complete=False)
+
             raise
+    
+    def deploy(self):
+
+        """
+        Deploy a model from current environment to target environment using Ruuter endpoint.
+        
+        Args:
+            model_id: The ID of the model to deploy
+            current_env: Current deployment environment (e.g., 'testing', 'production')
+            target_env: Target deployment environment to deploy to
+            first_deployment: Whether this is the first deployment (default: False)
+            
+        """
+        
+
+        #TODO - Add sessionId here to pass session ID to the deployment endpoint
+        logger.info("Starting model deployment")
+        
+        # Prepare request payload
+        payload = {
+            "modelId": self.model_id,
+            "currentEnv": self.current_deployment_platform,
+            "targetEnv": self.target_deployment_platform,
+            "firstDeployment": True
+        }
+
+        logger.info(f"Prepared deployment payload {payload}")
+        
+        try:
+            # Make request to deployment endpoint
+            response = requests.post(
+                DEPLOYMENT_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for deployment operations
+            )
+            
+            logger.info(f"Deployment endpoint response - {response.status_code} - {response.text}")
+            
+            # Check if request was successful
+            response.raise_for_status()
+            
+            logger.info("Model deployment completed successfully")
+
+            trainer.update_training_progression_session(
+                training_status=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
+                training_message=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE,
+                progress_percentage=MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
+                process_complete=True)
+
+            
+            return response.json()
+            
+        except requests.HTTPError as e:
+            error_msg = f"HTTP error during model deployment: {e.response.status_code} - {e.response.text}"
+            logger.error(error_msg, model_id=self.model_id, 
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform,
+                        status_code=e.response.status_code)
+            raise
+            
+        except requests.RequestException as e:
+            error_msg = f"Network error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+            
+        except Exception as e:
+            error_msg = f"Unexpected error during model deployment: {str(e)}"
+            logger.error(error_msg, model_id=self.model_id,
+                        current_env=self.current_deployment_platform, target_env=self.target_deployment_platform)
+            raise
+
+ 
+
+
+# ----------------------TODO: Uncomment the CLI section when needed----------------------
+def parse_args():
+    parser = argparse.ArgumentParser(description="Model Trainer CLI")
+    parser.add_argument(
+        "--model_types",
+        type=str,
+        required=True,
+        help="Model types (JSON string or list)",
+    )
+    parser.add_argument("--model_id", type=int, required=True, help="Model ID")
+    parser.add_argument("--job_id", type=int, required=True, help="Job ID")
+    parser.add_argument("--dataset_id", type=int, required=True, help="Dataset ID")
+    parser.add_argument("--model_name", type=str, required=True, help="Model Name")
+    parser.add_argument(
+        "--major_version", type=int, required=True, help="Major Version"
+    )
+    parser.add_argument(
+        "--minor_version", type=int, required=True, help="Minor Version"
+    )
+    parser.add_argument(
+        "--latest", type=str, required=True, help="Is Latest (true/false)"
+    )
+    parser.add_argument(
+        "--deployment_environment",
+        type=str,
+        required=True,
+        help="Deployment Environment",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    model_id = args.model_id
+    model_name = args.model_name
+    dataset_id = args.dataset_id
+    model_types = (
+        json.loads(args.model_types)
+        if isinstance(args.model_types, str)
+        else args.model_types
+    )
+    major_version = args.major_version
+    minor_version = args.minor_version
+    latest = args.latest.lower() == "true"
+    current_deployment_env = "undeployed"
+    progress_session_id = args.job_id
+    target_deployment_platform = args.deployment_environment
+
+    trainer = ModelTrainer(
+        model_id=model_id,
+        model_name=model_name,
+        dataset_id=dataset_id,
+        model_types=model_types,
+        major_version=major_version,
+        minor_version=minor_version,
+        latest=latest,
+        current_deployment_env=current_deployment_env,
+        progress_session_id=progress_session_id,
+        target_deployment_platform=target_deployment_platform,
+    )
+
+    trainer.create_training_progress_session()
+    trainer.train()
+    trainer.deploy()

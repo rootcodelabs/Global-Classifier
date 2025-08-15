@@ -1,0 +1,87 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Fetch new agencies from CentOps, retrieve their data, and add them to the database"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: lastSyncedTimestamp
+        type: string
+        description: "Timestamp to fetch agencies updated after this time"
+
+extractInput:
+  assign:
+    lastSyncedTimestamp: ${incoming.body.lastSyncedTimestamp || (new Date()).toISOString()}
+  log: "Starting agency sync with timestamp: ${lastSyncedTimestamp}"
+
+fetchAgenciesFromCentops:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/centops/new-agencies"
+    headers:
+      cookie: ${incoming.headers.cookie}
+    body:
+      lastSyncedTimestamp: ${lastSyncedTimestamp}
+  result: centopsResponse
+  log: "Fetched agencies from CentOps: ${centopsResponse}"
+  next: extractAgencyIds
+
+extractAgencyIds:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/extract_agency_ids"
+    headers:
+      type: json
+    body:
+      agencies: ${centopsResponse.response.body.response.agencies}
+  result: agencyIds
+  next: fetchAgencyMetadata
+
+fetchAgencyMetadata:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/ckb/agency-data-exist"
+    body:
+      agencyIds: ${agencyIds}
+  result: agencyMetadata
+  next: prepareAgencies
+
+prepareAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifie/prepare_agencies_for_import"
+    headers:
+      type: json
+    body:
+      agencyMetadata: ${agencyMetadata.body}
+  result: preparedAgencies
+  next: addAgencies
+
+addAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/agencies/add"
+    body:
+      agencies: ${preparedAgencies.body}
+  result: addAgenciesResult
+  next: formatResults
+
+formatResults:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_agency_sync_results"
+    headers:
+      type: json
+    body:
+      inputTimestamp: ${lastSyncedTimestamp}
+      totalFound: ${agencyIds.body.length}
+      addResult: ${addAgenciesResult.body}
+  result: finalResult
+  next: returnResult
+
+returnResult:
+  return: ${finalResult.body}
+  next: end

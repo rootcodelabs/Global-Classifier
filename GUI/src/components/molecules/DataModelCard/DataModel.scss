@@ -1,0 +1,14 @@
+.training-results-grid-container {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    gap: 10px;
+}
+
+.space-between {
+    display: flex;
+    gap: 1rem;
+}
+
+.mt-3{
+    margin-top: 3rem;
+}

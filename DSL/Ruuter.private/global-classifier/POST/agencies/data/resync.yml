@@ -1,0 +1,68 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Resync new data from CKB"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencyId
+        type: string
+        description: "Agency ID"
+
+extractInput:
+  assign:
+    agencyId: ${incoming.body.agencyId}
+
+importAgencyData:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/ckb/agency-data-import"
+    headers:
+      cookie: ${incoming.headers.cookie}
+    body:
+      agencyIds: ${agencyId}
+  result: importResult
+  next: updateAgencySyncStatus
+
+updateAgencySyncStatus:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency-data"
+    body:
+      agencyId: ${agencyId}
+      syncStatus: "Resync_in_progress_with_CKB"
+      agencyDataHash: ${importResult.response.body.response.find(a => a.agencyId == agencyId)?.agencyDataHash || ""}
+  result: updateResult
+  next: CreateDatasetVersion
+
+CreateDatasetVersion:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/datasets/version/minor"
+  result: datasetResponse
+  next: forwardToFormatting
+
+forwardToFormatting:
+  switch:
+    - condition: ${datasetResponse.response.body.response.length === 0}
+      next: end
+  next: initiateDataGeneration
+
+initiateDataGeneration:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/data/generate"
+    body:
+      presignedUrls: ${importResult.response.body.response}
+      datasetId: ${datasetResponse.response.body.response[0].id}
+      majorVersion: ${datasetResponse.response.body.response[0].major}
+      minorVersion: ${datasetResponse.response.body.response[0].minor}
+  result: dataGenerationResponse
+  next: returnImportResult
+
+returnImportResult:
+  return: ${dataGenerationResponse.response.body}
+  next: end

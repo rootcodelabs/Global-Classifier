@@ -1,0 +1,31 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get dataset versions as [id, version] array"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+getAllDatasetVersions:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-all-dataset-versions"
+  result: datasets_res
+  next: format_versions
+
+format_versions:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_dataset_versions"
+    headers:
+      type: json
+    body:
+      datasets: ${datasets_res.response.body}
+  result: formatted_versions
+  next: return_result
+
+return_result:
+  return: ${formatted_versions.response.body}
+  status: 200
+  next: end

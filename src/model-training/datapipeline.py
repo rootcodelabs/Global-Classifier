@@ -1,72 +1,62 @@
 import pandas as pd
-import requests
-from constants import (
-    DATA_DOWNLOAD_ENDPOINT,
-    GET_DATASET_METADATA_ENDPOINT,
-)
 from loguru import logger
 import sys
+from s3_ferry import S3Ferry
+import os
 
-logger.remove()
-logger.add(sys.stdout, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
+from loki_logger import LokiLogger
+logger = LokiLogger(service_name="model-trainer")
+
 
 
 class DataPipeline:
-    def __init__(self, dg_id, cookie):
-        logger.info(f"DOWNLOADING DATASET WITH DGID - {dg_id}")
+    def __init__(self, dataset_id):
+        logger.info(f"DOWNLOADING DATASET WITH Dataset - {dataset_id}")
 
-        cookies = {"customJwtCookie": cookie}
-
+        # Ensure the datasets directory exists
+        datasets_dir = "/app/shared/datasets"
+        os.makedirs(datasets_dir, exist_ok=True)
         # Download dataset
-        response = requests.get(
-            DATA_DOWNLOAD_ENDPOINT, params={"dgId": dg_id}, cookies=cookies
+        s3_ferry = S3Ferry()
+        s3_ferry.transfer_file(
+            destination_file_path=f"/shared/datasets/dataset_{dataset_id}.csv",
+            destination_storage_type="FS",
+            source_file_path=f"datasets/{dataset_id}/aggregated_dataset.csv",
+            source_storage_type="S3",
         )
 
-        if response.status_code == 200:
-            logger.info("DATA DOWNLOAD SUCCESSFUL")
-            data = response.json()
-            df = pd.DataFrame(data)
+        # Load CSV directly after download
+        csv_path = f"/app/shared/datasets/dataset_{dataset_id}.csv"
+        try:
+            df = pd.read_csv(csv_path)
+        except Exception as e:
+            logger.error(f"Failed to read CSV file: {csv_path}")
+            raise RuntimeError(f"Could not read CSV: {e}")
 
-            # Remove rowId if it exists
-            if "rowId" in df.columns:
-                df = df.drop("rowId", axis=1)
+        # Remove rowId if it exists (not expected in your CSV, but kept for compatibility)
+        if "rowId" in df.columns:
+            df = df.drop("rowId", axis=1)
 
-            self.df = df
-            logger.info(f"Downloaded dataset with {len(df)} samples")
-            logger.info(f"Dataset columns: {list(df.columns)}")
-        else:
-            logger.error(
-                f"DATA DOWNLOAD FAILED WITH ERROR CODE: {response.status_code}"
-            )
-            logger.error(f"RESPONSE: {response.text}")
-            raise RuntimeError(f"ERROR RESPONSE {response.text}")
+        self.df = df
+        logger.info(f"Downloaded dataset with {len(df)} samples")
+        logger.info(f"Dataset columns: {list(df.columns)}")
 
-        # Get dataset metadata
-        logger.info("****** Getting Dataset Metadata ******")
-        logger.info(f"Endpoint: {GET_DATASET_METADATA_ENDPOINT}")
-
-        response_hierarchy = requests.get(
-            GET_DATASET_METADATA_ENDPOINT, params={"groupId": dg_id}, cookies=cookies
-        )
-
-        if response_hierarchy.status_code == 200:
-            logger.info("DATASET METADATA RETRIEVAL SUCCESSFUL")
-            hierarchy = response_hierarchy.json()
-            self.hierarchy = hierarchy["response"]["data"][0]
-            logger.info(
-                f"Retrieved metadata for dataset: {self.hierarchy.get('name', 'Unknown')}"
-            )
-        else:
-            logger.error(
-                f"DATASET METADATA RETRIEVAL FAILED: {response_hierarchy.status_code}"
-            )
-            logger.error(f"RESPONSE: {response_hierarchy.text}")
-            raise RuntimeError(f"ERROR RESPONSE\n {response_hierarchy.text}")
+        # Set up hierarchy metadata manually for flat classification
+        # agency_name is target, data_item is input
+        self.hierarchy = {
+            "name": f"Dataset {dataset_id}",
+            "validationCriteria": {
+                "validationRules": {
+                    "data_item": {"isDataClass": False},
+                    "agency_name": {"isDataClass": True},
+                }
+            },
+        }
 
     def extract_input_columns(self):
         """Extract input columns from validation rules"""
         validation_rules = self.hierarchy["validationCriteria"]["validationRules"]
-        input_columns = [
+        input_columns: list[str | Unknown] = [
             key for key, value in validation_rules.items() if not value["isDataClass"]
         ]
         logger.info(f"Input columns identified: {input_columns}")
@@ -96,9 +86,8 @@ class DataPipeline:
         target_column = self.extract_target_column()
         unique_classes = sorted(self.df[target_column].unique().tolist())
 
-        # Create simple model structure for compatibility
-        models = [{1: unique_classes}]  # Single model with all classes
-        filters = [unique_classes]  # Single filter with all classes
+        models = [{1: unique_classes}]
+        filters = [unique_classes]
 
         logger.info("Flat classification setup:")
         logger.info(f"  Target column: {target_column}")
@@ -135,8 +124,11 @@ class DataPipeline:
             # Set target column
             df = df.rename(columns={target_column: "target"})
 
+            logger.info(f"Data frame before removing: {df}")
             # Keep only input and target columns, remove any NaN values
-            df = df[["input", "target"]].dropna()
+            df = df[["input", "target", "agency_id"]].dropna()
+
+            logger.info(f"Data frame after removing: {df}")
 
             # Validate the data
             if len(df) == 0:
@@ -273,4 +265,4 @@ class DataPipeline:
 
         except Exception as e:
             logger.error(f"Error validating data quality: {e}")
-            return [f"Validation error: {str(e)}"]
+            return

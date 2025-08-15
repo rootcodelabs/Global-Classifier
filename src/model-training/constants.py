@@ -1,50 +1,30 @@
-DATA_DOWNLOAD_ENDPOINT = "http://file-handler:8000/datasetgroup/data/download/json"
+UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
 
-GET_DATASET_METADATA_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datasetgroup/group/metadata"
-)
+CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/create"
 
-GET_MODEL_METADATA_ENDPOINT = "http://ruuter-private:8088/classifier/datamodel/metadata"
+UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/update"
 
-UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/update/training/status"
-)
+DEPLOYMENT_ENDPOINT = "http://ruuter-public:8086/global-classifier/inference/deploy"
 
-CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/progress/create"
-)
+MODEL_TRAINING_SOURCE_PATH = "/app/src/training" #path in container
 
-UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-private:8088/classifier/datamodel/progress/update"
-)
+TRAINING_LOGS_PATH = "/app/src/training/training_logs.log"
 
-TEST_DEPLOYMENT_ENDPOINT = (
-    "http://deployment-service:8003/classifier/datamodel/deployment/testing/update"
-)
+MODEL_RESULTS_PATH = "/app/shared/model_trainer/results"  # stored in the shared folder which is connected to s3-ferry
 
-TRAINING_LOGS_PATH = "/app/model_trainer/training_logs.log"
+LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/trained_base_model_layers"  # stored in the shared folder which is connected to s3-ferry
 
-MODEL_RESULTS_PATH = "/shared/model_trainer/results"  # stored in the shared folder which is connected to s3-ferry
+LOCAL_CLASSIFICATION_LAYER_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/classifier_layers"  # stored in the shared folder which is connected to s3-ferry
 
-LOCAL_BASEMODEL_TRAINED_LAYERS_SAVE_PATH = "/shared/model_trainer/results/{model_id}/trained_base_model_layers"  # stored in the shared folder which is connected to s3-ferry
+LOCAL_LABEL_ENCODER_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/label_encoders"  # stored in the shared folder which is connected to s3-ferry
 
-LOCAL_CLASSIFICATION_LAYER_SAVE_PATH = "/shared/model_trainer/results/{model_id}/classifier_layers"  # stored in the shared folder which is connected to s3-ferry
+S3_FERRY_MODEL_STORAGE_PATH = "/models/undeployed"  # folder path in s3 bucket
 
-LOCAL_LABEL_ENCODER_SAVE_PATH = "/shared/model_trainer/results/{model_id}/label_encoders"  # stored in the shared folder which is connected to s3-ferry
-
-S3_FERRY_MODEL_STORAGE_PATH = "/models"  # folder path in s3 bucket
-
-S3_FERRY_ENDPOINT = "http://s3-ferry:3000/v1/files/copy"
+S3_FERRY_ENDPOINT = "http://gc-s3-ferry:3000/v1/files/copy"
 
 BASE_MODEL_FILENAME = "base_model_trainable_layers_{model_id}"
 
 CLASSIFIER_MODEL_FILENAME = "classifier_{model_id}.pth"
-
-MODEL_TRAINING_IN_PROGRESS = "training in-progress"
-
-MODEL_TRAINING_SUCCESSFUL = "trained"
-
-MODEL_TRAINING_FAILED = "not trained"
 
 
 # MODEL TRAINING PROGRESS SESSION CONSTANTS
@@ -57,22 +37,22 @@ DEPLOYING_MODEL_PROGRESS_STATUS = "Deploying Model"
 
 MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS = "Model Trained And Deployed"
 
+TRAINING_FAILED_STATUS= "Training Failed"
+
+DEPLOYMENT_FAILED_STATUS = "Deployment Failed"
+
 
 INITIATING_TRAINING_PROGRESS_MESSAGE = "Download and preparing dataset"
 
-TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = (
-    "The dataset is being trained on all selected models"
-)
+TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = "The dataset is being trained on all selected models"
 
-DEPLOYING_MODEL_PROGRESS_MESSAGE = (
-    "Model training complete. The trained model is now being deployed"
-)
 
-MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = (
-    "The model was trained and deployed successfully to the environment"
-)
+DEPLOYING_MODEL_PROGRESS_MESSAGE = "Model training complete. The trained model is now being deployed"
 
-MODEL_TRAINING_FAILED_ERROR = "Training Failed"
+MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = "The model was trained and deployed successfully to the environment"
+
+
+TRAINING_FAILED_STATUS_MESSAGE = "Model training has failed"
 
 
 INITIATING_TRAINING_PROGRESS_PERCENTAGE = 30
@@ -82,6 +62,8 @@ TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE = 50
 DEPLOYING_MODEL_PROGRESS_PERCENTAGE = 80
 
 MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE = 100
+
+TRAINING_FAILED_PROGRESS_PERCENTAGE = 100
 
 
 # Supported Models for Testing
@@ -109,6 +91,8 @@ MODEL_CONFIGS = {
     },
 }
 
+SEQUENCE_LENGTH = 128
+
 # OOD Training configurations
 SUPPORTED_OOD_METHODS = ["energy", "sngp", "softmax"]
 
@@ -132,6 +116,12 @@ DEFAULT_OOD_CONFIGS = {
     },
     "softmax": {"temperature": 1.0, "use_entropy": True, "calibrate": False},
 }
+UNCERTAINTY_CONFIGS = {
+    "uncertainty_strategy": "sngp",
+    "confidence_scaling": False,
+    "human_handoff_threshold": 0.8,
+}
+
 
 # Training parameters
 DEFAULT_TRAINING_ARGS = {

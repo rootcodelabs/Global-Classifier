@@ -1,0 +1,93 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Test model classification endpoint for development and testing"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: modelId
+        type: string
+        description: "Identifier of the model to use for classification"
+      - field: text
+        type: string
+        description: "Text text to be classified"
+
+extractClassificationData:
+  assign:
+    modelId: ${incoming.body.modelId}
+    text: ${incoming.body.text}
+    startTime: ${Date.now()}
+  next: validate_input
+
+validate_input:
+  switch:
+    - condition: ${!modelId}
+      next: return_validation_error
+    - condition: ${!text}
+      next: return_validation_error
+  next: prepare_inference_payload
+
+prepare_inference_payload:
+  assign:
+    ensembleModelName: ${modelId}-classifier-ensemble
+  next: call_triton_inference
+
+call_triton_inference:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_TESTING_ENV_MODEL_SERVER]/v2/models/${ensembleModelName}/infer"
+    body:
+      inputs:
+        - name: "TEXT"
+          datatype: "BYTES"
+          shape: [1, 1]
+          data:
+            - ${text}
+    headers:
+      Content-Type: "application/json"
+  result: inference_result
+  next: process_classification_result
+  error: return_inference_error
+
+process_classification_result:
+  assign:
+    # Parse the JSON string output from Triton to get agency classification array
+    rawOutput: ${inference_result.response.body.outputs[0].data[0]}
+    parsedOutput: ${JSON.parse(rawOutput)}
+  next: log_testing_inference_result
+
+log_testing_inference_result:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-testing-inference-log"
+    body:
+      modelId: ${modelId}
+      text: ${text}
+      inferenceTimeMs: ${Date.now() - startTime}
+      parsedOutput: ${JSON.stringify(parsedOutput)}
+  result: log_result
+  next: return_classification_success
+  error: return_log_inference_error
+
+return_classification_success:
+  status: 200
+  return: ${parsedOutput}
+  next: end
+
+return_log_inference_error:
+  status: 500
+  return: "Error logging testing inference result in PostgresDB"
+  next: end
+
+return_validation_error:
+  status: 400
+  return: "Invalid payload. modelId and text are required."
+  next: end
+
+return_inference_error:
+  status: 500
+  return: "Classification service temporarily unavailable"
+  next: end

@@ -1,0 +1,6 @@
+model_trainer:
+  agency_data_sync:
+  trigger: "0 0/1 * * * ?"
+  # trigger: off
+  type: exec
+  command: "../app/scripts/train_script_starter.sh"

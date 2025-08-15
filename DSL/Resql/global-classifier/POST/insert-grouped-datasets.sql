@@ -1,0 +1,1 @@
+SELECT import_csv_dynamic(:filePath);

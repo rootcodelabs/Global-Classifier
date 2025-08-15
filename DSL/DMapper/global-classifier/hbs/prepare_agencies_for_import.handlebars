@@ -1,0 +1,16 @@
+[
+  {{#each agencyMetadata}}
+    {
+      "agencyId": "{{agencyId}}",
+      "agencyName": "Agency {{agencyId}}", 
+      "groupKey": "",
+      "isLatest": true,
+      "deploymentStatus": "undeployed",
+      "isEnabled": false,
+      "agencyDataHash": "{{agencyDataHash}}",
+      "enableAllowed": false,
+      "lastModelTrained": "",
+      "syncStatus": "Available_in_CKB"
+    }{{#unless @last}},{{/unless}}
+  {{/each}}
+]
