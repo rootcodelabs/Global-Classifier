@@ -405,7 +405,7 @@ server {
     location /gui/ {
         limit_req zone=general burst=20 nodelay;
         rewrite ^/gui/(.*) /$1 break;
-        proxy_pass http://gui;
+        proxy_pass http://localhost:3003;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
