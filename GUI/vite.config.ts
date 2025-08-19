@@ -20,7 +20,7 @@ export default defineConfig({
       },
     },
   ],
-  base: 'global-classifier',
+  base: '/',
   build: {
     outDir: './build',
     target: 'es2015',
@@ -30,19 +30,23 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3001,
     strictPort: false,
-    // Add allowed hosts configuration
     allowedHosts: [
       'global-classifier-dev.rootcode.software',
       'localhost',
       '127.0.0.1',
-      '.rootcode.software', // Allow all subdomains
+      '.rootcode.software',
     ],
     headers: {
       ...(process.env.REACT_APP_CSP && {
         'Content-Security-Policy': process.env.REACT_APP_CSP,
       }),
     },
-    // Ensure proper proxying
+    // Fix HMR for production proxy
+    hmr: {
+      port: 3001,
+      host: 'localhost',
+      clientPort: process.env.NODE_ENV === 'production' ? 443 : 3001,
+    },
     proxy: {
       '/ruuter-public': {
         target: 'http://ruuter-public:8086',
