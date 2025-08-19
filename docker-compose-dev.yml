@@ -333,6 +333,7 @@ services:
       - VITE_HOST=0.0.0.0
       - VITE_PORT=3001
       - HOST=0.0.0.0
+      - VITE_ALLOWED_HOSTS=global-classifier-dev.rootcode.software,localhost,127.0.0.1,.rootcode.software
     build:
       context: ./GUI
       dockerfile: Dockerfile.dev
