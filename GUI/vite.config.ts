@@ -5,7 +5,6 @@ import svgr from 'vite-plugin-svgr';
 import path from 'path';
 import { removeHiddenMenuItems } from './vitePlugin';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   envPrefix: 'REACT_APP_',
   plugins: [
@@ -28,26 +27,27 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: '0.0.0.0', // Accept connections from any host
+    port: 3001,
+    strictPort: false,
     headers: {
       ...(process.env.REACT_APP_CSP && {
         'Content-Security-Policy': process.env.REACT_APP_CSP,
       }),
     },
-    host: '0.0.0.0',
-    port: 3001,
-    // Use the environment variable approach for allowed hosts
-    ...(process.env.VITE_ALLOWED_HOSTS && {
-      allowedHosts: process.env.VITE_ALLOWED_HOSTS.split(',')
-    }),
-    // Fallback static configuration
-    ...(!process.env.VITE_ALLOWED_HOSTS && {
-      allowedHosts: [
-        'global-classifier-dev.rootcode.software',
-        'localhost',
-        '127.0.0.1',
-        '.rootcode.software'
-      ]
-    }),
+    // Ensure proper proxying
+    proxy: {
+      '/ruuter-public': {
+        target: 'http://ruuter-public:8086',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ruuter-public/, ''),
+      },
+      '/ruuter-private': {
+        target: 'http://ruuter-private:8088',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ruuter-private/, ''),
+      },
+    },
   },
   resolve: {
     alias: {
