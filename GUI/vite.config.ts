@@ -5,7 +5,7 @@ import svgr from 'vite-plugin-svgr';
 import path from 'path';
 import { removeHiddenMenuItems } from './vitePlugin';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   envPrefix: 'REACT_APP_',
   plugins: [
     react(),
@@ -25,6 +25,7 @@ export default defineConfig({
     outDir: './build',
     target: 'es2015',
     emptyOutDir: true,
+    sourcemap: mode === 'development',
   },
   server: {
     host: '0.0.0.0',
@@ -41,24 +42,11 @@ export default defineConfig({
         'Content-Security-Policy': process.env.REACT_APP_CSP,
       }),
     },
-    // Fix HMR for production proxy
-    hmr: {
+    // Disable HMR in production
+    hmr: mode === 'development' ? {
       port: 3001,
       host: 'localhost',
-      clientPort: process.env.NODE_ENV === 'production' ? 443 : 3001,
-    },
-    proxy: {
-      '/ruuter-public': {
-        target: 'http://ruuter-public:8086',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ruuter-public/, ''),
-      },
-      '/ruuter-private': {
-        target: 'http://ruuter-private:8088',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ruuter-private/, ''),
-      },
-    },
+    } : false,
   },
   resolve: {
     alias: {
@@ -66,4 +54,4 @@ export default defineConfig({
       '@': `${path.resolve(__dirname, './src')}`,
     },
   },
-});
+}));

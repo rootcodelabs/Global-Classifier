@@ -159,8 +159,7 @@ server {
     access_log /var/log/nginx/global-classifier-dev-access.log;
     error_log /var/log/nginx/global-classifier-dev-error.log;
 
-    # Main GUI application (default route)
-        # Main GUI application (default route)
+        # Main GUI application
     location / {
         limit_req zone=general burst=20 nodelay;
         proxy_pass http://gui;
@@ -176,13 +175,51 @@ server {
         proxy_set_header Connection $connection_upgrade;
         proxy_cache_bypass $http_upgrade;
         
-        # Development mode settings
         proxy_read_timeout 300s;
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         
         proxy_buffering off;
         proxy_request_buffering off;
+    }
+
+    # Proxy Vite development assets
+    location /@vite/ {
+        proxy_pass http://gui;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support for HMR
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+        
+        proxy_buffering off;
+    }
+
+    # Proxy React Refresh
+    location /@react-refresh {
+        proxy_pass http://gui;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_buffering off;
+    }
+
+    # Proxy source files in development
+    location /src/ {
+        proxy_pass http://gui;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_buffering off;
     }
 
     # Add WebSocket upgrade handling at the top of the server block
