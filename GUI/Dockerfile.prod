@@ -11,7 +11,7 @@ RUN npm ci --only=production --legacy-peer-deps
 COPY . .
 
 # Build the application for production
-RUN npm run build
+RUN ./node_modules/.bin/vite build --mode=production
 
 # Production stage with lightweight web server
 FROM nginx:alpine AS production
