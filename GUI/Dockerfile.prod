@@ -23,7 +23,7 @@ RUN apk add --no-cache curl
 COPY --from=build /app/build /usr/share/nginx/html
 
 # Copy custom nginx configuration for Global Classifier
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Remove default nginx config
 RUN rm -f /etc/nginx/conf.d/default.conf.dpkg-dist
