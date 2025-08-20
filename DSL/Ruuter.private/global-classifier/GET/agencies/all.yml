@@ -1,0 +1,19 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get list of agencyId and agencyName from integrated_agencies"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+getAllAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-all-agencies"
+  result: agencies_res
+  next: return_result
+
+return_result:
+  return: ${agencies_res.response.body}
+  next: end

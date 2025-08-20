@@ -1,0 +1,6 @@
+name: single_question
+description: Structure containing a single JSON file for Q&A pairs, intended to be placed within a topic-specific directory.
+root:
+  files:
+    faqs:
+      format: json

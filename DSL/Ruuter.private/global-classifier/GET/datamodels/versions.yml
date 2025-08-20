@@ -1,0 +1,66 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get datamodel versions as [id, model_name version] array"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+getAllDatamodelVersions:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-all-datamodel-versions"
+  result: datamodels_res
+  next: checkDatabaseResult
+
+checkDatabaseResult:
+  switch:
+    - condition: ${!datamodels_res || !datamodels_res.response || !datamodels_res.response.body}
+      next: return_database_error
+    - condition: ${datamodels_res.response.body.length === 0}
+      next: return_empty_result
+  next: format_versions
+
+format_versions:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_datamodel_versions"
+    headers:
+      type: json
+    body:
+      datamodels: ${datamodels_res.response.body}
+  result: formatted_versions
+  next: checkFormatResult
+
+checkFormatResult:
+  switch:
+    - condition: ${!formatted_versions || !formatted_versions.response}
+      next: return_format_error
+  next: return_result
+
+return_result:
+  return: ${formatted_versions.response.body}
+  status: 200
+  next: end
+
+return_empty_result:
+  return: ${[]}
+  status: 200
+  next: end
+
+return_database_error:
+  assign:
+    error_response:
+      error: "Failed to retrieve datamodel versions"
+  return: ${error_response}
+  status: 500
+  next: end
+
+return_format_error:
+  assign:
+    error_response:
+      error: "Failed to format datamodel versions"
+  return: ${error_response}
+  status: 500
+  next: end

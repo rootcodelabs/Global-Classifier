@@ -1,0 +1,136 @@
+.testModalFormTextArea {
+  margin-top: 30px;
+}
+
+.testModalClassifyButton {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.testModalList {
+  list-style: disc;
+  margin-left: 30px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.classification-results {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+
+  h3 {
+    margin: 0 0 1rem 0;
+    color: #333;
+  }
+
+  h4 {
+    margin: 0 0 0.75rem 0;
+    color: #555;
+    font-size: 1rem;
+  }
+
+  .results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .top-prediction {
+    .prediction-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: #e8f5e8;
+      border: 2px solid #4caf50;
+
+      .agency-name {
+        font-weight: 600;
+        color: #2e7d32;
+        font-size: 1.1rem;
+      }
+
+      .confidence-score {
+        font-weight: 700;
+        color: #2e7d32;
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .predictions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .prediction-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background-color: white;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+
+      &.highest {
+        border-color: #4caf50;
+        background-color: #f8fff8;
+      }
+
+      .rank {
+        font-weight: 600;
+        color: #666;
+        min-width: 2rem;
+      }
+
+      .agency-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .agency-name {
+          font-weight: 500;
+          color: #333;
+        }
+
+        .confidence-bar-container {
+          width: 100%;
+          height: 4px;
+          background-color: #e0e0e0;
+          border-radius: 2px;
+          overflow: hidden;
+
+          .confidence-bar {
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s ease;
+          }
+        }
+      }
+
+      .confidence-percentage {
+        font-weight: 600;
+        color: #555;
+        min-width: 4rem;
+        text-align: right;
+      }
+    }
+  }
+}
+
+.classification-error {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+  border-radius: 6px;
+  color: #c62828;
+  text-align: center;
+}

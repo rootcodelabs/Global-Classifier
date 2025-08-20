@@ -1,0 +1,111 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Update an agency in the integrated_agencies table"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agency_id
+        type: string
+        description: "Agency ID (required)"
+      - field: agency_name
+        type: string
+        description: "Name of the agency"
+      - field: group_key
+        type: string
+        description: "Group key"
+      - field: is_latest
+        type: boolean
+        description: "Whether this is the latest version"
+      - field: deployment_status
+        type: string
+        description: "Deployment status (deployed, testing, undeployed)"
+      - field: is_enabled
+        type: boolean
+        description: "Whether the agency is enabled"
+      - field: agency_data_hash
+        type: string
+        description: "Hash of the agency data"
+      - field: enable_allowed
+        type: boolean
+        description: "Whether enabling is allowed"
+      - field: last_model_trained
+        type: string
+        description: "Name/ID of the last model trained"
+      - field: last_trained_timestamp
+        type: string
+        description: "When the model was last trained"
+      - field: sync_status
+        type: string
+        description: "Sync status with CKB"
+
+extractRequestData:
+  assign:
+    agencyId: ${incoming.body.agency_id}
+    agencyName: ${incoming.body.agency_name ?? null}
+    groupKey: ${incoming.body.group_key ?? null}
+    isLatest: ${incoming.body.is_latest ?? null}
+    deploymentStatus: ${incoming.body.deployment_status ?? null}
+    isEnabled: ${incoming.body.is_enabled ?? null}
+    agencyDataHash: ${incoming.body.agency_data_hash ?? null}
+    enableAllowed: ${incoming.body.enable_allowed ?? null}
+    lastModelTrained: ${incoming.body.last_model_trained ?? null}
+    lastTrainedTimestamp: ${incoming.body.last_trained_timestamp ?? null}
+    syncStatus: ${incoming.body.sync_status ?? null}
+
+validateRequiredFields:
+  switch:
+    - condition: ${!agencyId}
+      next: return_missing_agency_id
+  next: checkAgencyExists
+
+checkAgencyExists:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agency"
+    body:
+      agencyId: ${agencyId}
+  result: agency_res
+  next: evaluateAgencyExistence
+
+evaluateAgencyExistence:
+  switch:
+    - condition: "${agency_res.response.body.length === 0}"
+      next: return_agency_not_found
+  next: updateAgency
+
+updateAgency:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency"
+    body:
+      agencyId: ${agencyId}
+      agencyName: ${agencyName}
+      groupKey: ${groupKey}
+      isLatest: ${isLatest}
+      deploymentStatus: ${deploymentStatus}
+      isEnabled: ${isEnabled}
+      agencyDataHash: ${agencyDataHash}
+      enableAllowed: ${enableAllowed}
+      lastModelTrained: ${lastModelTrained}
+      lastTrainedTimestamp: ${lastTrainedTimestamp}
+      syncStatus: ${syncStatus}
+  result: update_agency_res
+  next: return_result
+
+return_result:
+  return: ${update_agency_res.response.body}
+  next: end
+
+return_missing_agency_id:
+  return: "error: missing agency_id"
+  status: 400
+  next: end
+
+return_agency_not_found:
+  return: "error: agency not found"
+  status: 404
+  next: end

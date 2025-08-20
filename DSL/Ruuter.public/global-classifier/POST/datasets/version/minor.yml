@@ -1,0 +1,45 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Create a new dataset with incremented major/minor version"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+getLatestDataset:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-latest-dataset"
+  result: latestDatasetResult
+  next: createDataset
+
+createDataset:
+  switch:
+    - condition: ${latestDatasetResult.response.body.length === 0}
+      next: end
+  next: computeNewVersion
+
+computeNewVersion:
+  assign:
+    latestDataset: ${latestDatasetResult.response.body[0]}
+    newMajor: ${latestDataset?.major}
+    newMinor: ${latestDataset?.minor+1}
+  next: insertDataset
+
+insertDataset:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-dataset"
+    body:
+      major: ${newMajor}
+      minor: ${newMinor}
+      generationStatus: "Generation_in_Progress"
+      lastModelTrained: ""
+      lastTrained: "1970-01-01T00:00:00.000Z"
+  result: insertResult
+  next: returnResult
+
+returnResult:
+  return: ${insertResult.response.body}
+  next: end

@@ -1,0 +1,5 @@
+{{#each datasets}}
+  {{#if @first}}[{{/if}}
+  {"id":{{id}},"version":"V{{major}}.{{minor}}"}{{#unless @last}},{{/unless}}
+  {{#if @last}}]{{/if}}
+{{/each}}

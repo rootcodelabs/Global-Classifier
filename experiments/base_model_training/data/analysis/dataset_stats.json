@@ -1,0 +1,14 @@
+{
+  "num_conversations": 566,
+  "conversations_per_agency": {
+    "output_Politsei-_ja_Piirivalveamet": 205,
+    "output_Tarbijakaitse_ja_Tehnilise_Jarelevalve_Amet": 204,
+    "output_ID.ee": 157
+  },
+  "avg_turns": 2.0,
+  "min_turns": 2,
+  "max_turns": 2,
+  "avg_text_length": 399.02296819787983,
+  "min_text_length": 157,
+  "max_text_length": 835
+}

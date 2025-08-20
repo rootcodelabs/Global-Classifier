@@ -1,0 +1,39 @@
+name: "text_classifier"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+input [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT64
+    dims: [-1]
+  },
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT64
+    dims: [-1]
+  },
+  {
+    name: "token_type_ids"
+    data_type: TYPE_INT64
+    dims: [-1]
+  }
+]
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [-1]
+  }
+]
+dynamic_batching {
+  max_queue_delay_microseconds: 100
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    
+  }
+]
+

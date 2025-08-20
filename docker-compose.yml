@@ -17,15 +17,15 @@ services:
     ports:
       - 8086:8086
     networks:
-      - bykstack-gc
+      - bykstack
     cpus: "0.5"
     mem_limit: "512M"
-
+  
   ruuter-private:
     container_name: ruuter-private
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
       - application.httpCodesAllowList=200,201,202,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -39,24 +39,24 @@ services:
     ports:
       - 8088:8088
     networks:
-      - bykstack-gc
+      - bykstack
     cpus: "0.5"
     mem_limit: "512M"
 
-  # data-mapper:
-  #   container_name: data-mapper
-  #   image: data-mapper
-  #   environment:
-  #     - PORT=3000
-  #     - CONTENT_FOLDER=/data
-  #   volumes:
-  #     - ./DSL:/data
-  #     - ./DSL/DMapper/classifier/hbs:/workspace/app/views/classifier
-  #     - ./DSL/DMapper/classifier/lib:/workspace/app/lib
-  #   ports:
-  #     - 3000:3000
-  #   networks:
-  #     - bykstack-gc
+  data-mapper:
+    container_name: data-mapper
+    image: data-mapper
+    environment:
+      - PORT=3000
+      - CONTENT_FOLDER=/data
+    volumes:
+      - ./DSL:/data
+      - ./DSL/DMapper/global-classifier/hbs:/workspace/app/views/global-classifier
+      - ./DSL/DMapper/global-classifier/lib:/workspace/app/lib
+    ports:
+      - 3000:3000
+    networks:
+      - bykstack
 
   tim:
     container_name: tim
@@ -69,7 +69,7 @@ services:
     ports:
       - 8085:8085
     networks:
-      - bykstack-gc
+      - bykstack
     extra_hosts:
       - "host.docker.internal:host-gateway"
     cpus: "0.5"
@@ -82,21 +82,21 @@ services:
       - POSTGRES_USER=tim
       - POSTGRES_PASSWORD=123
       - POSTGRES_DB=tim
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      # - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - ./tim-db:/var/lib/postgresql/data
     ports:
       - 9876:5432
     networks:
-      - bykstack-gc
+      - bykstack
 
-  # authentication-layer:
-  #   container_name: authentication-layer
-  #   image: authentication-layer
-  #   ports:
-  #     - 3004:3004
-  #   networks:
-  #     - bykstack-gc
+  authentication-layer:
+    container_name: authentication-layer
+    image: authentication-layer
+    ports:
+      - 3004:3004
+    networks:
+      - bykstack
 
   resql:
     container_name: resql
@@ -114,8 +114,10 @@ services:
       - 8082:8082
     volumes:
       - ./DSL/Resql:/DSL
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
     networks:
-      - bykstack-gc
+      - bykstack
 
   users_db:
     container_name: users_db
@@ -127,44 +129,243 @@ services:
     ports:
       - 5435:5432
     volumes:
-      - ~/buerokratt_classifier/db_files:/var/lib/postgresql/data
+      - ./global-classifier-db/db_files:/var/lib/postgresql/data
+      - ./shared:/shared
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
 
     networks:
-      - bykstack-gc
+      - bykstack
     restart: always
 
   init:
     image: busybox
-    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer"]
+    command: ["sh", "-c", "chmod -R 777 /shared && chmod -R 777 /app/model_trainer && chmod -R 777 /app/data"]
     volumes:
       - shared-volume:/shared
       - ./model_trainer:/app/model_trainer
+      - cron_data:/app/data
     networks:
-      - bykstack-gc
+      - bykstack
 
-  classifier-service:
-    container_name: classifier-service
-    build:
-      context: ./src/classifier-service  # Create this folder with a Dockerfile and the Node.js code
-    ports:
-      - "8090:8090"
-    networks:
-      - bykstack-gc
+  cron-manager:
+    container_name: cron-manager
+    image: cron-manager-python:latest
     volumes:
-      - ./src/classifier-service:/app
+      - ./DSL/CronManager/DSL:/DSL
+      - ./DSL/CronManager/script:/app/scripts
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
+      - ./DSL/DatasetGenerator/config:/app/config
+      - ./src/model-training:/app/src/training
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
+      - ./data/processed:/app/data/processed
+      - shared-volume:/app/shared
+      - cron_data:/app/data
+      - ./models:/app/models
+    runtime: nvidia  
     environment:
-      - NODE_ENV=development
-    restart: always
+      - NVIDIA_VISIBLE_DEVICES=all
+      - server.port=9010
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PYTHONPATH=/app:/app/src/model_training:/app/src/s3_dataset_processor:/app/src
+    ports:
+      - 9010:8080
+    networks:
+      - bykstack
+    depends_on:
+      - init
+      - gc-s3-ferry
+      - mlflow
+
+
+  # classifier-service:
+  #   container_name: classifier-service
+  #   build:
+  #     context: ./src/classifier-service 
+  #   ports:
+  #     - "8090:8090"
+  #   networks:
+  #     - bykstack
+  #   volumes:
+  #     - ./src/classifier-service:/app
+  #   environment:
+  #     - NODE_ENV=development
+  #   restart: always
+
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    container_name: mlflow
+    ports:
+      - "5001:5000"
+    env_file:
+      - sidecar.env
+    environment:
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
+      - MLFLOW_HOST=${MLFLOW_HOST}
+      - MLFLOW_PORT=${MLFLOW_PORT}
+      - MLFLOW_BACKEND_STORE_URI=${MLFLOW_BACKEND_STORE_URI}
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+      - MLFLOW_FLASK_SERVER_SECRET_KEY=${MLFLOW_FLASK_SERVER_SECRET_KEY}
+    volumes:
+      - ./mlflow/mlflow_data:/mlflow/mlflow_data
+      - ./mlflow/mlflow_artifacts:/mlflow/mlflow_artifacts
+    networks:
+      - bykstack
+
+  
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    env_file:
+      - sidecar.env
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    networks:
+      - bykstack
+
+  gc-s3-ferry:
+    image: s3-ferry:latest
+    container_name: gc-s3-ferry
+    volumes:
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - shared-volume:/app/shared
+      - ./models:/app/models
+    env_file:
+      - config.env
+    ports:
+      - "3006:3000"
+    user: "root"
+    networks:
+      - bykstack
+
+  # dataset-file-handler:
+  #   container_name: dataset-file-handler
+  #   build: ./src/dataset_file_handler
+  #   ports:
+  #     - "8001:8001"
+  #   volumes:
+  #     - cron_data:/app/data  # Same volume as cron-manager
+  #   environment:
+  #     - PORT=8001
+  #   networks:
+  #     - bykstack
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+  opensearch-node:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-node
+    environment:
+      - node.name=opensearch-node
+      - discovery.seed_hosts=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600
+    networks:
+      - bykstack
+
+  notifications-node:
+    container_name: notifications-node
+    build:
+      context: ./notification-server
+      dockerfile: Dockerfile
+    ports:
+      - 4040:4040
+    depends_on:
+      - opensearch-node
+    environment:
+      OPENSEARCH_PROTOCOL: http
+      OPENSEARCH_HOST: opensearch-node
+      OPENSEARCH_PORT: 9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: admin
+      PORT: 4040
+      REFRESH_INTERVAL: 1000
+      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
+      RUUTER_URL: http://ruuter-public:8086
+    volumes:
+      - /app/node_modules
+      - ./notification-server:/app
+    networks:
+      - bykstack
+
+  # Uncomment below container if you wish to debug progress bar sessions in opensearch dashboard
+  opensearch-dashboards:
+      image: opensearchproject/opensearch-dashboards:2.11.1
+      container_name: opensearch-dashboards
+      environment:
+        - OPENSEARCH_HOSTS=http://opensearch-node:9200
+        - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      ports:
+        - 5601:5601
+      networks:
+        - bykstack
+        
+  gui:
+    container_name: gui
+    environment:
+      - NODE_ENV=local
+      - REACT_APP_RUUTER_API_URL=http://localhost:8086
+      - REACT_APP_RUUTER_PRIVATE_API_URL=http://localhost:8088
+      - REACT_APP_EXTERNAL_API_URL=http://localhost:8000
+      - REACT_APP_CUSTOMER_SERVICE_LOGIN=http://localhost:3004/et/dev-auth
+      - REACT_APP_NOTIFICATION_NODE_URL=http://localhost:4040
+      - REACT_APP_CSP=upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' http://localhost:8086 http://localhost:8088 http://localhost:8085 http://localhost:4040 http://localhost:3001 http://localhost:8000;
+      - DEBUG_ENABLED=true
+      - CHOKIDAR_USEPOLLING=true
+      - PORT=3001
+      - REACT_APP_SERVICE_ID=conversations,settings,monitoring
+      - REACT_APP_ENABLE_HIDDEN_FEATURES=TRUE
+
+    build:
+      context: ./GUI
+      dockerfile: Dockerfile.dev
+    ports:
+      - 3003:3001
+    volumes:
+      - /app/node_modules
+      - ./GUI:/app
+    networks:
+      - bykstack
+    cpus: "0.5"
+    mem_limit: "1G"
 
 volumes:
   shared-volume:
   opensearch-data:
+  dataset_gen_ollama_models:
+  minio_data:
+  cron_data:
 
 networks:
-  bykstack-gc:
-    name: bykstack-gc
+  bykstack:
+    name: bykstack
     driver: bridge
-    # ipam:
-    #   config:
-    #     - subnet: 172.25.0.0/27
-    #       gateway: 172.25.0.1
+   

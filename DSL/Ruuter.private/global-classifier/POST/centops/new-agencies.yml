@@ -1,0 +1,19 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get agencies synchronized after a specific timestamp"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  
+fetch_agencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/mock-get-agencies-from-centops"
+  result: agency_data
+  next: return_result
+
+return_result:
+  return: ${agency_data.response.body}
+  next: end

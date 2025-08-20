@@ -1,0 +1,152 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Dataset Generation for Global Classifier"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: datasetId
+        type: string
+      - field: majorVersion
+        description: "Major version number for the dataset generation request"
+      - field: minorVersion
+        description: "Minor version number for the dataset generation request"
+      - field: presignedUrls
+        type: json
+        description: "Request body containing dataset generation details with set of signed URLs and agencyId"
+
+log_request_start:
+  log: "Received dataset generation request{ datasetId: ${incoming.body.datasetId}, URLs count: ${incoming.body.presignedUrls?.length || 0} }"
+  next: validate_input
+  
+validate_input:
+  switch:
+    - condition: ${incoming.body.datasetId == null}
+      next: handle_missing_dataset_id
+    - condition: ${incoming.body.presignedUrls == null}
+      next: handle_missing_urls
+    - condition: ${Array.isArray(incoming.body.presignedUrls) && incoming.body.presignedUrls.length == 0}
+      next: handle_empty_urls
+  next: extract_request_data
+
+handle_missing_dataset_id:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "datasetId field is required"
+      errorCode: "MISSING_REQUIRED_FIELD"
+  status: 400
+  return: ${error_response}
+
+handle_missing_urls:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "presignedUrls field is required"
+      errorCode: "MISSING_REQUIRED_FIELD"
+  status: 400
+  return: ${error_response}
+
+handle_empty_urls:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "presignedUrls cannot be empty"
+      errorCode: "EMPTY_URL_LIST"
+  status: 400
+  return: ${error_response}
+
+extract_request_data:
+  assign:
+    dataset_id: ${JSON.stringify(incoming.body.datasetId)}
+    major_version: ${incoming.body.majorVersion}
+    minor_version: ${incoming.body.minorVersion}
+    url_list: ${incoming.body.presignedUrls}
+    encoded_urls: ${encodeURIComponent(JSON.stringify(url_list))}
+  next: log_request
+
+log_request:
+  log: "Dataset generation request received - Dataset ID: ${dataset_id}, URLs count: ${url_list.length}"
+  next: execute_cron_manager
+
+execute_cron_manager:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/dataset_pipeline_scheduler/dataset_pipeline_schedule"
+    query:
+        signedUrls: ${encoded_urls}
+        datasetId: ${dataset_id}
+        majorVersion: ${major_version}
+        minorVersion: ${minor_version}
+  result: cron_res
+  error: handle_cron_error
+  next: validate_cron_response
+
+handle_cron_error:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "Failed to communicate with cron manager service"
+      errorCode: "CRON_SERVICE_UNAVAILABLE"
+  status: 503
+  return: ${error_response}
+
+validate_cron_response:
+  log: "Cron manager response - Status: ${cron_res.response.statusCodeValue}"
+  switch:
+    - condition: ${cron_res.response.statusCodeValue >= 200 && cron_res.response.statusCodeValue < 300}
+      next: cron_job_format_res
+    - condition: ${cron_res.response.statusCodeValue >= 400 && cron_res.response.statusCodeValue < 500}
+      next: handle_client_error
+    - condition: ${cron_res.response.statusCodeValue >= 500}
+      next: handle_server_error
+  next: handle_unexpected_error
+
+handle_client_error:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "Invalid request to cron manager"
+      errorCode: "INVALID_REQUEST"
+      statusCode: ${cron_res.response.statusCodeValue}
+  return: ${error_response}
+  status: 400
+  next: end
+
+handle_server_error:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "Cron manager service temporarily unavailable"
+      errorCode: "SERVICE_UNAVAILABLE"
+      statusCode: ${cron_res.response.statusCodeValue}
+  return: ${error_response}
+  status: 502
+  next: end
+
+handle_unexpected_error:
+  assign:
+    error_response:
+      operationSuccessful: false
+      message: "Unexpected response from cron manager"
+      errorCode: "UNEXPECTED_ERROR"
+  return: ${error_response}
+  status: 500
+  next: end
+
+cron_job_format_res:
+  assign:
+    format_res:
+      operationSuccessful: true
+      message: "Dataset generation job scheduled successfully"
+  next: return_success
+
+return_success:
+  status: 200
+  headers:
+    Content-Type: application/json
+  return: ${format_res}
+  next: end

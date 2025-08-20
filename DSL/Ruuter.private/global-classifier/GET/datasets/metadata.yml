@@ -1,0 +1,85 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get dataset metadata by id with connected models and total data count"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: datasetId
+        type: number
+        description: "Dataset id"
+
+extractRequestData:
+  assign:
+    datasetId: ${Number(incoming.params.datasetId)}
+  next: getDatasetMetadata
+
+getDatasetMetadata:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-dataset-by-id"
+    body:
+      id: ${datasetId}
+  result: dataset_res
+  next: checkDatasetResult
+
+checkDatasetResult:
+  switch:
+    - condition: ${!dataset_res || !dataset_res.response.body || dataset_res.response.body.length === 0}
+      next: return_not_found
+  next: getDatasetTotalCount
+
+getDatasetTotalCount:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-dataset-total-count"
+    body:
+      datasetVersionId: ${datasetId}
+  result: total_count_res
+  next: getConnectedModels
+
+getConnectedModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-datasets-connected-models"
+    body:
+      datasetId: ${datasetId}
+  result: connected_models_res
+  next: formatConnectedModels
+
+formatConnectedModels:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/format_connected_models"
+    headers:
+      type: json
+    body:
+      connectedModels: ${connected_models_res.response.body}
+  result: formatted_models_res
+  next: buildFinalResponse
+
+buildFinalResponse:
+  assign:
+    dataset: ${dataset_res.response.body[0]}
+    totalCount: ${total_count_res.response.body[0]?.totalCount || 0}
+    finalResponse:
+      response:
+        - id: ${dataset.id}
+          major: ${dataset.major}
+          minor: ${dataset.minor}
+          totalDataCount: ${totalCount}
+          connectedModels: ${formatted_models_res.response.body}
+  next: return_result
+
+return_not_found:
+  return: '{"error": "Dataset not found"}'
+  status: 404
+  next: end
+
+return_result:
+  return: ${finalResponse}
+  status: 200
+  next: end

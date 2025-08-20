@@ -3,3 +3,39 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v1-classification-results.sql
   - include:
       file: changelog/global-classifier-script-v2-classification-feedback.sql
+  - include:
+      file: changelog/global-classifier-script-v3-user-management.sql
+  - include:
+      file: changelog/classifier-script-v5-configuration.sql
+  - include:
+      file: changelog/global-classifier-script-v4-authority-data.xml
+  - include:
+      file: changelog/global-classifier-script-v6-integrated-agencies.sql
+  - include:
+      file: changelog/mock-global-classifier-script-v7-centops-ckb.sql
+  - include:
+      file: changelog/global-classifier-script-v9-data-models.sql
+  - include:
+      file: changelog/global-classifier-script-v10-datasets-metadata.sql
+  - include:
+      file: changelog/global-classifier-script-v11-model-training-jobs.sql
+  - include:      
+      file: changelog/global-classifier-v12-datasets.sql
+  - include:
+      file: changelog/global-classifier-v13-dataset-update-stored-procedure.sql
+  - include:
+      file: changelog/global-classifier-script-v14-dataset-progress-sessions.sql
+  - include:
+      file: changelog/global-classifier-script-v15-data-model-progress-sessions.sql
+  - include:
+      file: changelog/global-classifier-script-v16-inference-logs.sql
+  - include:
+      file: changelog/global-classifier-script-v17-remove-author-id.sql
+  - include:
+      file: changelog/global-classifier-script-v18-testing-inference-logs.sql
+  - include:
+      file: changelog/global-classifier-script-v20-add-model-id-and-inference-time.sql
+  - include:
+      file: changelog/global-classifier-script-v21-rename-inference-time-to-milliseconds.sql
+  - include:
+      file: changelog/global-classifier-script-v22-model-training-jobs.sql

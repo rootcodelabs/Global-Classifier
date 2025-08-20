@@ -1,0 +1,97 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Check if new data_url is available in mock_ckb for agencies synced with CKB"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+checkForNewMockCkbData:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-synced-agency-ids"
+  result: syncedAgencies
+  next: checkForSyncedAgencies
+
+checkForSyncedAgencies:
+  switch:
+    - condition: ${syncedAgencies.response.body.length > 0}
+      next: fetchMockCkbHashes     
+  next: returnNoAgencies
+
+fetchMockCkbHashes:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PRIVATE]/ckb/agency-data-import"
+    headers:
+      cookie: ${incoming.headers.cookie}
+      type: json
+    body:
+      agencyIds: ${syncedAgencies.response.body.map(a => a.agencyId).join(' ')}
+  result: ckbData
+  next: initializeResyncCheck
+
+initializeResyncCheck:
+  assign:
+    ckbIndex: 0
+    resyncNeededAgencies: 0
+    totalCkb: ${ckbData.response.body.response.length}
+  next: processNextCkbAgency
+
+processNextCkbAgency:
+  switch:
+    - condition: ${ckbIndex >= totalCkb}
+      next: returnResult
+  next: checkAgencyHash
+
+checkAgencyHash:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agency-datahash"
+    body:
+      agencyId: ${ckbData.response.body.response[ckbIndex].agencyId}
+  result: integratedAgency
+  next: compareHashes
+
+compareHashes:
+  assign:
+    ckbAgency: ${ckbData.response.body.response[ckbIndex]}
+    integratedHash: ${integratedAgency.response.body[0].agencyDataHash}
+    ckbHash: ${ckbAgency.agencyDataHash}
+    needsResync: ${integratedHash !== ckbHash}
+  next: updateIfNeeded
+
+updateIfNeeded:
+  switch:
+    - condition: ${needsResync}
+      next: updateResyncStatus
+  next: incrementCkbIndex
+
+updateResyncStatus:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency-sync-status"
+    body:
+      agencyId: ${ckbAgency.agencyId}
+      syncStatus: "Resync_needed_with_CKB"
+      isEnabled: false
+  result: updateResult
+  assign:
+    resyncNeededAgencies: ${resyncNeededAgencies + 1}
+  next: incrementCkbIndex
+
+incrementCkbIndex:
+  assign:
+    ckbIndex: ${ckbIndex + 1}
+  next: processNextCkbAgency
+
+returnNoAgencies:
+  return: "No synced agencies found"
+  status: 404
+  next: end 
+
+returnResult:
+  return: "Agencies needing resync- ${resyncNeededAgencies}"
+  status: 200
+  next: end

@@ -1,0 +1,1 @@
+SELECT agency_data_hash FROM public.integrated_agencies WHERE agency_id = :agencyId;
