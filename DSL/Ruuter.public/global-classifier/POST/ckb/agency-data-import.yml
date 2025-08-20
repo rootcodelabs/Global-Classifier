@@ -1,0 +1,33 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get agency data information by agency IDs"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencyIds
+        type: array
+        description: "Array of unique institution IDs"
+
+extractRequestData:
+  assign:
+    agencyIds: ${incoming.body.agencyIds || []}
+  log: "Received request for agency data: ${agencyIds}"
+
+get_agency_data:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/mock-get-data-from-ckb"
+    headers:
+      type: json
+    body:
+      agencyIds: ${agencyIds}
+  result: agency_data_info
+  next: return_result
+
+return_result:
+  return: ${agency_data_info.response.body}
+  next: end

@@ -1,0 +1,45 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get all datasets from the datasets table with pagination and optional client filtering"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: pageNum
+        type: number
+        description: "Page number for pagination"
+      - field: pageSize
+        type: number
+        description: "Page size for pagination"
+      - field: datasetVersionId
+        type: number
+        description: "Dataset version ID"
+      - field: clientId
+        type: string
+        description: "Client ID to filter results (optional)"
+
+extractRequestData:
+  assign:
+    page: ${Number(incoming.params.pageNum) || 1}
+    pageSize: ${Number(incoming.params.pageSize) || 10}
+    datasetVersionId: ${Number(incoming.params.datasetVersionId) || 0}
+    clientId: ${incoming.params.clientId || 'all'}
+
+getAllDatasets:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-datasets-data"
+    body:
+      page: ${page}
+      page_size: ${pageSize}
+      dataset_version_id: ${datasetVersionId}
+      client_id: ${clientId}
+  result: datasets_res
+  next: return_result
+
+return_result:
+  return: ${datasets_res.response.body}
+  next: end

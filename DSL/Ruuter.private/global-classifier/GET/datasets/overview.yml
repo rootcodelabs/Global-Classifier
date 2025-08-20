@@ -1,0 +1,124 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get chunk_ids from dataset_metadata where included_agencies contains the given agencyId"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: agencyId
+        type: string
+        description: "Agency ID to search for in included_agencies"
+      - field: pageNum
+        type: string
+        description: "Page number for pagination"
+      - field: datasetId
+        type: string
+        description: "datasetId to filter chunks by dataset"
+
+extractRequestData:
+  assign:
+    agencyId: ${incoming.params.agencyId}
+    pageNum: ${incoming.params.pageNum}
+    datasetId: ${incoming.params.datasetId}
+
+checkFilter:
+  switch:
+    - condition: ${agencyId === "all"}
+      next: download_single_chunk_data
+  next: getChunksAndAgencies
+
+getAllChunks:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/get_all_chunks"
+    headers:
+      type: json
+    body:
+      pageNum: ${pageNum}
+      datasetId: ${datasetId}
+  result: dataChunksResult
+  next: return_chunk_data
+
+getChunksAndAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-chunks-and-agencies"
+    body:
+      datasetId: ${datasetId}
+  result: chunksResult
+  next: getPaginatedChunkIds
+
+getPaginatedChunkIds:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/get_paginated_chunk_ids"
+    headers:
+      type: json
+    body:
+      chunks: ${chunksResult.response.body}
+      agencyId: ${agencyId}
+      pageNum: ${pageNum}
+  result: paginatedChunksResult
+  next: download_agency_chunks_data
+
+download_single_chunk_data:
+  call: http.post
+  args:
+    url: "http://dataset-file-handler:8000/download-chunk"
+    body:
+      datasetId: ${datasetId}
+      pageNum: ${pageNum}
+  result: singleChunkResult
+  next: processSingleChunkResult
+
+processSingleChunkResult:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/get_single_chunk_data"
+    headers:
+      type: json
+    body:
+      chunkData: ${singleChunkResult.response.body.chunk_data.data}
+  result: chunkDataResult
+  next: return_single_chunk_response
+
+download_agency_chunks_data:
+  call: http.post 
+  args:
+    url: "http://dataset-file-handler:8000/download-multiple-chunks"
+    body:
+      datasetId: ${datasetId}
+      chunkIds: ${paginatedChunksResult.response.body.chunks}
+  result: aggregatedDataResult
+  next: filterChunkDataByAgency
+
+filterChunkDataByAgency:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/get_filtered_chunks"
+    headers:
+      type: json
+    body:
+      aggregatedData: ${aggregatedDataResult.response.body.aggregated_data}
+      startIndex: ${paginatedChunksResult.response.body.startIndex}
+      agencyId: ${agencyId}
+  result: filteredChunkDataResult
+  next: return_filtered_chunk_response
+
+return_chunk_data:
+  return: ${dataChunksResult.response.body}
+  status: 200
+  next: end
+
+return_single_chunk_response:
+  return: ${chunkDataResult.response.body}
+  status: 200
+  next: end
+
+return_filtered_chunk_response:
+  return: ${filteredChunkDataResult.response.body}
+  status: 200
+  next: end

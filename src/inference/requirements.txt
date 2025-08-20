@@ -1,0 +1,2 @@
+transformers==4.53.3
+scipy==1.16.0

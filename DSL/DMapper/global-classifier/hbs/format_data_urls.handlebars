@@ -1,0 +1,11 @@
+{    
+  "datasetId": "{{datasetId}}",
+  "presignedUrls": [
+    {{#each agencies}}
+      {
+        "agencyId": "{{agencyId}}",
+        "signedS3Url": "{{dataUrl}}"
+      }{{#unless @last}},{{/unless}}
+    {{/each}}
+  ]
+}

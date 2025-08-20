@@ -1,0 +1,8 @@
+name: topic_conversations
+description: "Structure for topic-based conversations"
+root:
+  description: "Root directory of the dataset"
+  files:
+    conversations:
+      description: "JSON file with conversation examples"
+      format: "json"

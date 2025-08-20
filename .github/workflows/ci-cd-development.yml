@@ -4,11 +4,39 @@ on:
   push:
     branches:
       - dev
+  pull_request:
+    branches:
+      - dev
 
 jobs:
+  lint:
+    name: Run ESLint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'GUI/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: ./GUI
+        run: npm install --legacy-peer-deps
+        
+      - name: Lint code
+        working-directory: ./GUI
+        run: npx eslint "src/**/*.{ts,tsx}" --quiet
+
   deploy:
     runs-on: [self-hosted, development]
-
+    if: github.event_name == 'push'
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -16,6 +44,7 @@ jobs:
       - name: Stop and remove existing containers
         run: |
           docker compose down
+          
       - name: Build & up Docker container 
         run: |
           docker compose up --build -d

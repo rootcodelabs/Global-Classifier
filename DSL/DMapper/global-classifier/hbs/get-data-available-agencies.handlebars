@@ -1,0 +1,7 @@
+[
+  {{#each agencies}}
+    {{#if isDataAvailable}}
+      "{{agencyId}}"{{#unless @last}},{{/unless}}
+    {{/if}}
+  {{/each}}
+]

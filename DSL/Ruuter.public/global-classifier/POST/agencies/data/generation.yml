@@ -1,0 +1,70 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Update sync_status and is_enabled for each agency in the array"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencies
+        type: array
+        description: "Array of agencies with agencyId and syncStatus"
+      - field: datasetId
+        type: string
+      - field: generationStatus
+        type: string
+
+extractRequestData:
+  assign:
+    agencies: ${incoming.body.agencies || []}
+    datasetId: ${incoming.body.datasetId || ''}
+    generationStatus: ${incoming.body.generationStatus || ''}
+    currentIndex: 0
+    updatedAgencies: []
+
+processAgencies:
+  switch:
+    - condition: ${currentIndex >= agencies.length}
+      next: updateDatasetStatus
+  next: updateCurrentAgency
+
+updateCurrentAgency:
+  assign:
+    currentAgency: ${agencies[currentIndex]}
+    agencyId: ${currentAgency.agencyId}
+    syncStatus: ${currentAgency.syncStatus}
+    isEnabled: ${syncStatus === 'Synced_with_CKB'}
+  next: updateAgency
+
+updateAgency:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency-sync-status"
+    body:
+      agencyId: ${String(agencyId)}
+      syncStatus: ${syncStatus}
+      isEnabled: ${isEnabled}
+  result: updateResult
+  next: processNextAgency
+
+processNextAgency:
+  assign:
+    updatedAgencies: ${updatedAgencies.concat([agencyId])}
+    currentIndex: ${currentIndex + 1}
+  next: processAgencies
+
+updateDatasetStatus:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-data-generation-status"
+    body:
+      datasetId: ${String(datasetId)}
+      generationStatus: ${generationStatus}
+  result: datasetUpdateResult
+  next: return_result
+
+return_result:
+  return: "${agencies.length} agencies updated successfully."
+  next: end

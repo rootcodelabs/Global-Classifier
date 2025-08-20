@@ -1,0 +1,92 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Add multiple agencies to the integrated_agencies table"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencies
+        type: array
+        description: "Body field 'agencies' as an array of agency objects"
+
+extractRequestData:
+  assign:
+    agencies: ${incoming.body.agencies || []}
+    addedAgencies: 0
+    currentIndex: 0
+
+processAgencies:
+  switch:
+    - condition: ${currentIndex >= agencies.length}
+      next: return_final_result
+  next: processCurrentAgency
+
+processCurrentAgency:
+  assign:
+    currentAgency: ${agencies[currentIndex]}
+    agencyId: ${agencies[currentIndex].agencyId}
+    agencyName: ${agencies[currentIndex].agencyName}
+  next: checkAgencyExists
+
+checkAgencyExists:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agency"
+    body:
+      agencyId: ${agencyId}
+  result: agency_res
+  next: evaluateAgencyExistence
+
+evaluateAgencyExistence:
+  switch:
+    - condition: "${agency_res.response.body.length > 0}"
+      next: moveToNextAgency
+  next: addAgency
+
+addAgency:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-agency"
+    body:
+      agencyId: ${agencyId}
+      agencyName: ${agencyName}
+      groupKey: ""
+      isLatest: true
+      deploymentStatus: "undeployed"
+      isEnabled: false
+      agencyDataHash: ""
+      enableAllowed: false
+      lastModelTrained: ""
+      lastUpdatedTimestamp: ${new Date().toISOString()}
+      lastTrainedTimestamp: "1970-01-01T00:00:00.000Z"
+      syncStatus: "Unavailable_in_CKB"
+      createdAt: ${new Date().toISOString()}
+  result: add_agency_res
+  next: addAgencySuccessResult
+
+addAgencySuccessResult:
+  assign:
+    addedAgencies: ${addedAgencies+1}
+  next: moveToNextAgency
+
+moveToNextAgency:
+  assign:
+    currentIndex: ${currentIndex + 1}
+  next: processAgencies
+
+return_final_result:
+  switch:
+    - condition: "${addedAgencies === 0}"
+      next: return_no_agencies_added
+  next: return_added_agencies_count
+
+return_added_agencies_count:
+  return: "${addedAgencies} agencies added successfully."
+  next: end
+
+return_no_agencies_added:
+  return: "No new agencies were added."
+  next: end

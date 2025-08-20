@@ -1,0 +1,228 @@
+user: Tere! Ma ostsin äsja uued jalanõud ja ma ei saa päris alguses aru, mida kõik need sildid tähendavad. Mida ma peaksin seal märkima?
+assistant: Tere! Jalanõudel peaksid leidma märkused pealsete, voodri ja talla valmistamisel kasutatud materjalid. Samuti on oluline, et jalatsitel oleks märgistatud nende otstarve – kas need sobivad tänaval kandmiseks või siseruumides kasutamiseks.	0	0
+user: Tere! Ma tahaksin teada, kuidas ma saan lapsele passi taotleda. Mis on esimene asi, mida ma pean tegema?
+assistant: Tere! Esiteks, pead broneerima aja politsei teeninduses. Sa leiad teenindused ja saad aja broneerida siin: https://broneering.politsei.ee/. Või saad dokumendi kaupluses kätte, aga sel juhul pead arvestama lisatasuga.	1	1
+user: Tere! Ma sain DigiDoc4 käivitamisel vea, et sertifikaatide usaldusnimekirja uuendamine ebaõnnestus. Mis see tähendab ja mida ma sellega pean tegema?
+assistant: Tere! See tähendab, et arvutis, millega DigiDoc4 töötab, ei ole uusima usaldusnimekirja versiooni. See on vajalik allkirjade kontrollimiseks. Selle probleemiga toime tulla, kõigepealt veenduge, et teil on arvutis kõige uuem ID-tarkvara paigaldatud. Saate seda hankida siin: https://www.id.ee/artikkel/paigalda-id-tarkvara/ . Kas te seda juba proovite?	2	2
+user: Tere! Kas te saate rääkida ID-tarkvara värskendamisest? Mul on küsimusi selle kohta.
+assistant: Tere! Muidugi, ma saan. ID-tarkvara värskendamine on väga lihtne. Meie veebilehel on automaatselt kindluses oleva tarkvara uusim versioon. Kas te olete Windows, macOS või Linux kasutaja? See aitab öelda, millist versiooni peaksite alla laadima.	2	2
+user: Tere! Mulle on vaja lennureisija õigustest rohkem teada. Mis on olulisim asi, mida ma peaksin meeles pidama?
+assistant: Tere! Olulisim asi on see, et sul on õigus saada abi lennujaamas, olenemata sinu erivajadusest. See tähendab, et saad abi registreerimisel, pagasiregistreerimisel ning isegi transpordiga väravani jõudmiseks. On oluline teatada abivajadusest teenusepakkujale 48 tundi enne lennu väljumisaega.	1	0
+user: Tere! Olen kuulnud midagi ühtse laadija kohta. Mis see tähendab ja miks on see oluline?
+assistant: Tere! Ühtne laadija tähendab, et paljud seadmed hakkavad kasutama USB-C laadimispesa, mis on juba üha levinum. See on oluline, kuna see standardiseerib laadimist, muudab laadijate ostmist kergemaks ja toetab kiirlaadimise tehnoloogiat.	0	0
+user: Tere! Mul on palju lugemist, aga ma tahan teada, mida tähendab "tarbija käendusleping"? Mis see üldse on?
+assistant: Tere! Tarbija käendusleping on olukord, kus sa kohustud sõbra või sugulase laenu eest tasuma, kui ta ise seda ei suuda. See annab laenuandjale lisakindluse, et laen tagastatakse. Olenemata sellest, kas tegemist on väikelaenu, järelmaksu, tarbimislaenu või eluasemelaenu puhul. Kas soovid, et selgitan täpsemalt sellega seotud nüansse?	1	0
+user: Tere! Ma olen kuulnud Tarbijakaitse Ametist, aga ei tea täpselt, mis tarbija õigused on. Mis on kõige olulisem asi, mida tarbija peaks teadma?
+assistant: Tere! Oluline on teada, et sul on õigus nõuda ja saada kaup või teenus, mis vastab nõuetele ja on ohutu sinu elule, tervisele ja varale. Samuti on sul õigus saada infot, et teha teadlik valik. See tähendab, et müüjalt peaks alati küsima vajalikku teavet toote või teenuse kohta.	0	0
+user: Tere! Mis õigused on mul kui lennureisija?
+assistant: Tere! Lennureisijana on sul mitmeid õigusi. Näiteks, kui lend hiljub või tühistatakse, sul on õigus teavitamist saada ja hüvitist nõuda, samuti saad abi saada lennujaamas, kui sul on erivajadusi. On ka õigusi seoses pagasi transpordi ja transpordivahendi kahjustuse puhul. Soovid, et ma puutuksin mõnele neist detailsemalt lahti?	1	0
+user: Tere! Ma kuulsin midagi hoonete energiatõhususest ja Tarbijakaitse ja Tehnilise Järelevalve Ametist. Mis see tähendab täpselt?
+assistant: Tere! Hoonete energiatõhusus tähendab seda, et uutele ja oluliselt rekonstrueeritavatele hoonetele on kehtestatud miinimumnõuded selle kohta, kui palju energiat nad tarbivad. Tarbijakaitse ja Tehnilise Järelevalve Amet (TTJA) jälgib, et neid nõudeid järgitaks. Näiteks, uuelt hoonelt ootatakse, et see oleks energiatõhusam kui varem. Kas sa tahaksid teada, kuidas need nõuded täpsemalt kehtivad?	0	0
+user: Tere! Ma lugesin TTJA veebilehel sideturu kohta ja natuke segadus. Mis need hulgiturgude teenused täpsemalt on, mida seal loetletud on? Näiteks kõne lõpetamise hulgiteenus telefonivõrgus - mis see tähendab?
+assistant: Tere! Hea, et küsid. Need hulgiturgude teenused on sellised teenused, mida operaatorid pakuvad teistele operaatoritele, mitte otse lõppkasutajale. Näiteks, kõne lõpetamise hulgiteenus telefonivõrgus tähendab, et üks operaator maksab teisele operaatorile selle eest, et tema klient saaks teha kõne teise operaatori klientidele. Sisuliselt on see hulgiturgude teenus, mis võimaldab erinevatel operaatoritel omavahel ühendust tagada.	0	0
+user: Tere! Ma olen huvitatud teadma, kuidas Politsei- ja Piirivalveamet pöördumistele vastates minu isikuandmeid kasutab?
+assistant: Tere! Pöördumiste lahendamiseks ja teile vastamiseks kasutame teie isikuandmeid. Kui peame teistele asutustele või isikutele järelepärimisi esitama, edastame neile ainult nii palju andmeid, kui on vajalik vastuse koostamiseks. Me ei avalda neid andmeid rohkem kui on tarvis.	1	1
+user: Tere! Ma saan DigiDoc4 käivitades veateadet, et sertifikaatide usaldusnimekirja uuendamine ebaõnnestub. Kas teate, mis selle vastu pean tegema?
+assistant: Tere! Jah, seda probleemi on mõeldud just sellele vea korral. See tähendab, et DigiDoc4 ei saa oma sertifikaate teiega usaldusväärselt kontrollida. Alustame kõigepealt sellest, et veenduksime, et sul on ID-tarkvara kõige uuem versioon. Võite seda vaadata ja vajadusel paigaldada siin: https://www.id.ee/artikkel/paigalda-id-tarkvara/	2	2
+user: Tere! Ma sain just elamisloa ettevõtluseks suurinvestorina. Kust ma saan selle elamisloakaardi kätte?
+assistant: Õnnitleme! Elamisloakaardi saad kätte isiklikult kas Eesti välisesinduses või Politsei- ja Piirivalveameti teeninduses. Tõenäoliselt märkisid sa seda juba oma tähtajalise elamisloa taotluses, kus said valida sobiva koha.	1	1
+user: Tere! Mul on küsimus elamisloa kohta. Mis juhtub, kui minu elamisluba täisealisele lapsele pereliikme juurde elama asumiseks lõppeb?
+assistant: Tere! Kui sinu elamisluba lõppeb, saad Eestisse jääda veel kuni 270 päevaks. Sel perioodil on sul ka võimalus Eestis töötada.	1	1
+user: Tere! Ma kuulsin palju 5G kohta, aga ei saa päris hästi aru, mida see tähendab. Mis on need kolm peamist arengusuunda, mida ITU näeb 5G puhul?
+assistant: Tere! ITU näeb 5G puhul kolme peamist arengusuunda: suurendatud andmesidekiirus (eMBB), tagatud ajakriitiline reaalajasüsteemide andmeside (URLLC) ja suurearvuline väikeseadmete kommunikatsioon (mMTC). See tähendab lihtsalt seda, et 5G lubab kiiremaid andmesidegaid, võimaldab reaalajas teenuseid ja toetab rohkemat arvukust seadmete ühenduse kohta.	2	0
+user: Tere! Ma tahaksin teada, kuidas ma saan Politsei- ja Piirivalveametilt teavet küsida. Mis on kõige lihtsam viis?
+assistant: Tere! Pöördumised PPA poole saab saata e-posti teel või postiaadressil Pärnu mnt 139, 15060 Tallinn. Kui saata e-postiga faile, palun krüpteeri need sertifikaadiga „Politsei- ja Piirivalveamet (PPA) 70008747“ turvalisuse tagamiseks.	1	1
+user: Tere! Ma pole kunagi digiallkirjastanud midagi mobiiliga. Kas see on üldse lihtne?
+assistant: Tere! Jah, digiallkirjastamine RIA DigiDoc mobiilirakendusega on väga lihtne. See on mõeldud nii ID-kaardi, mobiil-ID kui ka Smart-ID kasutajatele. Pärast lohistamist saab sa sellega lihtsalt dokumente allkirjastada. Kas sul on ID-kaart, mobiil-ID või Smart-ID?	2	2
+user: Tere! Ma kuulsin, et 112 on hädaabinumber. Aga millal täpselt ma peaksin sellele helistama?
+assistant: Tere! Sa peaksid 112-le helistama siis, kui sa vajad politsei kiiret abi ja tahad teatada korrarikkumisest, kuriteost või liiklusõnnetusest. See on number, millele helistada, kui on vaja kiiret sekkumist.	1	1
+user: Tere! Mul on küsimus raudtee ohutuse kohta. Mida peaksin silmas pidama, kui lähen raudteeülesõidu juurde?
+assistant: Tere! Oluline on peata kiirust, et vajaduse korral saaksid peatuda. Kontrolli liiklusmärke ja valgusfoore ning vaata ja kuula, et veenduda, et liikumine on ohutu. Enne üleminekut veendu alati, et lähenev raudteesõidukile anda teed.	0	0
+user: Tere! Ma imestan, kuidas Politsei- ja Piirivalveametiga (PPA) ühendust saada, kui mul on küsimus?
+assistant: Tere! PPA registrikood on 70008747 ja aadress on Pärnu mnt 139, 15060 Tallinn. Sa saad meiega ühendust faksi teel, number on 612 3009. Üldiselt on riigiinfo telefon 1247 ka hea võimalus alustuseks.	1	1
+user: Tere! Kas te saate mulle öelda, mis on Smart-ID ja miks seda peaks kasutama?
+assistant: Tere! Muidugi. Smart-ID on tasuta nutirakendus, millega saate sisse logida erinevates e-teenustes, kinnitada tehinguid ja allkirjastada dokumende. See on nagu ID-kaart, digi-ID või mobiil-ID, aga see on mugavam kasutada telefoni kaudu. Kas sa tahaksid rohkem teada, kuidas see töötab?	2	2
+user: Tere! Olen kuulnud, et Tarbijakaitse ja Tehnilise Järelevalve Ametil on kaart, mis näitab sideteenuste kättesaadavust. Mis see kaart täpselt on ja milleks see mõeldud?
+assistant: Tere! Jah, meil on sideteenuste kaart. See näitab, kas aadressil on võimalik interneti teenusega liituda. Kaart põhineb sideoperaatorite andmetel nende tavahinnakirjade alusel. Roheline punkt tähendab, et liitumisvõimalus on, punane aga mitte.	0	0
+user: Tere! Ma ei ole päris kindel, kuidas oma ID-kaardi sertifikaate vaadata ja neid arvutis salveida. Kas saate mind selles osas aidata?
+assistant: Muidugi! Üsna lihtne on see. Esmalt võid kaardilugeja arvutiga ühendada ja oma ID-kaardi sisse süstada. Seejäna avad DigiDoc4 programmi. Pärast seda ootad, kuni sinu ID-kaardi andmed sisse loetakse. Kas sul on kaardilugeja ja arvuti, mis on valmis kasutama?	2	2
+user: Tere! Ma saan teada, et Narva arestimajas on mingid reeglid pakikandmise kohta. Kas ma saan sinna saates käimas käibele pakki viia kellelegi?
+assistant: Tere! Kahjuks mitte. Arestialustele pakke üldiselt tuua ei saa. On teisi küsimusi selle kohta?	1	1
+user: Tere! Kuulsin, et ID-kaartidega on midagi juhtunud. Mis siis täpselt on juhtunud sertifikaatidega?
+assistant: Tere! Jah, 2018. aasta 1. aprillist tunnistati turvanõrkusega ID-kaardi sertifikaadid kehtetuks. See tähendab, et kui sa ei uuendanud neid 31. märtsiks 2018, siis elektrooniliselt ID-kaarti enam ei saa kasutada.	2	1
+user: Tere! Ma pole päris kindel, mida täpselt tähendab ‘digitaalne allkiri’. Kas see on sama asjalik kui tavaline kiri allkiri?
+assistant: Tere! Hea küsimus! Jah, mõttes on see väga sarnane, aga digitaalse allkirja puhul saab sellega kindluse, et see ei ole lihtsalt võltsitav. Tavaline kiri on mõelnud kui kirjalik kinnitus, kuid digitaalse allkirjaga saab kindlustada, et see on seaduslikult kehtiv ja seda ei saa muuta pärast allkirjastamist. See vastab omakäelisele allkirjale juriidiliselt.	0	2
+user: Tere! Ma uurisin Politsei ja Piirivalve ameti veebilehel infot lapse kodakondsuse kohta. Kuidas saan teada, millal saan lapse kodakondsustunnistuse?
+assistant: Tere! Kui laps saab Eesti kodakondsuse, saadetakse kodakondsustunnistus teile posti teel. Täpne ajakavast sõltub menetluse kiirusest, aga tunniste tulek postiga on tavapärane viis dokumentide edastamine.	1	1
+user: Tere! Ma olen Tarbijakaitse ja Tehnilise Järelevalve Ameti uus praktikant. Räägime natuke raadiosageduste kasutamisest. Mis on EFIS ja milleks seda kasutada saab?
+assistant: Tere! EFIS on Frequency Information System – Euroopa Raadiosageduste Informatsiooni Süsteem. See andmebaas võimaldab näha, kuidas konkreetne riik sagedusala (9kHz kuni 275 GHz) kasutab ja võrrelda seda teiste Euroopa riikidega. Samuti leiad sealt infot erinevates riikides kehtestatud nõuetele raadioseadmete kasutamisele ja sageduste jaotustele elektroonilise side teenuste osutamiseks.	0	0
+user: Tere! Ma olen kuulnud CE-märgist, aga ma ei tea päris täpselt, mis see tähendab. Saaksin natuke selgitust?
+assistant: Tere! Muidugi. CE-märgist kinnitab tootja või tema volitatud esindaja tootele. See tähendab, et tootja kinnitab, et toode vastab ELi ühtlustatud nõuetele. Mis konkreetsemalt sind CE-märgise kohta huvitab?	2	0
+user: Tere! Mul on küsimus lennureisijate õiguste kohta. Mis juhtub, kui mu lend hiljub?
+assistant: Tere! Kui sinu lend hiljub, on sul õigus hüvitisele, aga see sõltub hilinemise põhjustust. Kui lend hiljub kolm tundi või rohkem, ja hilinemine on vedaja süül, saad hüvitist. Kui aga hilinemine on erakorraliste asjaolude tõttu (mis on vedaja kontrolli alt väljas), hüvitist ei maksta. Täpsemalt on hüvitise summa olenev lennu pikkusest.	0	0
+user: Tere! Ostsin hiljaaegu veebist kaamera Saksamaalt. Mida ma peaksin teadma, kui sellega peaks midagi viga olema?
+assistant: Tere! Saksamaalt ostetud kaamera puhul on oluline teada, et EL-i ja Euroopa Majanduspiirkonna riikides (Saksamaa on ka selles piirkonnas) on tarbijatele sarnane kaitsetase. Sul on õigus esitada kaebus defektide kohta vähemalt kahe aasta jooksul alates ostukuupäevast. Tähtis on, et sul oleks ostutšekk või maksekorralduse väljavõte tõendamaks ostu.	0	0
+user: Tere! Ma sain trahviteate kiiruskaamerast, aga ma ei saa aru, kas fotot saab ka saada?
+assistant: Tere! Põhimõtteliselt jah, saad. Trahviteatega ei saadetata fotot automaatselt. Kuid mootorsõiduki eest vastutav isik saab taotleda fotokoopiat. Seda tuleb teha aga eraldi taotlusega, millele on lisatud digitaal- või tavaallkiri.	1	1
+user: Tere! Ma kuulsin, et piiri tugevdamiseks on rajatud lõiketraati. Kas see ei mõju metsloomadele? Palju nad sellega hädaldavad?
+assistant: Tere! See on väga hea küsimus. Tegelikult on seda küsimust juba arutletud. Mure on küll sees, et lõiketraat võib loomade liikumist piirata. Kuid politsei on Keskkonnaametiga kooskõlastanud, kuidas olukorda lahendada, kui loomad juhtu takerduma.	0	1
+user: Tere! Ma arvan, et mobiil-ID on hea asi, aga kuidas seda saab tellida? Ma ei tea, kust alustada.
+assistant: Tere! Päris hea küsimus. Mobiil-ID tellimine on päris lihtne. Seda saate tellida oma mobiilsideoperaatori juures - Telia, Elisa või Tele2. Kõik kolm pakuvad seda serviisi. Palju lihtsam on, kui saad teada, millise operaatori pakub sulle kõige sobivam teenus!	2	2
+user: Tere! Ma nägin midagi energiamärgistuse kohta, aga ei saa pähe. Mis see tähendab ja miks see oluline on?
+assistant: Tere! Energiamärgistus näitab, kui palju energiat seade kulutab. See on oluline, sest see aitab teil valida energiasäästlikumaid tooteid, mis aitab vähendada teie energiakulusid ja ka keskkonna mõju. ELis on kehtestatud ühtsed nõuded mitmele tootegrupile, näiteks külmikutele, pesumasinatele ja televiisioritele.	0	0
+user: Tere! Ma pole kunagi varem ID tarkvara uuendanud. Miks on see nii oluline?
+assistant: Tere! Palju maasõna! ID tarkvara uuendamine on väga oluline turva tõttu ja sellepärast, et see hakkaks paremini töötama. Ühest küljest tagab uuendamine, et sa oled kaitstud uusimaid turvariske vastu. Teisest küljest aitab uuendamine, et tarkvara oleks otstarbeks mugavam kasutada.	2	2
+user: Tere! Ma arvasin, et ID-kaardiga saab reisida, aga ma pole kindel. Kus ma saan teada, kuhu just saan ID-kaardiga reisida?
+assistant: Tere! Vastus on, et ID-kaardiga saab reisida Euroopa Liidu (EL) ja Euroopa Majanduspiirkonna (EMP) liikmesriikidesse. Aga kõige täpsema info saad ReisiTargalt veebilehel: https://reisitargalt.vm.ee/kontrolli-reisidokumente/. Seal näeb, millistesse riikidesse ID-kaardiga reisida on lubatud.	1	2
+user: Tere! Ma soovin tööle minna Eestis ettevõtluse pidamiseks, aga mul pole hetkel Eestis elamisloa. Kuidas saan selle taotleda?
+assistant: Tere! Palju õnne otsusega Eestis ettevõtlust alustada! Elamisluba ettevõtluseks saab taotleda, kui investeerid Eestis oma äriühingusse. Esiteks pead investeerima. Kas sa oled juba seda tegema planeerinud? Ja siis pead kohutama nõutud dokumentidele ja riigilõive.	1	1
+user: Tere! Mul on küsimus defektse toote kohta. Mis on minu õigused, kui kaubal on viga?
+assistant: Tere! Kui tootel on viga, on Sul õigus nõuda müüjalt esmalt tasuta parandamist või selle asendamist uue kaubaga. Müüja valib reeglina ise, kas parandada või asendada, kuid saavad kokku leppida. On ka olukorda, kus müüjal ei ole võimalik kaupa parandada või asendada, parandamine ebaõnnestub, müüja ei kõrvalda puudust mõistliku aja jooksul või Sulle tekitatakse põhjendamatuid ebamugavusi.	0	0
+user: Tere! Mul on küsimus – kui ma olen jäänud kelmuse ohvriks, kuhu ma peaksin kõigepealt pöörduma?
+assistant: Tere! Esimese asjana on väga oluline kohe ühendust võtta oma pangaga. Nad saavad sageli kiiresti reaalseid meetmeid võtma, et vältida lisakahjustusi. Swedbank, SEB, LHV ja Luminor kõik pakuvad selleks oma turvalisuse leheküljed, näiteks Swedbanki oma on siin: https://www.swedbank.ee/private/d2d/ebanking/secureBanking	0	1
+user: Tere! Ma kuulsin midagi CE-märgise kohta. Mis see tähendab ja kes sellele tootele kinnitada tohib?
+assistant: Tere! CE-märgis näitab, et toode vastab EL-i ühtlustatud nõuetele. Selle kinnitada tohib ainult tootja või tema volitatud esindaja. See on nagu kinnitus, et toode on ohutu ja vastab nõuetele.	0	0
+user: Tere! Kas ma saan ID-kaardiga reisida Euroopa Liitu? Kas mul peab olema pass? 
+assistant: Tere! Jah, ID-kaardiga saad reisida Euroopa Liitu ja Euroopa Majanduspiirkonna liikmesriikidesse ilma passi kohta. Pass on aga alati vajalik dokument, sest ID-kaart on ainult reisidokumendina lubatud. Kas sa mõtled täpseid riikseid reegleid? 	2	2
+user: Tere! Kas ma saan ID-kaardi kasutamiseks oma arvutis ID-tarkvara paigaldata?
+assistant: Tere! Jah, seda saab. ID-tarkvara on võimalik paigaldada Windowsi, macOS ja Ubuntu operatsioonisüsteemidel. Kuid on oluline teada, et see ei toeta vanemaid operatsioonisüsteeme. Mis operatsioonisüsteemi sa kasutad?	2	2
+user: Tere! Ma kuulsin, et Tarbijakaitse Amet on teinud meeleseisundi raudteeohutuse kohta. Mis see tähendab?
+assistant: Tere! Jah, meil ongi meeleseisund, mis tuletab meile kõik olulised punktid raudtee ohutuse kohta. Põhimõtteliselt tuletab see meid kõiki hoiatama, et raudteed on ohtlikud piirkonnad, kui eiratakse liikluseeskirju.	0	0
+user: Tere! Mul on küsimus TTJA otsuste kohta. Mis saab, kui ma ei nõustu TTJA otsusega?
+assistant: Tere! Kui sa ei nõustu TTJA otsusega, on sul õigus selle vaidlustada. Sul on kaks võimalust: esitada vaie TTJA peadirektorile või esitada kaebus Tallinna Halduskohtule.	1	0
+user: Tere! Ma uurisin politseijaoskondi ja nägin Lääne-Harju Kesklinna politseijaoskonna nime. Kus see asub?
+assistant: Tere! Lääne-Harju Kesklinna politseijaoskond asub Kolde puiestee 65, 10321 Tallinn.	1	1
+user: Tere! Mul on küsimus. Ma pean taotlema passi lapsele, kes on välismaalane. Kuidas ma riigilõivu maksin?
+assistant: Tere! Riigilõivu tasumiseks pead kasutama Rahandusministeeriumi kontot. Saaja on Rahandusministeerium, viitenumber on 2900082443. Pangaülekandeks on saadaval erinevad kontod, näiteks SEB (EE891010220034796011), Swedbank (EE932200221023778606), Luminor (EE701700017001577198), LHV Pank (EE777700771003813400).	1	1
+user: Tere! Ma olen kuulnud, et Tarbijakaitse ja Tehnilise Järevalve Amet (TTJA) jälgib gaasiseadmete ohutust. Kuidas see täpselt toimib?
+assistant: Tere! TTJA peab silmas, et gaasiseadmed müügil ei tohiks ohustada inimeste tervist ja turvalisust. See tähendab, et nad peavad olema valmistatud ja paigaldatud nõuetekohaselt, regulaarselt hooldatud ning kasutama ettenähtud otstarbel. TTJA võib peatada ohtliku gaasiseadme levitamise ja kasutamise, kui tekib kahtlus ning on õigus nõuda selle turult kõrvaldamist, kui ekspertiis näitab, et seade ei vasta nõuetele.	0	0
+user: Tere! Ma tahaksin teada, kuidas Narva arestimajas külastajatele lubatud on asju toimetada. Kas saab sinna pakke saata?
+assistant: Tere! Narva arestimajasse pakke ei saa toimetada. Ainult vahistatul on lubatud isiklikult toimetada asju.	1	1
+user: Tere! Ma tahaksin teada, mida ma peaksin silmas pidama, kui ma võtan laenu. Mis on vastutustundliku laenamise põhimõtted?
+assistant: Tere! Vastutustundliku laenamise põhimõtted tähendavad, et nii laenuandjad kui ka tarbijad peavad olema ettevaatlikud. Enne laenu, järelmaksu või liisingu võtmist, võta pakkumisi paarilt-kolmelt eri firmalt ja küsi tingimuste võrdlemiseks koos pakkumisega teabelehte. See leht sisaldab kõiki olulisi laenutingimusi.	0	0
+user: Tere! Ma arvan, et ma peaksin taotlema alaline elamisõigus, aga ma ei ole päris kindel, kuidas see toimib. Kas Politsei- ja Piirivalveamet seda menetleb?
+assistant: Tere! Jah, Politsei- ja Piirivalveamet kindlasti menetleb selle. Nad kontrollivad, et sa oled esitanud kõik vajalikud dokumendid ja et sa täidate elamisõiguse saamiseks nõuetekohased tingimused. Kui mingis punktis puudub midagi, sa saad teada. Kas sul on täna mõni konkreetne dokument, mille kohta sa arvad, et puudub midagi?	1	1
+user: Tere! Ma olen välismaal ja tahaksin teada, kuidas ma saan elamisloakaarti taotleda. On see võimalik?
+assistant: Tere! Jah, on võimalik. Välismaal saab elamisloakaarti taotleda erandkorras, kui oled välismaalane, kes ei ole EL liikmesriigi kodanik, sul on kehtiv Eesti elamisluba või elamisõigus ning sinu välismaa elukoht on Eesti rahvastikuregistris registreeritud.	1	1
+user: Tere! Ma pole päris kindel, mis need elektroonilised allkirjad on ja miks need nii olulised on Euroopas. Kas sa võiksid seda lihtsamalt seletada?
+assistant: Tere! Muidugi. Elektroonilised allkirjad on nagu tavaline allkiri, aga see on tehtud arvutis. Need on olulised, sest need aitavad meil e-tehinguteselt kindlust saada, et tegelikult on see just sina, kes selle allkirjastanud oled. Euroopas on selleks vajalikud reeglid, et nad oleksid kõik maailmas ühesugused.	1	2
+user: Tere! Ma olen huvitatud Eesti kodakondsuse taotlemisest. Kui ma esitan taotluse, mis siis juhtub järgmisena?
+assistant: Tere! Pärast taotluse esitamist edastatakse dokumendid Vabariigi Valitsusele. Nad langetavad otsuse sinu kodakondsuse andmise kohta.	1	1
+user: Tere! Olen kuulnud seiklusparkidest, aga ei tea väga palju. Mis on seiklusparki mineku reeglid, mida peaksin teadma?
+assistant: Tere! Seikluspark on tore koht aktiivseks puhkuseks. Enne rajale minekut on oluline tutvuda reeglite ja piirangutega. Näiteks, on oluline hinnata oma võimeid ja tervislikku seisundit, eriti kui kavatsete läbida raskemaid radu. Kas Sa oled huvitatud, et ma rääkiks täpsemalt raskusastmete kohta?	1	0
+user: Tere! Ma olen kuulnud, et Tarbijakaitseamet aitab probleemide puhul. Mis on esimene asi, mida ma peaksin tegema, kui mul on probleem mingi ostuga?
+assistant: Tere! Absoluutselt, Tarbijakaitseamet on abiks. Kõigepealt peaksite kirjutama kaebusena kirja kauplejale. Kui kaebus ei lahenda probleemi, saate pöörduda tarbijavaidluste komisjoni poole.	0	0
+user: Tere! Ma kaotasin oma passi ja ma ei tea, kust ma saan uue passi tellida. Kas Põlva politseiosakond saab mulle aidata?
+assistant: Tere! Jah, Põlva politseiosakond saab teid aidata. Parim viis passi taotlemiseks on PPA iseteenindus veebilehel: https://www.politsei.ee/et/iseteenindus. Võite ka tulla kohale. Põlva teenindus asub Võru 12, 63308 Põlva.	1	1
+user: Tere! Kas ID-kaart on mõni uus dokument Eestis või on see vana?
+assistant: Tere! ID-kaart on Eesti Vabariigis esmane isikut tõendav dokument. See on suhteliselt uus, sest selle kasutamine on seadusest tuleneva kohustus.	1	2
+user: Tere! Ma tahan teada, mis on Eesti kodaniku passi tellimisel riigilõivu suurus?
+assistant: Tere! Eesti kodaniku passi riigilõivu suurust saad teada Politsei- ja Piirivalveameti veebilehel. Link on https://www.politsei.ee/et/telli-dokument-selverisse. Täpset summat saad seal vaadata.	1	1
+user: Tere! Ma lugesin sellest artikkel kohta tarbijavaidluste komisjoni. Mis on selle komisjoni peamine ülesanne?
+assistant: Tere! Tarbijavaidluste komisjoni peamine ülesanne on lahendada vaidlusi tarbija ja ettevõtte vahel, mis puudutavad tarbekaupade või -teenuste ostu-müüki. Nad aitavad leida lahendusi, kui tarbija on rahul teenusega või toodetega.	0	0
+user: Tere! Ma olen kuulnud Ida-Harju politseijaoskonnast. Kus see asub täpselt?
+assistant: Tere! Ida-Harju politseijaoskond asub aadressil P. Pinna 4, 13615 Tallinn.	1	1
+user: Tere! Olen kuulnud, et on võimalik laenu maksepuhkust taotleda. Kuidas see üldiselt toimib?
+assistant: Tere! Jah, on õige. Maksepuhkus võimaldab teil laenu tagasimaksmist lühikeseks ajaks peatada, kui teil on raskusi. Üldjuhul antakse see kuni kuueks kuuks, ja sel ajal ei maksa laenu põhiselt, vaid intressi tuleb ikkagi edasi tasuda. Oluline on märkida, et seda tuleks taotleda alles siis, kui sissetuleku vähenemine on probleem ja teised kulud kokku tõmmata ei aita.	0	0
+user: Tere! Ma kuulasin rääkimist eIDAS-ist. Kas te võtaksite need mõned e-tehingud käsitlevaid küsimusi vastu? 
+assistant: Tere! Muidugi, võtan need küsimused vastu. eIDAS ongi Euroopa Liidu määrus, mis on loodud selleks, et lihtsustada piiriülest e-teenuste kasutamist. Kas sa tead, milles see lihtsustamine just seisab? 	2	2
+user: Tere! Ma olen välisriigi kodanik ja plaanin Eestis äri alustada. Kas mulle on vaja mingit erist elamisluba?
+assistant: Tere! Jah, kui sa ei ole Euroopa Liidu riigi, Islandi, Liechtensteini, Norra või Šveitsi kodanik, siis Eestis ettevõtlusega tegelneda on vaja elamisluba ettevõtluseks. See on Politsei- ja Piirivalveameti väljastatav dokument.	1	1
+user: Tere! Kas tean, et mobiil-ID on olemas, aga pole päris kindel, mida see tähendab ja kas see on minu jaoks hea?
+assistant: Tere! On tore, et huvi on! Mobiil-ID on tegelikult väga hea lahendus, kui vajate digitaalset isikutunnistust. See on tänapäeval mugavam ja turvameelt hoogu andev kui traditsiooniline ID-kaart. Sellega saate viibida eesti.ee-s, internetipankas, või osaleda e-valimistel. Kas teil on küsimusi selle kohta?	2	2
+user: Tere! Ma olen täiskasvanu ja tahan elamisloakaardi taotlemisega alustada. Kuidas ma riigilõivu maksta saan?
+assistant: Tere! Elamisloakaardi taotlemise riigilõivu maksmiseks on mitu võimalust. Saaja on Rahandusministeerium, ja viitenumber on 2900082443. Pangakontod on erinevad: SEB EE891010220034796011, Swedbank EE932200221023778606, Luminor EE701700017001577198 ja LHV Pank EE777700771003813400.	1	1
+user: Tere! Kas te saate öelda, kus ma saan RIA DigiDoc mobiilirakenduse uue versiooni alla laadida?
+assistant: Muidugi! RIA DigiDoc mobiilirakendus on saadaval nii App Store'ist (https://itunes.apple.com/ee/app/ria-digidoc/id1216104448?mt=8) kui ka Google Play poodist (https://play.google.com/store/apps/details?id=ee.ria.DigiDoc).	2	2
+user: Tere! Ma olen välisriigi kodanik ja plaanin Eestis äri alustada. Kas ma kindlasti vajan elamisluba selleks?
+assistant: Tere! Vaelisriigi kodanikuna jah, enamikul juhtudel vajad. Kui sa ei ole Euroopa Liidu riikide, Islandi, Liechtensteini, Norra või Šveitsi kodanik, siis ettevõtluseks Eestis on vaja elamisluba.	1	1
+user: Tere! Ma olen kuulnud, et Tarbijakaitse ja Tehnilise Järelevalve Amet (TTJA) tegeleb numeratsiooniga. Mis see täpsemalt tähendab?
+assistant: Tere! TTJA väljastab numbrilube sideteenuse osutajatele, ehk sideettevõtjatele, ning ka neile, kes pakuvad muud teenust side teenuse abil, näiteks sisuteenuseid. See tähendab, et nad määravad, kes tohib kasutada erinevaid numbrimudeleid, näiteks telefoninumbreid või mobiilnumbreid.	0	0
+user: Tere! Mul on küsimus TTJA otsuste kohta. Mis teha, kui ma ei nõustu TTJA tehtud otsusega?
+assistant: Tere! Kui te ei nõustu TTJA tehtud otsusega, on teil õigus selle vaidlustada. Teil on kaks võimalust: esitada vaie TTJA peadirektorile või esitada kaebus Tallinna Halduskohtule.	1	0
+user: Tere! Olen kuulnud, et Politsei- ja Piirivalveamet on lapsevanematele mingit ohutusraamatut välja andnud. Kas see on tõsi?
+assistant: Jah, see on tõsi! Politsei- ja Piirivalveamet ongi valmistanud ohutusraamatu just 1. klassi minevate laste vanematele. See on mõeldud eelkõige lapsevanemate toetamiseks lapse turvalisuse tagamisel.	1	1
+user: Tere! Mul on küsimusi rahvusvahelise kaitse taotlemise kohta, eriti seoses olukorraga Ukrainas. Kuidas ma saan seda taotleda?
+assistant: Tere! Rahvusvahelise kaitse taotlemiseks võite pöörduda nelja kohta: Tallinnas Pärnu mnt 139, Pärnus H. Tammsaare pst 61, Jõhvis Rahu tn 38 või Tartus Riia tee 132. Samuti on saadaval ankeedid Politsei- ja Piirivalveameti veebilehel. Aluseks on põhjendus, et te kardate tagakiusamist Ukrainas rassi, rahvuse, usu, ühiskondliku rühmitusse kuulumise või poliitiliste vaadete tõttu või et tagasipöördumine Ukrainasse kujutab endast tõsist ohtu.	1	1
+user: Tere! Ma arvan, et ma saan ID-kaardiga ilma passita Euroopasse reisida? Kas see on võimalik?
+assistant: Tere! Jah, ID-kaardiga saate reisida Euroopa Liitu (EL) ja Euroopa Majanduspiirkonda (EMP) kuuluvad riigid ilma passi kohta. See on võimalik, aga oluline on meeles pidada, et ID-kaart on vajalik reisidokumendina ja EI sobi paljude teiste dokumentidega, nagu näiteks elamisloa kaart või digi-ID.	1	2
+user: Tere! Ma saan probleeme ID-kaardi kasutamisega. Kas sulle teada on, kuidas kindlustada, et ID-kaart ja lugeja töötavad korralikult?
+assistant: Tere! Ma saan aru, et sul on probleeme. Alguses on oluline, et sa veedad hetkel vääris aega ja saad lugema selle artikli: https://www.id.ee/artikkel/paigalda-id-tarkvara. Seega veedad hetkel vääris aega ja saad lugema selle artikli: https://www.id.ee/artikkel/paigalda-id-tarkvara. Siis on oluline, et sinul oleks arvutisse ID-tarkvara paigaldatud, ja vajadusel on ID-kaardi kasutamiseks seadistatud veebibrauserid.	2	2
+user: Tere! Ma saan probleeme mobiil-IDga allkirjastamisel. Mis võiks olla põhjus?
+assistant: Tere! Võib olla mitmeid asja. Sageli on probleem ajutine ja laheneb ise. Palju olgem vaadates veateadet – see sisalda alati vajaliku info probleemi lahendamiseks. Esmalt luge veateade täies ulatuses. Kas sa tead, mis veateadet sa nägid?	2	2
+user: Tere! Olen kuulnud, et Politsei- ja Piirivalveamet on saanud raha piiriehituseks. Kas see on tõsi?
+assistant: Jah, see on tõsi. Politsei- ja Piirivalveamet on saanud toetust piiriehituse rahastamiseks Euroopa Liidu Sisejulgeolekufondi välispiiride ja viisade rahastamisvahendist perioodil 2014-2020.	1	1
+user: Tere! Ma tahan ID-tarkvara Ubuntu peale paigaldada. Kuidas ma kõige paremini alustan?
+assistant: Tere! Väga hea küsimus. Ubuntu jaoks on kõige mugavam paigaldada ID-tarkvara automaatskripti abil. Alustame sellega: esmalt pead salvestama skripti oma arvuti tahvlkale. Siis avad Terminali ja navigeerid kataloogi, kuhu sa skripti salvestasid. Näiteks, kui sa seda 'Downloads' kataloogi, siis sisestad käskluse `cd /home/kasutajanimi/Downloads` (kasutajanimi asendades sinu kasutajanimega). Skripti käivitamiseks siis `sh install-open-eid.sh` ning parool sisestamisel lihtsalt vajuta edasi.	2	2
+user: Tere! Kas ma saan Eesti kodakondsuse taotleda, kui ma olen eestkostetav?
+assistant: Tere! Jah, võimalik on. Aga on mõned tingimused, mida pead täistõttu täitma. Peamine asi on see, et pead olema vähemalt 15-aastane. Kas te seda teate?	1	1
+user: Tere! Ma tahan lapsele ID-kaarti taotleda. Kuidas ma riigilõivu maksta saan?
+assistant: Tere! ID-kaardi taotlemisel lapsele riigilõivu tasumisel on mitmeid võimalusi. Kui taotled iseteeninduses, saad riigilõivu tasuda otse sealsamas. Kui aga teed pangaülekande, siis saaja on Rahandusministeerium, viitenumber on 2900082443. Kontopõhjad on erinevate pankade jaoks erinevad: SEB EE891010220034796011, Swedbank EE932200221023778606, Luminor Bank EE701700017001577198, LHV Pank EE777700771003813400.	1	1
+user: Tere! Ma tean, et on mobiil-ID, aga kas see on nagu tavaline ID-kaart, aga telefoni sees?
+assistant: Tere! Jah, täpselt nii! Mobiil-ID on SIM-kaardi põhjal toimiv digitaalne isikutunnistus, mis on samasugune kui tavaline ID-kaart (digi-ID, elamisloakaart) – see on riiklikult garanteeritud. See on lihtsalt kasutuses mobiilseadmega. Kas sulle on oluline teada, kuidas seda kasutada? Kas sa mõtled, kuidas taotleda või kuidas sellega tegelikult midagi teha? 	2	2
+user: Tere! Olen kuulnud, et mõned tooted on ohtlikud. Kuidas ma saan teada, millised tooted on just praegu probleemiks?
+assistant: Tere! EL-is on selleks kiirhoiatussüsteem Safety Gate. Saa tutvuda nädala ülevaatega nende kodulehel https://ec.europa.eu/consumers/consumers_safety/safety_products/rapex/alerts/?event=main.listNotifications&lng=en või kasuta otsingut, kui sul on huvi mingi kindla toote suhtes.	0	0
+user: Tere! Ma just sain teada, et meil on uus beebi. Mida me peame nüüd kodakondsuse osas tegema?
+assistant: Õnne! Kui teie laps saab Eesti kodakondsuse, siis teile saadetakse posti teel kodakondsustunnistus. See on tähtis dokument! Meil on Politsei- ja Piirivalveamet vastutab selle väljastamise.	1	1
+user: Tere! Mul on küsimus WiFi-seadmete kasutamise kohta. Mis on need piirangud, kui ma näiteks tahaksin kodus selliseid seadmeid kasutada?
+assistant: Tere! WiFi-seadmete kasutamisel on oluline teada, et erinevad sagedusribad on reguleeritud erinevate piirangutega. Näiteks 2,4 GHz sagedusel on lubatud võimsus kuni 100 mW ja selle kasutamine ei ole piiratud. Täpsem info on leitav määruse „Raadiosageduste kasutamise tingimused ja tehnilised nõuded sagedusloast vabastatud raadioseadmetele“ lisast 6.	0	0
+user: Tere! Ma olen kuulnud, et lennusõitjatel on teatud õigused. Mis need on?
+assistant: Tere! Jah, lennusõitjatel on mitmeid õigusi. Näiteks, kui lennud hiljenevad või tühistatakse, on teil õigus teavitus saada, hüvitist nõuda ja abi saada tagasipöörduse korral. Lisaks on teil õigus saada abi lennujaamas kui teil on erivajadused.	0	0
+user: Tere! Ma ei ole päris kindel, mis on eIDAS. Kas saate mulle sellest natuke selgeks teha? See on midagi, mis seotakse ID.ee?
+assistant: Tere! Jah, eIDAS on Euroopa Liidu määrus, mis seotakse ID.ee-ga. Lihtsasti öeldud, see on seadus, mis näeb ette, kuidas digiteenuseid ja e-tehinguid turvaliselt identifitseerida ja kinnitada. See aitab inimestel digimaailmas ohksele saada. See määrus jõudis jõule 23. juulil 2014. aastal.	1	2
+user: Tere! Ma olen kuulnud, et relvaloa kehtivust on võimalik pikendada. Mis siis täpsemalt on sellega seotud, kui ma tahan seda enda puhul teha?
+assistant: Tere! Relvaloa kehtivuse pikendamisel on oluline, miks sa relvaloa üldse omad. Kui relva otstarbeks on märgitud jahipidamine või sport, siis täiendavat laskekatset ei pea tegema. Kui aga on märgitud ainult enese ja vara kaitseks, siis pead selleks täiendava laskekatse sooritama.	0	1
+user: Tere! Ma arvan, et mul on ID-kaart ja ma tahan sellega arvutis midagi tegema. Mis ma pean tegema, et see tööle hakkaks?
+assistant: Tere! Üsna hea küsimus! Et saaksid ID-kaardi arvutis kasutama, pead paigaldama ID-tarkvara. See tarkvara on sinu arvuti jaoks vajalik, et ID-kaardiga elektroonilisi toiminguid teha. Kas sa kasutad Windowsi, macOS või Linuxi operatsioonisüsteemi?	2	2
+user: Tere! Ma olen kuulnud, et Politsei- ja Piirivalveamet kasutab minu isikuandmeid, kui ma saan teiega ühendust. Kas see on nii ja millal?
+assistant: Tere! Jah, see on õige. Me kasutame isikuandmeid pöördumiste lahendamiseks ja teile vastamiseks. Kui peame pöördumist lahendades küsimusi esitama teistele asutustele, edastame neile ainult need andmed, mis on vastuse koostamiseks tõesti vajalikud. See aitab meil privaatsust kaitsta.	1	1
+user: Tere! Kas teeksite mulle infot ID-tarkvara uusima versiooni kohta?
+assistant: Tere! Jah, küllap. ID-tarkvara uusimad versioonid on ID.ee lehel saadaval. Meie süte automaatselt teie arvuti operatsioonisüsteemi ja pakub sobiva paketi. On lihtne, peate vaid tarkvara alla lahtima ja paigaldama.	2	2
+user: Tere! Ma lugesin, et Tarbijakaitse ja Tehnilise Järelevalve Amet (TTJA) tegeleb ka kauplejate komisjoni töoga. Kuidas see üldiselt toimib, kui mul on mingi probleem kauplusega?
+assistant: Tere! Üldjuhul, kui sul on probleem, esitad avalduse TTJAs. Komisjon annab kauplejale aega oma seisukohti selgitada ja vastata sinu väidetele. See annab neile võimaluse probleemi lahendada enne, kui asi jõuab komisjoni istungini.	0	0
+user: Tere! Olen kuulnud, et Tarbijakaitse ja Tehnilise Järelevalve Amet (TTJA) on tellinud mitmeid uuringuid. Kas sa saaksid rääkida neist?
+assistant: Tere! Jah, TTJA on tellinud mitmeid uuringuid. Üks olulisi on uuring passiivse lairibataristu rajamise kohta maapiirkondadesse, mille tellis Majandus- ja Kommunikatsiooniministeerium. Lisaks on tehtud uuring Eesti elanike tarbijate õiguste teadlikkusest ja e-kaubanduse turust.	0	0
+user: Tere! Ma arvan, et tean, et ID.ee on olemas, aga ma ei ole päris kindel, kuidas digiallkirjastamist oma veebisüsteemi juurde lisada. Kas teil on näiteks lihtne viis, kuidas seda saaksin teha?
+assistant: Tere! Päev! Jah, digiallkirjastamist saab lisada oma veebisüsteemi mitmel viisil. Alustuseks on Riigi allkirjastamisteenus (SiGa) valitsusektori jaoks väga hea võimalus. See on aga tarkvara, mida peab enda serverile paigaldama. Kas teete veebirakendusi väljapoole valitsust?	2	2
+user: Tere! Ma olen ajakirjanik ja tahaksin teada, kuidas Politsei- ja Piirivalveametiga pressilisti liikmeks saada. Mis on selleks vaja?
+assistant: Tere! Liitumine on lihtne. Saate saata e-kirja aadressil, mis on kirjeldatud ametisõnumites. Kirjutage kirja enda nimi, väljaande nimi ja e-posti aadress.	1	1
+user: Tere! Mul on mõned küsimused selle kohta, mida ma saan teha, kui ma olen veebist midagi ostnud ja ma ei ole sellega rahul. Mis on minu õigused?
+assistant: Tere! Kui oled midagi veebist ostnud, on sul õigus lepingust taganeda 14 päeva jooksul alates sellest, kui kaubad sinuni jõudsid. See on nn 14-päevane taganemisõigus. See kehtib ka teenuste puhul, kus taganemisõiguse tähtaeg algab lepingu sõlmimisest.	0	0
+user: Tere! Ma olen Tarbijakaitse ja Tehnilise Järelevalve Ameti uus töötaja. Üks minu ülesandete kohta on raadiosageduste kasutamine. Kust ma peaksin alustama, et aru saada, kuidas seda Eestis reguleeritakse?
+assistant: Tere! Suurepärane! Alustada saaks Eesti raadiosagedusplaanist. See on meil avaldatud ja saadaval Riigiteataja veebilehel: https://www.riigiteataja.ee/akt/125012019006. See dokument annab kõige olulisema ülevaate sellest, kuidas Eestis raadiosagedusi kasutatakse ja mis on sellega seotud reeglid.	0	0
+user: Tere! Ma sain uue ID-kaardi ja koodiümbriku. Kas ma pean kohe PIN- ja PUK-koodid vahetama?
+assistant: Tere! Jah, väga hea, et sa sai uue ID-kaardi ja koodiümbriku! Soovitav on PIN- ja PUK-koodid kohe vahetada. See tagab parema turvalisuse. Koodiümbrikus on uusad koodid, ja on hea, kui sa neid kohe uusima kaardi külge kinnitatakse.	2	2
+user: Tere! Ma kuulsin, et Rail Balticu ehitamine on keeruline projekt. Mis kõige suuremad väljakutsed sellega seoses on olnud?
+assistant: Tere! Jah, Rail Balticu ehitamine on tegelikult üsna keeruline. Üks suurim väljakutse on see, et olemasoleva raudtee ümberehitus, näiteks kurvide sirgemaks tegemine või teise rööpapaari lisamine, on tehtud analüüside järgi kallim kui uue trassi ehitamine. Lisaks on oluline arvestada, et Tartu kaudu minev trass ei võimalda kasutada Euroopa ühendamise rahastu toetust samas mahus.	0	0
+user: Tere! Ma ei ole päris kindel, mis need sertifikaadid on ja miks on need nii olulised. Kas saaksid seda veidi selgitada?
+assistant: Muidugi! Ühest küljest on sertifikaadid nagu digitaalne isikutunnusjoon, mis seob sind sinu digitaalse isikutuvastusvahendiga, näiteks ID-kaardiga või mobiil-ID-ga. See tähendab, et kui sa kasutad e-teenust, kasutatakse seda sertifikaati, et kinnitada, et sa oled see, keda sa väidate olevat. On nagu digitaalne kiri, millega sa kinnitad oma identiteedi. Kuidas sa need tavaliselt kasutad?	2	2
+user: Tere! Ma saan aru, et RIA DigiDoc on mobiilirakendus. Kas see on täielikult ligipääsetav kõigile kasutajatele, kes seda kasutavad?
+assistant: Tere! Jah, RIA DigiDoc on ehitatud vastavalt WCAG 2.1 AA suunetele, mis tähendab, et seda on mõeldud kasutamiseks ka inimestele, kellel on nägemisvõimete puudega või muud liiklusvõimete probleemid. Küll aga on teatud piirkonnad, kus ligipääsetavus pole täielik. Meie teates on detailsemalt kirjas, milles need puudumised on.	0	2
+user: Tere! Ma plaanin elamisloakaardi taotlemist. Kuidas ma riigilõivu maksta saan?
+assistant: Tere! Elamisloakaardi taotlemisel riigilõivu tasumiseks on mitmeid võimalusi. Saaja on Rahandusministeerium. Viitenumber on 2900082443. Pangad, kuhu saad maksta, on SEB (EE891010220034796011), Swedbank (EE932200221023778606), Luminor Bank (EE701700017001577198) ja LHV Pank (EE777700771003813400).	1	1
+user: Tere! Ma olen ostmas kuldehit, aga ma ei tea, millele ma peaksin tähelepanu pöörama. Mida peaksin kontrollima?
+assistant: Tere! Kuldehit ostes on oluline, et sellel oleksid proovi- ja nimemärgid. Proovimärgis näitab, millist metalli on kasutatud ja selle osa sulamis, näiteks 375, 585 või 916. See märk on tuhandeksüsteemis. Nimemärgis on tootja või maaletoja nimi. See peab olema registreeritud riiklikus registris. Kas sa teadsid seda?	1	0
+user: Tere! Ma ostsin hiljuti televiisori, aga see ei tööta korralikult. Kuidas ma peaksin selle kohta kaebust esitama?
+assistant: Tere! Esiteks, otsige üles ostutšekk või mingi muu dokument, mis tõendab ostu. See on oluline. Seejärel pöörduge viivitamatult selle poodi, kust televiisori ostsite. Kaebuse esitamine peaks toimuma hiljemalt kahe kuu jooksul alates vea avastamisest.	0	0
+user: Tere! Ma plaanin elamisloakaarti taotleda. Kus ma teenindusse ma peaksin minema ja mida ma kaasa võtma peaksin?
+assistant: Tere! Elamisloakaardi taotlemiseks saad valida sobiva teeninduse kohta Politsei- ja Piirivalveameti veebilehelt. Kindlasti kaasa isikut tõendav dokument. Sa saad aja broneerida veebilehel https://broneering.politsei.ee/ kui soovid.	1	1
+user: Tere! Ma mõtlesin, mis see Mobiil-ID on? Kas see on uus ID-kaart?
+assistant: Tere! Mobiil-ID on juurdekasv ID-kaardi kasutamisele. See on mobiiltelefoniga kaasasolev vebinimiliselt kindel identifikaator. See annab teile juurdejuurdepääsu e-teenustele, ilma et peaksite ID-kaarti kaasas kandma. Kas te mõtlete, et see on samasugune kui ID-kaart? See on juurdekasv!	2	2
+user: Tere! Ma olen veidi segadus ID-kaardi taotlemisel. Kuidas liikumisvõimetule inimesele ID-kaart taotleda saab? Mis on kõige lihtsam viis?
+assistant: Tere! Liikumisvõimetule inimesele on mitmeid võimalusi ID-kaardi taotlemiseks. Iseteeninduses saab taotleda, kui te olete täiskasvanu või alaealine laps, ja teil on ID-kaart, mobiil-ID või Smart-ID. Seal peate üles laadima foto ja maksma riigilõivu pangalingi kaudu. Kas teil on iseteenindusega kogemust?	2	1
+user: Tere! Ma tean, et võin taotleda alaline elamisoigust EL-ist pärit inimesena. Aga kuidas see poliisiasutus selle menetletakse?
+assistant: Tere! Jah, seda saab teha. Politsei- ja Piirivalveamet kontrollib taotluse. Nad peaksid veenduma, et teil on kõik nõuetekohased dokumendid, ja et teil on täidetud kõik elamisõiguse saamiseks vajalikud tingimused. Küll aga ei pruugiks teil midagi lisaks kuuldagi, kui kõik on korras. Kas te soovite rohkem teada?	1	1
+user: Tere! Mul on probleem Windowsiga ID tarkvara paigaldamisel. Ilmnes mingi tõrk. Kas te saate mind aidata?
+assistant: Tere! Ma saan küll. Palun räägi rohkem sellest tõrkest. Kas sa saad mingi veaõht (koodiga) või veateate? Ja millise ID tarkvara sa paigaldate?	2	2
+user: Tere! Ma tahan küsida Kuressaare arestimaja kohta. Kas sinna saab pakke tuua?
+assistant: Tere! Kuressaare arestimajas ei saa arestalustele pakke tuua. Vahistatule aga lubatakse üks pakk kuus alates 01.08.2020.	1	1
+user: Tere! Ma kuulsin, et Tarbijakaitse ja Tehnilise Järelevalve Amet (TJAA) tegelda koduohutusega. Mis see täpsemalt tähendab?
+assistant: Tere! Nõmme, TJAA jälgib, et ehitis oleks ohutu kogu oma eluea jooksul. Põhimõte on, et omanik vastutab ehitise ohutuse eest. Korterelamus on oluline vaheline erinevus reaalosade ja kaasomandi vahel. Mis on sinu jaoks kõige olulisem selles?	0	0
+user: Tere! Ma olen kuulnud, et Tarbijakaitseamet kaitseb tarbija õigusi. Aga mida see täpsemalt tähendab? Millised on mu peamised õigused ostjana?
+assistant: Tere! Jah, Tarbijakaitseamet on seal, et kaitsta sind tarbijana. Peamiselt sa saad nõuda kaupa või teenust, mis vastab nõuetele, on ohutu ja mida ei ole keelatud omada või kasutada. Samuti on sul õigus saada vajalikku teavet pakutavate kaupade ja teenuste kohta, et sa saaksid teadlikult valida. Ja kui su õigusi rikutakse, saad nõu ja abi Tarbijakaitseametilt!	0	0
+user: Tere! Ma arvan, et politsei on mõnikord avalikule koosoledule sekkuda. Miks nad seda teevad, ja millistel juhtudel?
+assistant: Tere! Jah, see on tõsi. Politsei saab avalisele koosoledule sekkuda, kui arvab, et on olukord, kus koosoleku pidamine ohustab inimelu või seaduslikkust. Näiteks, kui on alust arvata, et kohas, kus koosolek toimub, on olukord, kus saab tõesti kiiresti süütu tekitada. Mida täpsemalt sa küsid?	1	1
+user: Tere! Ma nägin seda MyID portaali. Mis see üldse on? Kas see on midagi uut?
+assistant: Tere! MyID portaal on uus platvorm, mida pakub SK ID Solutions AS (SK), mobiil-ID, ID-kaardi, Digi-ID ja Smart-ID kontode kohta. See on koht, kus saad teavet nende kontode kohta ja sellest, mida neis tehtud on. Kas sa tahad teada rohkem, kuidas seda kasutada või mis teeb selle eriliseks? 	2	2
+user: Tere! Mul on küsimusi rõivaste ja jalatste märgistamise kohta. Mis on kõige olulisem, mida ma peaks ostes vaatama?
+assistant: Tere! Oluline on vaadata, kas rõival või jalatseid on näidatud toote nimetus, suurus, materjalikoostis (eriti oluline, kui ei ole nahast või karusnahast) ja hooldusjuhised ehk hooldustähistus. Need on põhilised asjad, mis annavad sulle olulist teavet toote kohta.	0	0

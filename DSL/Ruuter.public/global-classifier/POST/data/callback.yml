@@ -1,0 +1,120 @@
+declare:
+  call: declare
+  version: 0.1
+  description: "Callback endpoint for dataset generation status logging"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: task_id
+        type: string
+        description: "UUID string identifying the task"
+      - field: status
+        type: string
+        description: "Task completion status (success, failed, etc.)"
+      - field: message
+        type: string
+        description: "Status message or debug information"
+      - field: filePath
+        type: string
+        description: "Path to the generated dataset file"
+      - field: results
+        type: array
+        description: "List of agency IDs for which the dataset generation was completed"
+
+log_callback_received:
+  log: "📞 Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}"
+  next: extract_callback_data
+
+extract_callback_data:
+  assign:
+    task_id: ${incoming.body.task_id}
+    status: ${incoming.body.status}
+    message: ${incoming.body.message}
+    file_path: ${incoming.body.filePath}
+    results: ${encodeURIComponent(JSON.stringify(incoming.body.results))}
+  next: log_detailed_info
+
+log_detailed_info:
+  log: "📋 Callback Details - Task: ${task_id}, Status: ${status}, Message: ${message}, filePath: ${file_path}, results: ${results}"
+  next: check_for_request_data
+
+check_for_request_data:
+  switch:
+    - condition: ${task_id !== null && status !== null && message !== null && file_path !== null && results !== null}
+      next: determine_status_response
+  next: return_incorrect_request
+
+determine_status_response:
+  switch:
+    - condition: ${status == "success"}
+      next: handle_success_callback
+    - condition: ${status == "failed" || status == "error"}
+      next: handle_failure_callback
+    - condition: true
+      next: handle_unknown_status
+
+handle_success_callback:
+  assign:
+    format_res:
+      task_id: ${task_id}
+      status: "received"
+      message: "Success callback processed successfully"
+  next: log_cron_manager_execution
+
+log_cron_manager_execution:
+  log: "Executing Cron Manager for callback formatting - Task ID: ${task_id}, File Path: ${file_path}, Results: ${results}"
+  next: execute_cron_manager
+
+execute_cron_manager:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/callback_formatter/callback_format"
+    query:
+      taskId: ${task_id}
+      filePath: ${file_path}
+      results: ${results}
+  result: cron_res
+  next: assign_success_cron_response
+
+assign_success_cron_response:
+  assign:
+    format_success_cron_response_res:
+      task_id: ${task_id}
+      message: "Callback formatted started"
+      operationSuccessful: true
+  next: return_success
+
+handle_failure_callback:
+  assign:
+    format_failure_callback_res:
+      task_id: ${task_id}
+      status: "received"
+      message: "Failure callback processed"
+  next: return_failure_details 
+
+handle_unknown_status:
+  assign:
+    format_unknown_status_res:
+      task_id: ${task_id}
+      status: "received"
+      message: "Unknown status callback processed"
+  next: return_unknown_status
+
+return_failure_details:
+  status: 500
+  return: ${format_failure_callback_res}
+
+return_unknown_status:
+  status: 200
+  return: ${format_unknown_status_res}
+
+return_incorrect_request:
+  status: 400
+  return: 'Missing Required Fields'
+
+return_success:
+  status: 200
+  return: ${format_success_cron_response_res}

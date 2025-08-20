@@ -1,0 +1,20 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Get the current production data model"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+getProductionModel:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-production-data-model"
+    body: {}
+  result: productionModelRes
+  next: return_result
+
+return_result:
+  return: ${productionModelRes.response.body}
+  next: end
