@@ -144,7 +144,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
                 ),
                 size: 'large',
                 content: (
-                  <div style={{overflowY:'scroll', maxHeight:'70vh'}}>
+                  <div className='training-results-container'>
                     {results ? (
                       <ModelResults models={trainingResults} />
                     ) : (

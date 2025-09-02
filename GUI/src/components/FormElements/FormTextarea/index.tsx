@@ -10,6 +10,7 @@ type TextareaProps = TextareaAutosizeProps & {
   hideLabel?: boolean;
   showMaxLength?: boolean;
   maxLengthBottom?: boolean;
+  className?: string;
 };
 
 const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((

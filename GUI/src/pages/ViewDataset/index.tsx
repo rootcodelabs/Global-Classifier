@@ -542,7 +542,6 @@ const ViewDataset = () => {
                 appearance={ButtonAppearanceTypes.SECONDARY}
                 onClick={() => setIsProgressModalOpen(false)}
                 disabled={isUpdating}
-
               >
                 {t('global.cancel')}
               </Button>
