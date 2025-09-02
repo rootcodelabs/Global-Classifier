@@ -120,7 +120,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
           </div>
           <p>
             {t('dataModels.dataModelCard.lastTrained') ?? ''}:{' '}
-            {lastTrained && formatDate(new Date(lastTrained), 'D.M.yy-H:m')}
+            {lastTrained ? formatDate(new Date(lastTrained), 'D.M.yy-H:m'):"N/A"}
           </p>
         </div>
         <div className="flex" style={{ flexWrap: 'wrap', gap: '5px' }}>
@@ -144,7 +144,7 @@ const DataModelCard: FC<PropsWithChildren<DataModelCardProps>> = ({
                 ),
                 size: 'large',
                 content: (
-                  <div>
+                  <div style={{overflowY:'scroll', maxHeight:'70vh'}}>
                     {results ? (
                       <ModelResults models={trainingResults} />
                     ) : (

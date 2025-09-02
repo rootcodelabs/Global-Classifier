@@ -36,14 +36,14 @@ const ViewDataset = () => {
   const [editedRows, setEditedRows] = useState<SelectedRowPayload[]>([]);
   const [selectedAgencyId, setSelectedAgencyId] = useState<string | number>("all");
   const [originalDataset, setOriginalDataset] = useState<any[]>([]);
-   const [updatePayload, setUpdatePayload] = useState<{
+  const [updatePayload, setUpdatePayload] = useState<{
     updatedDataItems: SelectedRowPayload[];
     deletedRows: (string | number)[];
     updatedRowsLength: number;
     deletedRowsLength: number;
   } | null>(null);
   const navigate = useNavigate();
-  const { data: metadata, isLoading: isMetadataLoading,refetch: refetchMetadata } = useQuery({
+  const { data: metadata, isLoading: isMetadataLoading, refetch: refetchMetadata } = useQuery({
     queryKey: datasetQueryKeys.GET_META_DATA(datasetVersionId ?? 0),
     queryFn: () => getDatasetMetadata(datasetVersionId ?? 0),
   });
@@ -242,9 +242,9 @@ const ViewDataset = () => {
         setDeletedRowIds([]);
       }, 3000);
       await Promise.all([
-          refetchMetadata(),
-          refetchDataset()
-        ]);
+        refetchMetadata(),
+        refetchDataset()
+      ]);
     },
     onError: () => {
       setIsUpdating(false);
@@ -258,8 +258,8 @@ const ViewDataset = () => {
     },
   });
 
- 
- const minorUpdate = () => {
+
+  const minorUpdate = () => {
     setIsProgressModalOpen(true);
 
     // Create payload inside the function
@@ -310,7 +310,7 @@ const ViewDataset = () => {
       {metadata && !isMetadataLoading && (
         <div>
           <div className="title_container">
-            <div className="flex-between">
+            <div className="flex-grid m-30-0">
               <Link to={'/datasets'}>
                 <BackArrowButton />
               </Link>
@@ -321,17 +321,21 @@ const ViewDataset = () => {
             isHeaderLight={false}
           >
             <div className="flex-between">
-              <div>
+              <div style={{ minWidth: 'fit-content' }}>
                 <p>
                   <b>{t('datasets.detailedView.version') ?? ''} :</b>  {`V${metadata?.major}.${metadata?.minor}`}
                 </p>
-                <div className='flex'>
-                  <div style={{ minWidth: 'fit-content' }}>
-                    <p><b>{t('datasets.detailedView.connectedModels') ?? ''} : </b></p></div><p>{metadata?.connectedModels?.join(', ') ?? ''}</p></div>
+                <p><b>{t('datasets.detailedView.connectedModels') ?? ''} : </b>
+                {metadata?.connectedModels.length>0 ? metadata?.connectedModels?.join(', ') : 'N/A'}</p>
                 <p>
                   <b>{t('datasets.detailedView.noOfItems') ?? ''} :</b> {metadata?.totalDataCount ?? "-"}
                 </p>
               </div>
+              <Button
+                appearance={ButtonAppearanceTypes.PRIMARY}
+              >
+                {t('datasets.detailedView.export') ?? ''}
+              </Button>
 
             </div>
           </Card>
@@ -352,7 +356,7 @@ const ViewDataset = () => {
           </div>
         </div>
         {datasetIsLoading && <SkeletonTable rowCount={10} />}
-        {!datasetIsLoading && updatedDataset && updatedDataset?.length > 0 && (
+        {!datasetIsLoading && (
           <DataTable
             data={updatedDataset}
             columns={dataColumns as ColumnDef<string, string>[]}
@@ -387,11 +391,7 @@ const ViewDataset = () => {
             isClientSide={false}
           />
         )}
-        {
-          updatedDataset?.length === 0 && (
-            <NoDataView text='No data available' />
-          )
-        }
+
         <div className="button-container-bottom">
           <Button
             appearance={ButtonAppearanceTypes.ERROR}
@@ -430,7 +430,7 @@ const ViewDataset = () => {
           />
         </Dialog>
       )}
-   {isProgressModalOpen && (
+      {isProgressModalOpen && (
         <Dialog
           title={t('datasets.detailedView.confirmUpdateDatasetTitle')}
           onClose={() => setIsProgressModalOpen(false)}
@@ -440,6 +440,8 @@ const ViewDataset = () => {
               <Button
                 appearance={ButtonAppearanceTypes.SECONDARY}
                 onClick={() => setIsProgressModalOpen(false)}
+                disabled={isUpdating}
+
               >
                 {t('global.cancel')}
               </Button>
@@ -457,7 +459,7 @@ const ViewDataset = () => {
               </Button>
             </div>
           }
-           >
+        >
           {isUpdating ? (
             <div style={{ justifyContent: 'center', alignItems: 'center' }} className='flex'>
               <p>{t('datasets.detailedView.dataBeingUpdated')}</p>

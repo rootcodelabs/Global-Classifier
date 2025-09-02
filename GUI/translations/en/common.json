@@ -408,7 +408,7 @@
     },
     "configureDataModel": {
       "saveChangesTitile": "Changes Saved Successfully",
-      "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"All Data Models\" view.",
+      "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"Data Models\" view.",
       "updateErrorTitile": "Error Updating Data Model",
       "updateErrorDesc": "There was an issue updating the data model. Please try again. If the problem persists, contact support for assistance.",
       "deleteErrorTitle": "Cannot Delete Model",

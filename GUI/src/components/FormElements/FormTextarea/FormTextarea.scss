@@ -50,7 +50,7 @@
   &__max-length-top {
     position: absolute;
     top: 10px;
-    right: 8px;
+    right: 20px;
     font-size: $veera-font-size-80;
     color: get-color(black-coral-12);
     pointer-events: none;
@@ -103,7 +103,7 @@
 
   &--maxlength-shown {
     textarea {
-      padding-right: 70px;
+      padding-right: 90px;
     }
   }
 }

@@ -32,6 +32,7 @@ import { Icon, Track } from 'components';
 import Filter from './Filter';
 import './DataTable.scss';
 import DropdownFilter from './DropdownFilter';
+import NoDataView from 'components/molecules/NoDataView';
 
 type DataTableProps = {
   data: any;
@@ -209,7 +210,15 @@ const DataTable: FC<DataTableProps> = (
           </thead>
         )}
         <tbody>
-          {tableBodyPrefix}
+          {!data || data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} style={{ textAlign: 'center', padding: '20px' }}>
+                <NoDataView text='No data available' />
+              </td>
+            </tr>
+          ):(
+            <>
+            {tableBodyPrefix}
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
               {row.getVisibleCells().map((cell) => (
@@ -217,6 +226,11 @@ const DataTable: FC<DataTableProps> = (
               ))}
             </tr>
           ))}
+            </>
+          )
+        
+        }
+          
         </tbody>
       </table>
       {pagination && (
