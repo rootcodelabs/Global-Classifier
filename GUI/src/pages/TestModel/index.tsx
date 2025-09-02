@@ -127,7 +127,7 @@ const TestModel: FC = () => {
             <p>{t('testModels.classifyTextLabel')}</p>
             <FormTextarea
               label=""
-              name=""
+              name="text"
               maxLength={1000}
               onChange={(e) => handleChange('text', e.target.value)}
               showMaxLength={true}

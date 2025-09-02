@@ -48,8 +48,10 @@ class TritonPythonModel:
                 # Handle different label mapping formats
                 if "model_id2label" in self.label_mappings:
                     self.id_to_label = self.label_mappings["model_id2label"]
+                    self.id_to_label[0] = "out_of_distribution"
                 if "agency_id2label" in self.label_mappings:
                     self.agency_id2label = self.label_mappings["agency_id2label"]
+                    self.agency_id2label["out_of_distribution"] = 0
 
                 # Get number of classes
                 if "num_labels" in self.label_mappings:
@@ -104,36 +106,19 @@ class TritonPythonModel:
 
         confidence_score = 1.0 - uncertainty_score
         is_high_uncertainty = uncertainty_score > self.ood_threshold
-        needs_human_handoff = uncertainty_score > self.human_handoff_threshold
 
-        # Log important cases (even if not modifying output)
-        if needs_human_handoff:
-            if hasattr(self.logger, "log_warn"):
-                self.logger.log_warn(
-                    f"Sample {batch_idx}: High uncertainty ({uncertainty_score:.3f}) - Human handoff recommended"
-                )
-        elif is_high_uncertainty:
+        if is_high_uncertainty:
             if hasattr(self.logger, "log_info"):
                 self.logger.log_info(
                     f"Sample {batch_idx}: OOD detected ({uncertainty_score:.3f})"
                 )
 
         if self.uncertainty_strategy == "inject_class":
-            if needs_human_handoff:
-                # Inject human handoff signal as top prediction
-                handoff_item = {
-                    "agency_id": -1,
-                    "agency_name": "human_handoff_required",
-                    "confidence": float(uncertainty_score),
-                }
-                # Add at the beginning and shift others
-                return [handoff_item] + sample_result
-
-            elif is_high_uncertainty:
+            if is_high_uncertainty:
                 # Inject OOD/uncertain class
                 ood_item = {
-                    "agency_id": -2,
-                    "agency_name": "out_of_domain",
+                    "agency_id": 0,
+                    "agency_name": "out_of_distribution",
                     "confidence": float(uncertainty_score),
                 }
                 # Add at the beginning and shift others
@@ -153,83 +138,15 @@ class TritonPythonModel:
 
         elif self.uncertainty_strategy == "threshold_filter":
             # If too uncertain, return generic "uncertain" response
-            if needs_human_handoff:
+
+            if is_high_uncertainty:
                 return [
                     {
-                        "agency_id": -3,
-                        "agency_name": "uncertain_input",
-                        "confidence": 1.0,
-                    }
-                ]
-            elif is_high_uncertainty:
-                return [
-                    {
-                        "agency_id": -4,
-                        "agency_name": "low_confidence",
+                        "agency_id": 0,
+                        "agency_name": "out_of_distribution",
                         "confidence": float(confidence_score),
                     }
                 ]
-
-        # Return original predictions if no strategy applied
-        return sample_result
-
-    def apply_uncertainty_strategy(
-        self, sample_result, uncertainty_score, probabilities, batch_idx
-    ):
-        """Apply uncertainty handling strategy to modify predictions"""
-
-        # If no strategy is set, just return original predictions
-        if self.uncertainty_strategy is None or self.uncertainty_strategy == "none":
-            return sample_result
-
-        confidence_score = 1.0 - uncertainty_score
-        is_high_uncertainty = uncertainty_score > self.ood_threshold
-        needs_human_handoff = uncertainty_score > self.human_handoff_threshold
-
-        # Log important cases (even if not modifying output)
-        if needs_human_handoff:
-            self.logger.log_warn(
-                f"Sample {batch_idx}: High uncertainty ({uncertainty_score:.3f}) - Human handoff recommended"
-            )
-        elif is_high_uncertainty:
-            self.logger.log_info(
-                f"Sample {batch_idx}: OOD detected ({uncertainty_score:.3f})"
-            )
-
-        if self.uncertainty_strategy == "inject_class":
-            if needs_human_handoff:
-                # Inject human handoff signal as top prediction
-                new_result = {1: {"human_handoff_required": float(uncertainty_score)}}
-                # Shift other predictions down
-                for rank, prediction in sample_result.items():
-                    new_result[rank + 1] = prediction
-                return new_result
-
-            elif is_high_uncertainty:
-                # Inject OOD/uncertain class
-                new_result = {1: {"out_of_domain": float(uncertainty_score)}}
-                # Shift other predictions down
-                for rank, prediction in sample_result.items():
-                    new_result[rank + 1] = prediction
-                return new_result
-
-        elif self.uncertainty_strategy == "confidence_scaling":
-            # Scale probabilities by confidence
-            if self.confidence_scaling and confidence_score < 0.8:
-                scaled_result = {}
-                for rank, prediction in sample_result.items():
-                    for label, prob in prediction.items():
-                        # Scale probability by confidence
-                        scaled_prob = prob * confidence_score
-                        scaled_result[rank] = {label: float(scaled_prob)}
-                return scaled_result
-
-        elif self.uncertainty_strategy == "threshold_filter":
-            # If too uncertain, return generic "uncertain" response
-            if needs_human_handoff:
-                return {1: {"uncertain_input": 1.0}}
-            elif is_high_uncertainty:
-                return {1: {"low_confidence": float(confidence_score)}}
 
         # Return original predictions if no strategy applied
         return sample_result

@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MdOutlineDeleteOutline, MdOutlineEdit } from 'react-icons/md';
-import { CellContext, ColumnDef, createColumnHelper, PaginationState } from '@tanstack/react-table';
+import { CellContext, ColumnDef, createColumnHelper, PaginationState, RowSelectionState } from '@tanstack/react-table';
 import {
   SelectedRowPayload,
 } from 'types/datasets';
@@ -18,8 +18,6 @@ import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
 import NoDataView from 'components/molecules/NoDataView';
 import { DATASET_PAGE_SIZE } from 'utils/constants';
-import { is } from 'date-fns/locale';
-import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
 
 const ViewDataset = () => {
   const { t } = useTranslation();
@@ -27,6 +25,7 @@ const ViewDataset = () => {
     pageIndex: 0,
     pageSize: DATASET_PAGE_SIZE,
   });
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const { open, close } = useDialog();
   const [deletedRowIds, setDeletedRowIds] = useState<(string | number)[]>([]);
@@ -57,12 +56,68 @@ const ViewDataset = () => {
     queryFn: () => getDatasetData(
       datasetVersionId ?? 0,
       pagination.pageIndex + 1,
-      selectedAgencyId === "all" ? "all" : selectedAgencyId.toString()
+      selectedAgencyId === "all" ? "all" : selectedAgencyId.toString(),
+      pagination.pageSize
     ),
   });
   const [updatedDataset, setUpdatedDataset] = useState(dataset);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState<boolean>(false);
+
+  const selectedRowsData = useMemo(() => {
+    if (!updatedDataset) return [];
+    return Object.keys(rowSelection)
+      .filter(key => rowSelection[key])
+      .map(key => updatedDataset[parseInt(key)])
+      .filter(Boolean);
+  }, [rowSelection, updatedDataset]);
+  const selectedRowsCount = selectedRowsData.length;
+
+   useEffect(() => {
+    setRowSelection({});
+  }, [pagination.pageIndex, pagination.pageSize,selectedAgencyId]);
+
+   const handleBulkDelete = () => {
+    if (selectedRowsCount === 0) return;
+    
+    open({
+      title: t('datasets.detailedView.bulkDeleteTitle') || 'Delete Selected Items',
+      content: (
+        <div>
+          <p>{t('datasets.detailedView.bulkDeleteDesc1') || 'Are you sure you want to delete the selected items?'}</p>
+          <p><strong>{t('datasets.detailedView.bulkDeleteDesc2') || 'Note : This deletion will not be affected in the original dataset until you click on Save Changes.'}</strong> </p>
+        </div>
+      ),
+      footer: (
+        <div className="button-wrapper">
+          <Button
+            appearance={ButtonAppearanceTypes.SECONDARY}
+            onClick={() => close()}
+          >
+            {t('global.cancel')}
+          </Button>
+          <Button
+            appearance={ButtonAppearanceTypes.ERROR}
+            onClick={() => {
+              // Add selected items to deleted rows
+              const selectedIds = selectedRowsData.map(row => row.itemId);
+              setDeletedRowIds(prev => [...prev, ...selectedIds]);
+              
+              // Remove selected items from updated dataset
+                setUpdatedDataset((prev: SelectedRowPayload[] | undefined) => 
+                prev?.filter((row: SelectedRowPayload) => !selectedIds.includes(row.itemId))
+                );
+              // Clear selection
+              setRowSelection({});
+              close();
+            }}
+          >
+            {t('global.delete')}
+          </Button>
+        </div>
+      ),
+    });
+  };
 
   useEffect(() => {
     if (dataset) {
@@ -84,6 +139,10 @@ const ViewDataset = () => {
       setUpdatedDataset(mergedDataset);
     }
   }, [dataset, editedRows]);
+
+  useEffect(() => {
+   refetchDataset();
+  }, [pagination]);
 
   const { data: agencies } = useQuery({
     queryKey: integratedAgenciesQueryKeys.ALL_AGENCIES_LIST(),
@@ -122,7 +181,8 @@ const ViewDataset = () => {
       onClick={() => {
         open({
           title: t('datasets.detailedView.deleteDataRowTitle') ?? '',
-          content: <p>{t('datasets.detailedView.deleteDataRowDesc')}</p>,
+          content: <div><p>{t('datasets.detailedView.deleteDataRowDesc')}</p>
+          <strong>{t('datasets.detailedView.bulkDeleteDesc2')}</strong></div>,
           footer: (
             <div className="button-wrapper">
               <Button
@@ -151,6 +211,28 @@ const ViewDataset = () => {
 
   const dataColumns = useMemo(() => {
     const columnHelper = createColumnHelper<any>();
+
+       // Selection checkbox column
+    const selectColumn = columnHelper.display({
+      id: 'select',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+          aria-label={t('global.selectAll') || 'Select all'}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+          aria-label={`${t('global.select') || 'Select'} ${row.original.dataItem}`}
+        />
+      ),
+      meta: { size: 40 },
+    });
 
     // Incremental ID column
     const incrementalIdColumn = columnHelper.display({
@@ -186,7 +268,7 @@ const ViewDataset = () => {
       meta: { size: '1%' },
     });
 
-    return [incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
+    return [selectColumn, incrementalIdColumn, questionColumn, agencyColumn, editColumn, deleteColumn];
   }, [editView, deleteView, pagination.pageIndex, pagination.pageSize, t]);
 
   const editDataRecord = (dataRow: SelectedRowPayload) => {
@@ -354,6 +436,22 @@ const ViewDataset = () => {
               </Button>
             )}
           </div>
+          {/* Bulk actions */}
+          {selectedRowsCount > 0 && (
+            <div className="bulk-actions">
+              <span className="selected-count">
+                {selectedRowsCount} {t('datasets.detailedView.itemsSelected') || 'items selected'}
+              </span>
+              <Button
+                appearance={ButtonAppearanceTypes.ERROR}
+                onClick={handleBulkDelete}
+                size="s"
+              >
+                <Icon icon={<MdOutlineDeleteOutline />} />
+                {t('global.deleteSelected') || 'Delete Selected'}
+              </Button>
+            </div>
+          )}
         </div>
         {datasetIsLoading && <SkeletonTable rowCount={10} />}
         {!datasetIsLoading && (
@@ -361,6 +459,8 @@ const ViewDataset = () => {
             data={updatedDataset}
             columns={dataColumns as ColumnDef<string, string>[]}
             pagination={pagination}
+            rowSelection={rowSelection}
+            setRowSelection={setRowSelection}
             dropdownFilters={[
               {
                 columnId: 'agencyName',
@@ -371,11 +471,12 @@ const ViewDataset = () => {
                 })) ?? [],
               },
             ]}
+            showPageSizeSelector={true}
             onSelect={(value) => {
               setSelectedAgencyId(value);
               setPagination({
                 pageIndex: 0,
-                pageSize: DATASET_PAGE_SIZE,
+                pageSize: pagination.pageSize,
               });
               setUpdatedDataset([]);
             }}
@@ -384,7 +485,7 @@ const ViewDataset = () => {
                 state.pageIndex === pagination.pageIndex &&
                 state.pageSize === pagination.pageSize
               )
-                return;
+               return;
               setPagination(state);
             }}
             pagesCount={dataset?.[0]?.totalPages ?? 0}
