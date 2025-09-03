@@ -49,12 +49,15 @@
     "failed": "Failed",
     "sessionTimeOutTitle": "You session has been ended!",
     "sessionTimeOutDesc": "Extend your session or sign out from application in {{seconds}}",
-    "close":"Close",
-    "proceed":"Proceed",
-    "maxFileSize":"File size should not exceed 20 MB.",
+    "close": "Close",
+    "proceed": "Proceed",
+    "maxFileSize": "File size should not exceed 20 MB.",
     "select": "-Select-",
     "replace": "Replace",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "showEntries": "Show",
+    "entries": "records",
+    "deleteSelected": "Delete Selection"
   },
   "menu": {
     "userManagement": "User Management",
@@ -213,7 +216,7 @@
       "editDataRowTitle": "Edit Data Record",
       "editDataRowDesc": "Updates you make to the data record will be saved in the dataset",
       "deleteDataRowTitle": "Delete Data Record",
-      "deleteDataRowDesc": "Deleted data records will be removed from the dataset",
+      "deleteDataRowDesc": "Are you sure you want to delete this data record?",
       "data": "Data",
       "clientName": "Client Name",
       "patchUpdateBanner": "You have edited individual items in the dataset which are not saved. Please save the changes to apply",
@@ -236,6 +239,11 @@
       "itemsUpdated": "items updated",
       "itemsDeleted": "items deleted",
       "dataBeingUpdated": "Data is being updated...",
+      "itemsSelected": "items selected",
+      "bulkDeleteTitle": "Delete Selected Items",
+      "bulkDeleteDesc1": "Are you sure you want to delete the selected items?",
+      "bulkDeleteDesc2": "Note : This deletion will not be affected in the original dataset until you click on Save Changes.",
+      "bulkDeleteSuccessTitle": "Items Deleted Successfully",
       "table": {
         "id": "Item ID",
         "data": "Data",
@@ -408,7 +416,7 @@
     },
     "configureDataModel": {
       "saveChangesTitile": "Changes Saved Successfully",
-      "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"All Data Models\" view.",
+      "saveChangesDesc": "You have successfully saved the changes. You can view the data model in the \"Data Models\" view.",
       "updateErrorTitile": "Error Updating Data Model",
       "updateErrorDesc": "There was an issue updating the data model. Please try again. If the problem persists, contact support for assistance.",
       "deleteErrorTitle": "Cannot Delete Model",
@@ -465,7 +473,6 @@
     "topPrediction": "Top Prediction",
     "allPredictions": "All Predictions",
     "classificationFailed": "Classification failed. Please try again."
-  
   },
   "optionLists": {
     "text": "Text",

@@ -87,94 +87,87 @@ const DataModels: FC = () => {
                   {t('dataModels.createModel')}
                 </Button>
               </div>
-              <div className="search-panel flex">
-                <div
-                  className='models-filter-div'
-                >
+              <div className="search-panel">
+  <div className="models-filter-div">
+    <FormSelect
+      label=""
+      name=""
+      placeholder={t('dataModels.filters.modelStatus') ?? ''}
+      options={modelStatuses}
+      onSelectionChange={(selection) =>
+        handleFilterChange('modelStatus', selection?.value ?? '')
+      }
+      defaultValue={filters?.modelStatus}
+    />
 
-                  <FormSelect
-                    label=""
-                    name=""
-                    placeholder={t('dataModels.filters.modelStatus') ?? ''}
-                    options={
-                      modelStatuses
-                    }
-                    onSelectionChange={(selection) =>
-                      handleFilterChange('modelStatus', selection?.value ?? '')
-                    }
-                    defaultValue={filters?.modelStatus}
-                    style={{ width: '15%' }}
-                  />
+    <FormSelect
+      label=""
+      name=""
+      placeholder={t('dataModels.filters.trainingStatus') ?? ''}
+      options={trainingStatuses}
+      onSelectionChange={(selection) =>
+        handleFilterChange('trainingStatus', selection?.value)
+      }
+      defaultValue={filters?.trainingStatus}
+    />
 
-                  <FormSelect
-                    label=""
-                    name=""
-                    placeholder={t('dataModels.filters.trainingStatus') ?? ''}
-                    options={
-                      trainingStatuses
-                    }
-                    onSelectionChange={(selection) =>
-                      handleFilterChange('trainingStatus', selection?.value)
-                    }
-                    defaultValue={filters?.trainingStatus}
-                    style={{ width: '15%' }}
-                  />
-                  <FormSelect
-                    label=""
-                    name=""
-                    placeholder={t('dataModels.filters.maturity') ?? ''}
-                    options={formattedArray(deploymentEnvironmentsData?.[0]?.deploymentEnvironments) ?? []}
-                    onSelectionChange={(selection) =>
-                      handleFilterChange('deploymentEnvironment', selection?.value)
-                    }
-                    defaultValue={filters?.deploymentEnvironment}
-                    style={{ width: '25%' }}
-                  />
-                  <FormSelect
-                    label=""
-                    name=""
-                    placeholder={t('dataModels.filters.sort') ?? ''}
-                    options={[
-                      {
-                        label: t('dataModels.sortOptions.dataModelAsc'),
-                        value: 'modelName asc',
-                      },
-                      {
-                        label: t('dataModels.sortOptions.dataModelDesc'),
-                        value: 'modelName desc',
-                      },
-                      {
-                        label: t('dataModels.sortOptions.createdDateDesc'),
-                        value: 'createdAt desc',
-                      },
-                      {
-                        label: t('dataModels.sortOptions.createdDateAsc'),
-                        value: 'createdAt asc',
-                      },
-                    ]}
-                    onSelectionChange={(selection) =>
-                      handleFilterChange('sort', selection?.value)
-                    }
-                    defaultValue={filters?.sort}
-                    style={{ width: '25%' }}
-                  />
-                  <Button
-                    onClick={() =>
-                      setFilters({
-                        modelName: 'all',
-                        modelStatus: 'all',
-                        trainingStatus: 'all',
-                        deploymentEnvironment: 'all',
-                        sort: 'createdAt desc',
-                      })
-                    }
-                    appearance={ButtonAppearanceTypes.SECONDARY}
-                  >
-                    {t('global.reset') ?? ''}
-                  </Button>
-                </div>
+    <FormSelect
+      label=""
+      name=""
+      placeholder={t('dataModels.filters.maturity') ?? ''}
+      options={formattedArray(deploymentEnvironmentsData?.[0]?.deploymentEnvironments) ?? []}
+      onSelectionChange={(selection) =>
+        handleFilterChange('deploymentEnvironment', selection?.value)
+      }
+      defaultValue={filters?.deploymentEnvironment}
+    />
 
-              </div>
+    <FormSelect
+      label=""
+      name=""
+      placeholder={t('dataModels.filters.sort') ?? ''}
+      options={[
+        {
+          label: t('dataModels.sortOptions.dataModelAsc'),
+          value: 'modelName asc',
+        },
+        {
+          label: t('dataModels.sortOptions.dataModelDesc'),
+          value: 'modelName desc',
+        },
+        {
+          label: t('dataModels.sortOptions.createdDateDesc'),
+          value: 'createdAt desc',
+        },
+        {
+          label: t('dataModels.sortOptions.createdDateAsc'),
+          value: 'createdAt asc',
+        },
+      ]}
+      onSelectionChange={(selection) =>
+        handleFilterChange('sort', selection?.value)
+      }
+      defaultValue={filters?.sort}
+    />
+
+    <div className="filter-reset-button">
+      <Button
+        onClick={() =>
+          setFilters({
+            modelName: 'all',
+            modelStatus: 'all',
+            trainingStatus: 'all',
+            deploymentEnvironment: 'all',
+            sort: 'createdAt desc',
+          })
+        }
+        appearance={ButtonAppearanceTypes.SECONDARY}
+      >
+        {t('global.reset') ?? ''}
+      </Button>
+    </div>
+  </div>
+</div>
               {prodDataModel != null && <div className="m-30-0">
                 <p>Deployed Model</p>
                 <div className="grid-container m-30-0">

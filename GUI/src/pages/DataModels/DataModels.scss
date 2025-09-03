@@ -90,3 +90,68 @@ body {
   border: 1px solid #D73E3E;
   margin-bottom: 2rem;
 }
+
+.search-panel {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.models-filter-div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 1025px) {
+    grid-template-columns: repeat(4, 1fr) auto;
+  }
+}
+
+.filter-reset-button {
+  display: flex;
+  justify-content: center;
+
+  @media (max-width: 1024px) {
+    justify-content: stretch;
+    
+    button {
+      width: fit-content;
+    }
+  }
+}
+
+// Additional responsive utilities
+@media (max-width: 768px) {
+  .container {
+    padding: 16px 12px;
+  }
+
+  .title_container {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+
+    .title {
+      text-align: center;
+    }
+  }
+
+  .grid-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

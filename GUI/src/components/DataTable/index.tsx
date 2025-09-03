@@ -13,7 +13,8 @@ import {
   PaginationState,
   TableMeta,
   Row,
-  RowData, ColumnFiltersState,
+  RowData, ColumnFiltersState, RowSelectionState,
+
 } from '@tanstack/react-table';
 import {
   RankingInfo,
@@ -32,6 +33,7 @@ import { Icon, Track } from 'components';
 import Filter from './Filter';
 import './DataTable.scss';
 import DropdownFilter from './DropdownFilter';
+import NoDataView from 'components/molecules/NoDataView';
 
 type DataTableProps = {
   data: any;
@@ -52,8 +54,11 @@ type DataTableProps = {
   pagesCount?: number;
   meta?: TableMeta<any>;
   dropdownFilters?: DropdownFilterConfig[];
-  onSelect?: (value: string | number) => void | undefined// Callback for dropdown filter selection
-
+  onSelect?: (value: string | number) => void | undefined
+  showPageSizeSelector?: boolean;
+  pageSizeOptions?: number[];
+  rowSelection?: RowSelectionState;
+  setRowSelection?: (state: RowSelectionState) => void;
 };
 
 type ColumnMeta = {
@@ -116,7 +121,11 @@ const DataTable: FC<DataTableProps> = (
     pagesCount,
     meta,
     dropdownFilters,
-    onSelect
+    onSelect,
+    showPageSizeSelector = false,
+    pageSizeOptions = [10, 20, 50, 100],
+    rowSelection,
+    setRowSelection,
   },
 ) => {
   const id = useId();
@@ -134,12 +143,23 @@ const DataTable: FC<DataTableProps> = (
       globalFilter,
       columnVisibility,
       ...{ pagination },
+      ...(rowSelection && { rowSelection }),
     },
     meta,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: fuzzyFilter,
+    enableRowSelection: !!setRowSelection,
+    onRowSelectionChange: setRowSelection
+      ? (updaterOrValue) => {
+        if (typeof updaterOrValue === 'function') {
+          setRowSelection(updaterOrValue(table.getState().rowSelection));
+        } else {
+          setRowSelection(updaterOrValue);
+        }
+      }
+      : undefined,
     onSortingChange: (updater) => {
       if (typeof updater !== 'function') return;
       setSorting?.(updater(table.getState().sorting));
@@ -156,6 +176,15 @@ const DataTable: FC<DataTableProps> = (
     manualSorting: isClientSide ? undefined : true,
     pageCount: isClientSide ? undefined : pagesCount,
   });
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    if (setPagination && pagination) {
+      setPagination({
+        pageIndex: 0,
+        pageSize: newPageSize,
+      });
+    }
+  };
 
   return (
     <div className='data-table__scrollWrapper'>
@@ -184,7 +213,7 @@ const DataTable: FC<DataTableProps> = (
                             const dropdownConfig = dropdownFilters?.find(
                               (df) => df.columnId === header.column.id
                             );
-                            
+
                             if (dropdownConfig) {
                               return (
                                 <DropdownFilter
@@ -195,7 +224,7 @@ const DataTable: FC<DataTableProps> = (
                                 />
                               );
                             }
-                           
+
                           })()
                         )}
                         {filterable && header.column.getCanFilter() && (
@@ -209,18 +238,52 @@ const DataTable: FC<DataTableProps> = (
           </thead>
         )}
         <tbody>
-          {tableBodyPrefix}
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-              ))}
+          {!data || data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} style={{ textAlign: 'center', padding: '20px' }}>
+                <NoDataView text='No data available' />
+              </td>
             </tr>
-          ))}
+          ) : (
+            <>
+              {tableBodyPrefix}
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))}
+            </>
+          )
+
+          }
+
         </tbody>
       </table>
       {pagination && (
         <div className='data-table__pagination-wrapper'>
+          {showPageSizeSelector && (
+            <div className='data-table__page-size-selector'>
+              <span className='page-size-label'>
+                {t('global.showEntries') || 'Show'}
+              </span>
+              <select
+                className='page-size-select'
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <span className='page-size-label'>
+                {t('global.entries') || 'entries'}
+              </span>
+            </div>
+          )}
           {(table.getPageCount() * table.getState().pagination.pageSize) > table.getState().pagination.pageSize && (
             <div className='data-table__pagination'>
               <button
