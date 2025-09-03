@@ -91,8 +91,8 @@ const DataModelForm: FC<DataModelFormType> = ({
                 onSelectionChange={(selection) => {
                   handleChange('datasetId', selection?.value);
                 }}
-                value={dataModel?.datasetId === null && t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
-                defaultValue={dataModel?.datasetId ? dataModel?.datasetId : t('dataModels.dataModelForm.errors.datasetVersionNotExist')}
+                value={dataModel?.datasetId === null && ""}
+                defaultValue={dataModel?.datasetId ? dataModel?.datasetId : ""}
                 error={errors?.datasetId}
               />
               <div>
@@ -154,3 +154,5 @@ const DataModelForm: FC<DataModelFormType> = ({
 };
 
 export default DataModelForm;
+
+

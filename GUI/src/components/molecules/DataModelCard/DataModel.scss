@@ -12,3 +12,8 @@
 .mt-3{
     margin-top: 3rem;
 }
+
+.training-results-container {
+  overflow-y: scroll;
+  max-height: 70vh;
+}

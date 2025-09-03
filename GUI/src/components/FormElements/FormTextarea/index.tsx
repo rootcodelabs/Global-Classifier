@@ -10,6 +10,7 @@ type TextareaProps = TextareaAutosizeProps & {
   hideLabel?: boolean;
   showMaxLength?: boolean;
   maxLengthBottom?: boolean;
+  className?: string;
 };
 
 const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
@@ -25,16 +26,23 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
     maxLengthBottom,
     defaultValue,
     onChange,
+    className,
     ...rest
   },
   ref,
 ) => {
   const id = useId();
   const [currentLength, setCurrentLength] = useState((typeof defaultValue === 'string' && defaultValue.length) || 0);
+  
   const textareaClasses = clsx(
     'textarea',
     disabled && 'textarea--disabled',
     showMaxLength && 'textarea--maxlength-shown',
+  );
+
+  const textareaAutosizeClasses = clsx(
+    className,
+    showMaxLength && 'textarea--maxlength-shown'
   );
 
   const handleOnChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -47,6 +55,9 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
     <div className={textareaClasses}>
       {label && !hideLabel && <label htmlFor={id} className='textarea__label'>{label}</label>}
       <div className='textarea__wrapper'>
+         {showMaxLength && (
+          <div className={maxLengthBottom ? 'textarea__max-length-bottom' : 'textarea__max-length-top'}>{currentLength}/{maxLength}</div>
+        )}
         <TextareaAutosize
           id={id}
           maxLength={maxLength}
@@ -54,6 +65,7 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
           maxRows={maxRows}
           ref={ref}
           defaultValue={defaultValue}
+          className={textareaAutosizeClasses}
           aria-label={hideLabel ? label : undefined}
           onChange={(e) => {
             if (onChange) onChange(e);
@@ -61,9 +73,6 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
           }}
           {...rest}
         />
-        {showMaxLength && (
-          <div className={maxLengthBottom ? 'textarea__max-length-bottom' : 'textarea__max-length-top'}>{currentLength}/{maxLength}</div>
-        )}
       </div>
     </div>
   );
