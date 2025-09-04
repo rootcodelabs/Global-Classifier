@@ -326,8 +326,8 @@ class ModelDeploymentOrchestrator:
         return [
             f"{self.model_id}-classifier-ensemble",
             f"{self.model_id}-pre-processing",
-            f"{self.model_id}-post-processing", 
-            f"{self.model_id}-text-classifier"
+            f"{self.model_id}-post-processing",
+            f"{self.model_id}-text-classifier",
         ]
 
     def check_server_health(self, server_url: str) -> bool:
@@ -356,44 +356,50 @@ class ModelDeploymentOrchestrator:
         """Load a model to Triton server"""
         try:
             self.log_message(f"Loading model {model_name} to {server_url}")
-            
+
             response = requests.post(
                 f"{server_url}/v2/repository/models/{model_name}/load"
             )
-            
+
             if response.status_code in [200, 201]:
                 self.log_message(f"Successfully loaded model {model_name}")
                 return True
             else:
-                self.log_error(f"Failed to load model {model_name}: HTTP {response.status_code} - {response.text}")
+                self.log_error(
+                    f"Failed to load model {model_name}: HTTP {response.status_code} - {response.text}"
+                )
                 return False
-                
+
         except requests.exceptions.RequestException as e:
             self.log_error(f"Error loading model {model_name}: {e}")
             return False
 
-    def unload_model_from_triton(self, server_url: str, model_name: str, unload_dependents: bool = False) -> bool:
+    def unload_model_from_triton(
+        self, server_url: str, model_name: str, unload_dependents: bool = False
+    ) -> bool:
         """Unload a model from Triton server"""
         try:
             self.log_message(f"Unloading model {model_name} from {server_url}")
-            
+
             payload = {}
             if unload_dependents:
                 payload["unload_dependents"] = True
-            
+
             response = requests.post(
                 f"{server_url}/v2/repository/models/{model_name}/unload",
                 json=payload if payload else None,
-                timeout=60
+                timeout=60,
             )
-            
+
             if response.status_code in [200, 201]:
                 self.log_message(f"Successfully unloaded model {model_name}")
                 return True
             else:
-                self.log_error(f"Failed to unload model {model_name}: HTTP {response.status_code} - {response.text}")
+                self.log_error(
+                    f"Failed to unload model {model_name}: HTTP {response.status_code} - {response.text}"
+                )
                 return False
-                
+
         except requests.exceptions.RequestException as e:
             self.log_error(f"Error unloading model {model_name}: {e}")
             return False
@@ -403,66 +409,79 @@ class ModelDeploymentOrchestrator:
         try:
             # Use repository index endpoint with ready=true to get only loaded models
             payload = {"ready": True}
-            response = requests.post(f"{server_url}/v2/repository/index", json=payload, timeout=30)
-            
+            response = requests.post(
+                f"{server_url}/v2/repository/index", json=payload, timeout=30
+            )
+
             if response.status_code == 200:
                 models_data = response.json()
                 loaded_models = []
-                
+
                 # The response is an array of model objects
                 for model in models_data:
                     if model.get("state") == "READY":
                         loaded_models.append(model.get("name"))
-                
+
                 return loaded_models
             else:
-                self.log_error(f"Failed to get models list: HTTP {response.status_code}")
+                self.log_error(
+                    f"Failed to get models list: HTTP {response.status_code}"
+                )
                 return []
-                
+
         except requests.exceptions.RequestException as e:
             self.log_error(f"Error getting models list: {e}")
             return []
 
-    def test_model_inference(self, server_url: str, max_retries: int = 10, retry_delay: int = 5) -> bool:
+    def test_model_inference(
+        self, server_url: str, max_retries: int = 10, retry_delay: int = 5
+    ) -> bool:
         """Test if the ensemble model can perform inference"""
         ensemble_model_name = f"{self.model_id}-classifier-ensemble"
-        
+
         # Simple test input for text classification
         test_payload = {
             "inputs": [
                 {
                     "name": "TEXT",
                     "datatype": "BYTES",
-                    "shape": [1,1],
-                    "data": ["This is a test message for classification."]
+                    "shape": [1, 1],
+                    "data": ["This is a test message for classification."],
                 }
             ]
         }
-        
+
         for attempt in range(max_retries):
             try:
-                self.log_message(f"Testing inference for {ensemble_model_name} (attempt {attempt + 1}/{max_retries})")
-                
+                self.log_message(
+                    f"Testing inference for {ensemble_model_name} (attempt {attempt + 1}/{max_retries})"
+                )
+
                 response = requests.post(
                     f"{server_url}/v2/models/{ensemble_model_name}/infer",
                     json=test_payload,
-                    timeout=30
+                    timeout=30,
                 )
-                
+
                 if response.status_code == 200:
-                    self.log_message(f"Inference test successful for {ensemble_model_name}")
+                    self.log_message(
+                        f"Inference test successful for {ensemble_model_name}"
+                    )
                     return True
                 else:
-                    self.log_error(f"Inference test failed: HTTP {response.status_code} - {response.text}")
-                    
+                    self.log_error(
+                        f"Inference test failed: HTTP {response.status_code} - {response.text}"
+                    )
+
             except requests.exceptions.RequestException as e:
                 self.log_error(f"Inference test error (attempt {attempt + 1}): {e}")
-            
+
             if attempt < max_retries - 1:
                 self.log_message(f"Waiting {retry_delay} seconds before retry...")
                 import time
+
                 time.sleep(retry_delay)
-        
+
         self.log_error(f"Inference test failed after {max_retries} attempts")
         return False
 
@@ -470,203 +489,215 @@ class ModelDeploymentOrchestrator:
         """Unload any existing models with the same model ID"""
         model_names = self.get_ensemble_model_names()
         loaded_models = self.get_loaded_models(server_url)
-        
-        models_to_unload = [model for model in loaded_models if any(model.startswith(f"{self.model_id}-") for model in model_names)]
-        
+
+        models_to_unload = [
+            model
+            for model in loaded_models
+            if any(model.startswith(f"{self.model_id}-") for model in model_names)
+        ]
+
         if not models_to_unload:
             self.log_message("No existing models to unload")
             return True
-        
+
         self.log_message(f"Found existing models to unload: {models_to_unload}")
-        
+
         # Unload ensemble first (with dependents) to avoid conflicts
         ensemble_name = f"{self.model_id}-classifier-ensemble"
         if ensemble_name in models_to_unload:
-            if not self.unload_model_from_triton(server_url, ensemble_name, unload_dependents=True):
+            if not self.unload_model_from_triton(
+                server_url, ensemble_name, unload_dependents=True
+            ):
                 return False
             models_to_unload.remove(ensemble_name)
-        
+
         # Unload remaining individual models
         for model_name in models_to_unload:
             if not self.unload_model_from_triton(server_url, model_name):
                 return False
-        
+
         return True
 
     def load_ensemble_models(self, server_url: str) -> bool:
         """Load all models for the ensemble in the correct order"""
         model_names = self.get_ensemble_model_names()
-        
+
         # Load individual models first (dependencies)
-        individual_models = [name for name in model_names if not name.endswith("-classifier-ensemble")]
+        individual_models = [
+            name for name in model_names if not name.endswith("-classifier-ensemble")
+        ]
         ensemble_model = f"{self.model_id}-classifier-ensemble"
-        
+
         # Load individual models first
         for model_name in individual_models:
             if not self.load_model_to_triton(server_url, model_name):
                 self.log_error(f"Failed to load dependency model {model_name}")
                 return False
-        
+
         # Load ensemble model last
         if not self.load_model_to_triton(server_url, ensemble_model):
             self.log_error(f"Failed to load ensemble model {ensemble_model}")
             return False
-        
+
         return True
 
     def deploy_model(self) -> bool:
         """
         Deploy model based on current and target environments.
-        
+
         Returns:
             bool: True if deployment was successful, False otherwise
         """
-        self.log_message(f"Starting model deployment from {self.current_env} to {self.target_env}")
-        
+        self.log_message(
+            f"Starting model deployment from {self.current_env} to {self.target_env}"
+        )
+
         # Case 1: undeployed -> undeployed (no-op)
         if self.current_env == "undeployed" and self.target_env == "undeployed":
-            self.log_message("Both current and target environments are 'undeployed'. No deployment needed.")
+            self.log_message(
+                "Both current and target environments are 'undeployed'. No deployment needed."
+            )
             return True
-        
+
         # Case 2: testing -> production
         elif self.current_env == "testing" and self.target_env == "production":
             self.log_message("Deploying from testing to production")
-            
+
             # Check production server health
             prod_url = self.get_triton_server_url("production")
             if not self.check_server_health(prod_url):
                 self.log_error("Production server health check failed")
                 return False
-            
+
             # Unload existing models in production
             if not self.unload_existing_models(prod_url):
                 self.log_error("Failed to unload existing models from production")
                 return False
-            
+
             # Load models to production
             if not self.load_ensemble_models(prod_url):
                 self.log_error("Failed to load models to production")
                 return False
-            
+
             # Test inference
             if not self.test_model_inference(prod_url):
                 self.log_error("Production inference test failed")
                 return False
-            
+
             self.log_message("Successfully deployed model from testing to production")
             return True
-        
+
         # Case 3: testing -> undeployed
         elif self.current_env == "testing" and self.target_env == "undeployed":
             self.log_message("Undeploying model from testing")
-            
+
             test_url = self.get_triton_server_url("testing")
             if not self.check_server_health(test_url):
                 self.log_error("Testing server health check failed")
                 return False
-            
+
             # Unload models from testing
             if not self.unload_existing_models(test_url):
                 self.log_error("Failed to unload models from testing")
                 return False
-            
+
             self.log_message("Successfully undeployed model from testing")
             return True
-        
+
         # Case 4: production -> testing
         elif self.current_env == "production" and self.target_env == "testing":
             self.log_message("Moving model from production to testing")
-            
+
             # Unload from production
             prod_url = self.get_triton_server_url("production")
             if not self.check_server_health(prod_url):
                 self.log_error("Production server health check failed")
                 return False
-            
+
             if not self.unload_existing_models(prod_url):
                 self.log_error("Failed to unload models from production")
                 return False
-            
+
             # Load to testing
             test_url = self.get_triton_server_url("testing")
             if not self.check_server_health(test_url):
                 self.log_error("Testing server health check failed")
                 return False
-            
+
             if not self.unload_existing_models(test_url):
                 self.log_error("Failed to unload existing models from testing")
                 return False
-            
+
             if not self.load_ensemble_models(test_url):
                 self.log_error("Failed to load models to testing")
                 return False
-            
+
             if not self.test_model_inference(test_url):
                 self.log_error("Testing inference test failed")
                 return False
-            
+
             self.log_message("Successfully moved model from production to testing")
             return True
-        
+
         # Case 5: undeployed -> testing
         elif self.current_env == "undeployed" and self.target_env == "testing":
             self.log_message("Deploying model to testing")
-            
+
             test_url = self.get_triton_server_url("testing")
             if not self.check_server_health(test_url):
                 self.log_error("Testing server health check failed")
                 return False
-            
+
             if not self.unload_existing_models(test_url):
                 self.log_error("Failed to unload existing models from testing")
                 return False
-            
+
             if not self.load_ensemble_models(test_url):
                 self.log_error("Failed to load models to testing")
                 return False
-            
+
             if not self.test_model_inference(test_url):
                 self.log_error("Testing inference test failed")
                 return False
-            
+
             self.log_message("Successfully deployed model to testing")
             return True
-        
+
         # Case 6: undeployed -> production
         elif self.current_env == "undeployed" and self.target_env == "production":
             self.log_message("Deploying model directly to production")
-            
+
             prod_url = self.get_triton_server_url("production")
             if not self.check_server_health(prod_url):
                 self.log_error("Production server health check failed")
                 return False
-            
+
             if not self.unload_existing_models(prod_url):
                 self.log_error("Failed to unload existing models from production")
                 return False
-            
+
             if not self.load_ensemble_models(prod_url):
                 self.log_error("Failed to load models to production")
                 return False
-            
+
             if not self.test_model_inference(prod_url):
                 self.log_error("Production inference test failed")
                 return False
-            
+
             self.log_message("Successfully deployed model directly to production")
             return True
-        
+
         # Invalid case
         else:
-            self.log_error(f"Invalid deployment path: {self.current_env} -> {self.target_env}")
+            self.log_error(
+                f"Invalid deployment path: {self.current_env} -> {self.target_env}"
+            )
             return False
 
     def load_model_to_repository(self):
         """Main model repository upload process"""
         try:
-            self.log_message(
-                f"Starting model upload for model ID: {self.model_id}"
-            )
+            self.log_message(f"Starting model upload for model ID: {self.model_id}")
 
             # Step 1: Create working directory
             self.create_working_directory()
@@ -680,9 +711,7 @@ class ModelDeploymentOrchestrator:
             # Step 4: Upload to model repository
             self.upload_to_model_repository()
 
-            self.log_message(
-                "Model files uploaded successfully to both environments"
-            )
+            self.log_message("Model files uploaded successfully to both environments")
 
         except KeyboardInterrupt:
             self.log_error("Model upload interrupted by user")
@@ -746,14 +775,20 @@ def main():
     try:
         args = parser.parse_args()
     except SystemExit as e:
-        logger.error(f"Argument parsing failed with error arparse error code: {e} - Check the INFO logs for more details.")
+        logger.error(
+            f"Argument parsing failed with error arparse error code: {e} - Check the INFO logs for more details."
+        )
         raise
     except Exception as e:
-        logger.error(f"Unexpected error during argument parsing error code: {e}  - Check the INFO logs for more details.")
+        logger.error(
+            f"Unexpected error during argument parsing error code: {e}  - Check the INFO logs for more details."
+        )
         raise
 
     # Log all passed arguments for debugging
-    logger.info(f"Starting deployment with arguments: {vars(args)}", model_id=args.model_id)
+    logger.info(
+        f"Starting deployment with arguments: {vars(args)}", model_id=args.model_id
+    )
 
     try:
         deployer = ModelDeploymentOrchestrator(
@@ -766,23 +801,31 @@ def main():
             target_env=args.target_env,
             first_deployment=args.first_deployment.lower() == "true",
         )
-        
+
         # Step 1: Upload model files to repository (only on first deployment)
         if args.first_deployment.lower() == "true":
-            logger.info("First deployment detected - uploading model files to repository", model_id=args.model_id)
+            logger.info(
+                "First deployment detected - uploading model files to repository",
+                model_id=args.model_id,
+            )
             deployer.load_model_to_repository()
         else:
-            logger.info("Not a first deployment - skipping model repository upload", model_id=args.model_id)
-        
+            logger.info(
+                "Not a first deployment - skipping model repository upload",
+                model_id=args.model_id,
+            )
+
         # Step 2: Deploy model to Triton inference servers
         if not deployer.deploy_model():
-            logger.error("Model deployment to Triton servers failed", model_id=args.model_id)
+            logger.error(
+                "Model deployment to Triton servers failed", model_id=args.model_id
+            )
             sys.exit(1)
-            
+
         logger.info("Model deployment completed successfully", model_id=args.model_id)
-        
+
     except Exception as e:
-        logger.error(f"Fatal error: {e}", model_id=getattr(args, 'model_id', None))
+        logger.error(f"Fatal error: {e}", model_id=getattr(args, "model_id", None))
         sys.exit(1)
 
 

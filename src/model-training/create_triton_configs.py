@@ -182,7 +182,7 @@ output [
   }},
   """
     if supports_token_type_ids:
-        config += f"""{{
+        config += """{{
     name: "token_type_ids"
     data_type: TYPE_INT64
     dims: [ -1 ]
@@ -211,7 +211,7 @@ parameters [
   {{
     key: "ood_method"
     value: {{
-      string_value: "{ood_method if ood_method else 'none'}"
+      string_value: "{ood_method if ood_method else "none"}"
     }}
   }},
   {{
@@ -270,7 +270,7 @@ input [
 
     # Add token_type_ids input if supported
     if supports_token_type_ids:
-        config += f""",
+        config += """,
   {{
     name: "token_type_ids"
     data_type: TYPE_INT64
@@ -289,7 +289,7 @@ output [
     dims: [ {num_labels} ]
   }}"""
 
-    config += f"""
+    config += """
 ]
 
 
@@ -368,7 +368,7 @@ parameters [
   {{
     key: "ood_method"
     value: {{
-      string_value: "{ood_method if ood_method else 'none'}"
+      string_value: "{ood_method if ood_method else "none"}"
     }}
   }},
   {{
@@ -392,7 +392,7 @@ parameters [
   {{
     key: "uncertainty_strategy"
     value: {{
-      string_value: "{uncertainty_strategy if uncertainty_strategy else 'none'}"
+      string_value: "{uncertainty_strategy if uncertainty_strategy else "none"}"
     }}
   }},
   {{
@@ -499,5 +499,3 @@ def generate_all_triton_configs(
     }
 
     return configs
-
-

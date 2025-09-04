@@ -1,11 +1,71 @@
-# LLM Provider configuration
-provider:
-  name: "ollama"
+# Bedrock Anthropic provider configuration (when provider.name = "bedrock-anthropic")
+bedrock_anthropic:
+  model_name: "eu.anthropic.claude-3-7-sonnet-20250219-v1:0"
+  aws_region: "eu-west-1"
+  temperature: 0.7
+  max_tokens: 4096
+  top_p: 1.0
+  tpm_limit: 200000
+  stop_sequences: []
+  batch_generation:
+    enabled: true
+    max_batch_size: 10
+    max_tokens_per_batch: 20000
+
+# Azure OpenAI provider configuration (when provider.name = "azure-openai")
+azure_openai:
+  # Required: Set via environment variables AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT_NAME
+  api_version: "2024-12-01-preview"
+  model_name: "gpt-4o"
+  temperature: 0.7
+  max_tokens: 4096
+  top_p: 1.0
+  tpm_limit: 200000
+  rpm_limit: 6000
+  batch_generation:
+    enabled: true
+    max_batch_size: 10
+    max_tokens_per_batch: 20000
+
+# Ollama provider configuration (when provider.name = "ollama")
+ollama:
   model_name: "gemma3:1b-it-qat"
-  api_url: "http://ollama:11434"
+  host: "http://ollama:11434"
   timeout: 60
   max_retries: 3
   retry_delay: 5
+  batch_generation:
+    enabled: false
+
+# MAIN PROVIDER SELECTION - THIS IS THE KEY SETTING
+provider:
+  name: "azure-openai"  # THIS DETERMINES WHICH PROVIDER TO USE
+  timeout: 60
+  max_retries: 3
+  retry_delay: 5
+
+# Processing settings
+processing:
+  wait_between_requests: 1
+  timeout_seconds: 1300  # 1 hour timeout for dataset processing
+  max_consecutive_failures: 3
+  success_rate_threshold: 0.8  # 80% success rate required
+  retry_on_failure: true
+
+# Callback configuration for external project notifications
+callback:
+  url: "http://ruuter-public:8086/global-classifier/data/callback"
+  timeout: 60.0  # Callback timeout in seconds
+  retries: 3  # Number of retry attempts
+  retry_backoff: true  # Use exponential backoff
+  include_error_details: true
+  include_summary: true
+
+# Batch generation settings (global)
+batch_generation:
+  enabled: true
+  max_batch_size: 10
+  fallback_on_failure: true
 
 # API connection settings
 api:
@@ -18,8 +78,8 @@ directories:
   output: "output_datasets"
   templates: "templates"
   user_configs: "user_configs"
-  
-# Default generation settings (can be overridden per generation request)
+
+# Default generation settings
 generation:
   default_num_examples: 10
   default_language: "et"
@@ -28,22 +88,42 @@ generation:
     temperature: 0.7
     max_tokens: 4096
 
+# Language and Prompt Settings  
+language_settings:
+  default_system_prompt: "You are a helpful assistant providing accurate information based on topic content."
+  default_language: "et"
+  supported_languages:
+    en: "English"
+    et: "Estonian"
+    fi: "Finnish"
+
+# Storage configuration
+storage:
+  datasets_dir: "datasets"
+  templates_dir: "templates"
+  user_configs_dir: "user_configs"
+
+# Default Output Settings
+output_defaults:
+  save_format: "json"
+  supported_formats:
+    - "json"
+    - "text"
+
 # Dataset generation configuration
 dataset_generation:
   structure_name: "single_question"
   prompt_template_name: "institute_topic_question"
-  traversal_strategy: "pattern"  # Options: "flat", "recursive", "institutional", "pattern"
+  traversal_strategy: "pattern"
   output_format: "json"
   num_samples: 10
-  post_processing: "aggregation"  # Options: "zip", "aggregation"
-  # Aggregation-specific configuration (only used when post_processing = "aggregation")
+  post_processing: "aggregation"
   aggregation:
     output_filename: "12"
-    output_format: "csv" 
+    output_format: "csv"
     merge_strategy: "combine_arrays"
     include_metadata: true
     enable_shuffling: false
-
     field_mapping:
       enabled: true
       payload_to_output:
@@ -54,15 +134,12 @@ dataset_generation:
         dataset_version_id: version_id
       content_fields:
         question: data_item
-        
-
     csv_field_order:
-    - item_id
-    - agency_name
-    - agency_id
-    - data_item
-    - dataset_version_id
-
+      - item_id
+      - agency_name
+      - agency_id
+      - data_item
+      - dataset_version_id
   parameters:
     language: "et"
     temperature: 0.7
@@ -72,10 +149,6 @@ dataset_generation:
     style: "clear and concise"
     system_prompt: "You are a helpful assistant for generating synthetic questions for given contexts."
   filter: {}
-    
-# Processing settings
-processing:
-  wait_between_requests: 1
 
 # MLflow tracking
 mlflow:
@@ -89,31 +162,65 @@ data_sources:
     patterns: ["**/cleaned.txt"]
     recursive: true
 
-callback:
-  url: "http://ruuter-public:8086/global-classifier/data/callback"
-  max_retries: 3
-  timeout: 30
 
-# Relevance Score Analysis
-relevance_score:
-  enabled: true
-  embedding_model: "paraphrase-multilingual-mpnet-base-v2"
-  segment_weight: 0.6
-  query_weight: 0.3
-  term_weight: 0.1
-  threshold_good: 0.7
-  threshold_acceptable: 0.5
-  min_df: 1
-  max_df: 0.9
-  ngram_range: (1, 2)
-
-# Information Coverage Analysis
-information_coverage:
-  enabled: true
-  similarity_threshold: 0.5
 
 # Model settings
 models:
   embedding_model: "paraphrase-multilingual-mpnet-base-v2"
-  qualitative_model: "google/gemma-2-2b-it"
-  use_4bit_quantization: true
+
+
+# redis configuration
+redis:
+  # Redis connection URL - modify according to your setup
+  # url: "redis://localhost:6379"  # For local Redis
+  url: "redis://redis:6379"  # For Docker Compose setup
+  # url: "redis://:password@redis-host:6379"  # With password
+  
+  # Redis database number to use (0-15 typically available)
+  db: 0
+  
+  # Connection pool settings
+  max_connections: 10
+  retry_on_timeout: true
+  socket_timeout: 5
+  socket_connect_timeout: 5
+
+# Embedding-specific settings
+embedding:
+  # Path to topic documents
+  topic_documents_path: "/app/data"
+  
+  # TTL settings for different embedding types
+  ttl:
+    # Persistent embeddings (topic documents) - no expiration by default
+    persistent: null  # null means no expiration
+    # Temporary embeddings (questions) - expire after successful evaluation
+    temporary: 3600  # 1 hour in seconds
+    # Failed evaluation sessions - keep longer for potential retry
+    failed_session: 7200  # 2 hours in seconds
+
+# Evaluation configuration
+evaluation:
+  # Enable automatic embedding cleanup after successful evaluation
+  auto_cleanup_on_success: true
+  # Keep embeddings for failed evaluations (for potential retry)
+  keep_failed_embeddings: true
+  # Batch size for embedding operations
+  embedding_batch_size: 32
+  max_regeneration_attempts: 3
+  # Evaluation thresholds
+  thresholds:
+    topic_coverage_min: 0.7
+    information_coverage_min: 0.6
+    similarity_coverage_min: 0.6
+    overall_min: 0.65
+    context_coverage_min: 0.5
+
+# Monitoring and logging
+monitoring:
+  # Log cache hit/miss statistics
+  log_cache_stats: true
+  # Log embedding operations
+  log_embedding_operations: true
+  # Cache statistics reporting interval (seconds)
+  stats_interval: 300  # 5 minutes

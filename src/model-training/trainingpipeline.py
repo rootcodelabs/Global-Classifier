@@ -21,8 +21,8 @@ import shutil
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import sys
-from typing import Counter, Union
+from typing import Union
+from loki_logger import LokiLogger
 from constants import (
     MODEL_CONFIGS,
     SUPPORTED_BASE_MODELS,
@@ -34,7 +34,6 @@ from constants import (
     TEST_SIZE_RATIO,
     SEQUENCE_LENGTH,
 )
-from loguru import logger
 import os
 from transformers import logging as transformers_logging
 import warnings
@@ -46,7 +45,8 @@ warnings.filterwarnings(
 transformers_logging.set_verbosity_error()
 
 
-from loki_logger import LokiLogger
+
+
 logger = LokiLogger(service_name="model-trainer")
 
 
