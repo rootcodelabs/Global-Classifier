@@ -45,8 +45,6 @@ warnings.filterwarnings(
 transformers_logging.set_verbosity_error()
 
 
-
-
 logger = LokiLogger(service_name="model-trainer")
 
 
