@@ -1,0 +1,686 @@
+# Global Classifier Development Environment
+# /etc/nginx/sites-available/global-classifier-dev
+# Domain: global-classifier-dev.rootcode.software
+# Public IP: 193.40.152.204
+# 
+# To enable this site:
+# sudo ln -s /etc/nginx/sites-available/global-classifier-dev /etc/nginx/sites-enabled/
+# sudo nginx -t
+# sudo systemctl reload nginx
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+# Upstream definitions for all services
+upstream ruuter_public {
+    server 127.0.0.1:8086;
+    keepalive 32;
+}
+
+upstream ruuter_private {
+    server 127.0.0.1:8088;
+    keepalive 32;
+}
+
+upstream data_mapper {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+upstream tim {
+    server 127.0.0.1:8085;
+    keepalive 32;
+}
+
+upstream authentication_layer {
+    server 127.0.0.1:3004;
+    keepalive 32;
+}
+
+upstream resql {
+    server 127.0.0.1:8082;
+    keepalive 32;
+}
+
+upstream cron_manager {
+    server 127.0.0.1:9010;
+    keepalive 32;
+}
+
+upstream mlflow {
+    server 127.0.0.1:5001;
+    keepalive 32;
+}
+
+upstream minio_api {
+    server 127.0.0.1:9000;
+    keepalive 32;
+}
+
+upstream minio_console {
+    server 127.0.0.1:9001;
+    keepalive 32;
+}
+
+upstream gc_s3_ferry {
+    server 127.0.0.1:3006;
+    keepalive 32;
+}
+
+upstream opensearch_node {
+    server 127.0.0.1:9200;
+    keepalive 32;
+}
+
+upstream opensearch_dashboards {
+    server 127.0.0.1:5601;
+    keepalive 32;
+}
+
+upstream notifications_node {
+    server 127.0.0.1:4040;
+    keepalive 32;
+}
+
+upstream gui {
+    server 127.0.0.1:3003;
+    keepalive 32;
+}
+
+upstream dataset_gen_service {
+    server 127.0.0.1:8000;
+    keepalive 32;
+}
+
+upstream dataset_gen_ollama {
+    server 127.0.0.1:11434;
+    keepalive 32;
+}
+
+upstream triton_production_server_http {
+    server 127.0.0.1:6000;
+    keepalive 32;
+}
+
+upstream triton_production_server_grpc {
+    server 127.0.0.1:6001;
+    keepalive 32;
+}
+
+upstream triton_production_server_metrics {
+    server 127.0.0.1:6002;
+    keepalive 32;
+}
+
+upstream triton_test_server_http {
+    server 127.0.0.1:4000;
+    keepalive 32;
+}
+
+upstream triton_test_server_grpc {
+    server 127.0.0.1:4001;
+    keepalive 32;
+}
+
+upstream triton_test_server_metrics {
+    server 127.0.0.1:4002;
+    keepalive 32;
+}
+
+upstream grafana {
+    server 127.0.0.1:4005;
+    keepalive 32;
+}
+
+upstream loki {
+    server 127.0.0.1:3100;
+    keepalive 32;
+}
+
+# Rate limiting zones
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=inference:10m rate=5r/s;
+limit_req_zone $binary_remote_addr zone=general:10m rate=50r/s;
+
+# Main server block
+server {
+    listen 80;
+    server_name global-classifier-dev.rootcode.software 193.40.152.204;
+    
+    # Basic security headers
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Client settings
+    client_max_body_size 100M;
+    client_body_timeout 60s;
+    client_header_timeout 60s;
+
+    # Logging
+    access_log /var/log/nginx/global-classifier-dev-access.log;
+    error_log /var/log/nginx/global-classifier-dev-error.log;
+
+    # Main GUI application (default route)
+    # React Dev Server with Hot Reload
+    location / {
+        limit_req zone=general burst=20 nodelay;
+        
+        # This ensures all requests under / go to the dev server
+        proxy_pass http://127.0.0.1:3003;
+
+        # WebSocket and HTTP headers
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Don't cache WebSocket upgrades
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeout settings for dev
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Ruuter Public
+    location /ruuter-public/ {
+        limit_req zone=api burst=50 nodelay;
+        rewrite ^/ruuter-public/(.*) /$1 break;
+        proxy_pass http://ruuter_public;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-API-Key" always;
+        add_header Access-Control-Expose-Headers "Content-Length,Content-Range" always;
+        
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type 'text/plain; charset=utf-8';
+            add_header Content-Length 0;
+            return 204;
+        }
+    }
+
+    # Ruuter Private
+    location /ruuter-private/ {
+        limit_req zone=api burst=30 nodelay;
+        rewrite ^/ruuter-private/(.*) /$1 break;
+        proxy_pass http://ruuter_private;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Internal API - more restrictive CORS
+        add_header Access-Control-Allow-Origin "$host" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
+    }
+
+    # Data Mapper
+    location /data-mapper/ {
+        limit_req zone=api burst=20 nodelay;
+        rewrite ^/data-mapper/(.*) /$1 break;
+        proxy_pass http://data_mapper;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # TIM (Token Identity Management)
+    location /tim/ {
+        limit_req zone=api burst=10 nodelay;
+        rewrite ^/tim/(.*) /$1 break;
+        proxy_pass http://tim;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Authentication Layer
+    location /authentication-layer/ {
+        limit_req zone=api burst=20 nodelay;
+        rewrite ^/authentication-layer/(.*) /$1 break;
+        proxy_pass http://authentication_layer;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Authentication specific headers
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Original-Method $request_method;
+    }
+
+    # ResQL
+    location /resql/ {
+        limit_req zone=api burst=30 nodelay;
+        rewrite ^/resql/(.*) /$1 break;
+        proxy_pass http://resql;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Cron Manager
+    location /cron-manager/ {
+        limit_req zone=api burst=10 nodelay;
+        rewrite ^/cron-manager/(.*) /$1 break;
+        proxy_pass http://cron_manager;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # MLflow
+    location /mlflow/ {
+        limit_req zone=general burst=30 nodelay;
+        proxy_pass http://mlflow/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Prefix /mlflow;
+        
+        # MLflow specific settings
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # MinIO (S3 API)
+    location /minio/ {
+        limit_req zone=api burst=100 nodelay;
+        rewrite ^/minio/(.*) /$1 break;
+        proxy_pass http://minio_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # MinIO specific headers
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_connect_timeout 300;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+        
+        # Large file upload support
+        proxy_request_buffering off;
+        proxy_max_temp_file_size 0;
+    }
+
+    # MinIO Console (separate location for web UI)
+    location /minio-console/ {
+        limit_req zone=general burst=20 nodelay;
+        proxy_pass http://minio_console/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Prefix /minio-console;
+        
+        # WebSocket support for MinIO console
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # GC S3 Ferry
+    location /gc-s3-ferry/ {
+        limit_req zone=api burst=50 nodelay;
+        rewrite ^/gc-s3-ferry/(.*) /$1 break;
+        proxy_pass http://gc_s3_ferry;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # OpenSearch Node
+    location /opensearch-node/ {
+        limit_req zone=api burst=50 nodelay;
+        rewrite ^/opensearch-node/(.*) /$1 break;
+        proxy_pass http://opensearch_node;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # OpenSearch specific settings
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+
+    # OpenSearch Dashboards
+    location /opensearch-dashboards/ {
+        limit_req zone=general burst=20 nodelay;
+        proxy_pass http://opensearch_dashboards/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Prefix /opensearch-dashboards;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Notifications Node
+    location /notifications-node/ {
+        limit_req zone=api burst=100 nodelay;
+        rewrite ^/notifications-node/(.*) /$1 break;
+        proxy_pass http://notifications_node;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support for real-time notifications
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # GUI (also accessible via container name)
+    location /gui/ {
+        limit_req zone=general burst=20 nodelay;
+        rewrite ^/gui/(.*) /$1 break;
+        proxy_pass http://localhost:3003;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support for development hot reload
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Dataset Generator Service
+    location /dataset-gen-service/ {
+        limit_req zone=api burst=10 nodelay;
+        rewrite ^/dataset-gen-service/(.*) /$1 break;
+        proxy_pass http://dataset_gen_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Long timeout for dataset generation
+        proxy_read_timeout 1800s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Dataset Generator Ollama
+    location /dataset-gen-ollama/ {
+        limit_req zone=inference burst=10 nodelay;
+        rewrite ^/dataset-gen-ollama/(.*) /$1 break;
+        proxy_pass http://dataset_gen_ollama;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Long timeouts for AI model requests
+        proxy_read_timeout 600s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        
+        # Streaming support
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    # Triton Production Server - HTTP
+    location /triton-production-server/ {
+        limit_req zone=inference burst=20 nodelay;
+        rewrite ^/triton-production-server/(.*) /$1 break;
+        proxy_pass http://triton_production_server_http;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Model inference timeouts
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Triton Production Server - gRPC (separate endpoint)
+    location /triton-production-server-grpc/ {
+        limit_req zone=inference burst=20 nodelay;
+        grpc_pass grpc://triton_production_server_grpc;
+        grpc_set_header Host $host;
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        grpc_set_header X-Forwarded-Proto $scheme;
+        
+        # Model inference timeouts
+        grpc_read_timeout 300s;
+        grpc_connect_timeout 300s;
+        grpc_send_timeout 300s;
+    }
+
+    # Triton Production Server - Metrics
+    location /triton-production-server-metrics/ {
+        rewrite ^/triton-production-server-metrics/(.*) /$1 break;
+        proxy_pass http://triton_production_server_metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Triton Test Server - HTTP
+    location /triton-test-server/ {
+        limit_req zone=inference burst=20 nodelay;
+        rewrite ^/triton-test-server/(.*) /$1 break;
+        proxy_pass http://triton_test_server_http;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Model inference timeouts
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Triton Test Server - gRPC (separate endpoint)
+    location /triton-test-server-grpc/ {
+        limit_req zone=inference burst=20 nodelay;
+        grpc_pass grpc://triton_test_server_grpc;
+        grpc_set_header Host $host;
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        grpc_set_header X-Forwarded-Proto $scheme;
+        
+        # Model inference timeouts
+        grpc_read_timeout 300s;
+        grpc_connect_timeout 300s;
+        grpc_send_timeout 300s;
+    }
+
+    # Triton Test Server - Metrics
+    location /triton-test-server-metrics/ {
+        rewrite ^/triton-test-server-metrics/(.*) /$1 break;
+        proxy_pass http://triton_test_server_metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Grafana
+    location /grafana/ {
+        limit_req zone=general burst=30 nodelay;
+        proxy_pass http://grafana/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Prefix /grafana;
+        
+        # WebSocket support for Grafana live features
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Loki
+    location /loki/ {
+        limit_req zone=api burst=100 nodelay;
+        rewrite ^/loki/(.*) /$1 break;
+        proxy_pass http://loki;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Loki log ingestion settings
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Legacy API endpoints (for backwards compatibility)
+    # These can be removed once all clients are updated to use container names
+    location /api/public/ {
+        return 301 /ruuter-public/$1;
+    }
+
+    location /api/private/ {
+        return 301 /ruuter-private/$1;
+    }
+
+    location /auth/ {
+        return 301 /authentication-layer/$1;
+    }
+
+    location /cron/ {
+        return 301 /cron-manager/$1;
+    }
+
+    location /s3-ferry/ {
+        return 301 /gc-s3-ferry/$1;
+    }
+
+    location /opensearch/ {
+        return 301 /opensearch-node/$1;
+    }
+
+    location /notifications/ {
+        return 301 /notifications-node/$1;
+    }
+
+    location /dataset-generator/ {
+        return 301 /dataset-gen-service/$1;
+    }
+
+    location /ollama/ {
+        return 301 /dataset-gen-ollama/$1;
+    }
+
+    location /triton/production/ {
+        return 301 /triton-production-server/$1;
+    }
+
+    location /triton/testing/ {
+        return 301 /triton-test-server/$1;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Nginx status endpoint (restricted access)
+    location /nginx-status {
+        stub_status on;
+        access_log off;
+        allow 127.0.0.1;
+        allow 10.0.0.0/8;
+        allow 172.16.0.0/12;
+        allow 192.168.0.0/16;
+        deny all;
+    }
+
+    # Security - Block common attack vectors
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ~ ~$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Error pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    
+    location = /404.html {
+        internal;
+        return 404 "Page Not Found";
+        add_header Content-Type text/plain;
+    }
+    
+    location = /50x.html {
+        internal;
+        return 500 "Internal Server Error";
+        add_header Content-Type text/plain;
+    }
+}
+
+# HTTPS server block (ready for SSL certificate)
+# Uncomment and configure when SSL certificate is obtained
+# server {
+#     listen 443 ssl http2;
+#     server_name global-classifier-dev.rootcode.software;
+#     
+#     # SSL Configuration
+#     ssl_certificate /etc/ssl/certs/global-classifier-dev.rootcode.software.pem;
+#     ssl_certificate_key /etc/ssl/private/global-classifier-dev.rootcode.software.key;
+#     
+#     # Modern SSL configuration
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+#     ssl_prefer_server_ciphers off;
+#     ssl_session_cache shared:SSL:10m;
+#     ssl_session_timeout 1d;
+#     ssl_session_tickets off;
+#     
+#     # HSTS
+#     add_header Strict-Transport-Security "max-age=63072000" always;
+#     
+#     # Include all the same location blocks as the HTTP server above
+# }

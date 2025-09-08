@@ -10,7 +10,7 @@ type FormattedOption = {
 // convert flat array to label, value pairs 
 export const formattedArray = (data: string[]|undefined): FormattedOption[]|undefined => {
   return data?.map((name) => ({
-    label: name,
+    label: name?.charAt(0).toUpperCase() + name?.slice(1),
     value: name,
   }));
 };
