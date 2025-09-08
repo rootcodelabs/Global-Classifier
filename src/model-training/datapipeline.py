@@ -55,7 +55,8 @@ class DataPipeline:
         """Extract input columns from validation rules"""
         validation_rules = self.hierarchy["validationCriteria"]["validationRules"]
         input_columns: list[str] = [
-            key for key, value in validation_rules.items()
+            key
+            for key, value in validation_rules.items()
             if isinstance(key, str) and not value["isDataClass"]
         ]
         logger.info(f"Input columns identified: {input_columns}")

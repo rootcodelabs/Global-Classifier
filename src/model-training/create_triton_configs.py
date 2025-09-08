@@ -211,7 +211,7 @@ parameters [
   {{
     key: "ood_method"
     value: {{
-      string_value: "{ood_method if ood_method else 'none'}"
+      string_value: "{ood_method if ood_method else "none"}"
     }}
   }},
   {{
@@ -368,7 +368,7 @@ parameters [
   {{
     key: "ood_method"
     value: {{
-      string_value: "{ood_method if ood_method else 'none'}"
+      string_value: "{ood_method if ood_method else "none"}"
     }}
   }},
   {{
@@ -392,7 +392,7 @@ parameters [
   {{
     key: "uncertainty_strategy"
     value: {{
-      string_value: "{uncertainty_strategy if uncertainty_strategy else 'none'}"
+      string_value: "{uncertainty_strategy if uncertainty_strategy else "none"}"
     }}
   }},
   {{
