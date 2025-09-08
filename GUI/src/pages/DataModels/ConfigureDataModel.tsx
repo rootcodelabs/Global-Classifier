@@ -97,7 +97,7 @@ const ConfigureDataModel: FC = () => {
       open({
         title: t('dataModels.configureDataModel.saveChangesTitile'),
         content: t('dataModels.configureDataModel.saveChangesDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'); close(); }}>View all Data Models</Button></div>)
       });
 
     },
@@ -115,7 +115,7 @@ const ConfigureDataModel: FC = () => {
       open({
         title: t('dataModels.configureDataModel.deployDataModalSuccessTitle'),
         content: t('dataModels.configureDataModel.deployDataModalSuccessDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'); close(); }}>View all Data Models</Button></div>)
       });
 
     },

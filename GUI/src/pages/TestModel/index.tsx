@@ -116,7 +116,7 @@ const TestModel: FC = () => {
                 }}
                 value={testModel?.modelId === null ? t('testModels.errors.modelNotExist') : undefined} defaultValue={testModel?.modelId ?? undefined}
               />
-              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId || mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
+              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId || mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""); mutation.mutate(testModel.modelId); setColor("#005aa3"); }}>
                 Load Model
               </Button>
               <div style={{ width: "100%", color: color }} >{modelLoadingStatus}</div>
