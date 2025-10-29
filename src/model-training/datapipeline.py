@@ -1,12 +1,10 @@
 import pandas as pd
-from loguru import logger
-import sys
 from s3_ferry import S3Ferry
 import os
 
 from loki_logger import LokiLogger
-logger = LokiLogger(service_name="model-trainer")
 
+logger = LokiLogger(service_name="model-trainer")
 
 
 class DataPipeline:
@@ -56,8 +54,10 @@ class DataPipeline:
     def extract_input_columns(self):
         """Extract input columns from validation rules"""
         validation_rules = self.hierarchy["validationCriteria"]["validationRules"]
-        input_columns: list[str | Unknown] = [
-            key for key, value in validation_rules.items() if not value["isDataClass"]
+        input_columns: list[str] = [
+            key
+            for key, value in validation_rules.items()
+            if isinstance(key, str) and not value["isDataClass"]
         ]
         logger.info(f"Input columns identified: {input_columns}")
         return input_columns

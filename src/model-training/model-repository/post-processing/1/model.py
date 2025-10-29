@@ -24,7 +24,6 @@ class TritonPythonModel:
                 model_path = str(args)
 
         except Exception as e:
-
             print(f"Warning: Failed to parse args in initialize: {e}")
 
         label_file = os.path.join(model_path, "1", "label_mappings.json")

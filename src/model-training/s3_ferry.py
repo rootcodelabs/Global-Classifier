@@ -1,11 +1,10 @@
 import requests
-from loguru import logger
 from constants import S3_FERRY_ENDPOINT
 
-import sys
-
 from loki_logger import LokiLogger
+
 logger = LokiLogger(service_name="model-trainer-s3-ferry")
+
 
 class S3Ferry:
     def __init__(self):
@@ -25,7 +24,6 @@ class S3Ferry:
             source_file_path,
             source_storage_type,
         )
-
 
         logger.info(f"Transferring file with payload: {payload}")
         response = requests.post(self.url, json=payload)
