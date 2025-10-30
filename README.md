@@ -45,9 +45,9 @@ Windows:
 ## Using LLMs for data generation
 
 Currently 3 providers available in Global classifier for dataset generation
-- Bedrock Anthropic
-- Azure Openai
-- Ollama
+- Bedrock Anthropic(bedrock-anthropic)
+- Azure Openai(azure-openai)
+- Ollama(ollama)
 
 To select a provider, navigate to DSL\DatasetGenerator\config\config.yaml
 
