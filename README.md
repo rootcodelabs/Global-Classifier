@@ -50,7 +50,8 @@ Currently 3 providers available in Global classifier for dataset generation
 - Ollama
 
 To select a provider, navigate to DSL\DatasetGenerator\config\config.yaml
-Change the provider name in the below block. Dataset generator will use the selected provider for the generation.
+
+1.Change the provider name in the below block. Dataset generator will use the selected provider for the generation.
   ```yaml
 provider:
   name: "azure-openai"  # THIS DETERMINES WHICH PROVIDER TO USE
@@ -58,7 +59,7 @@ provider:
   max_retries: 3
   retry_delay: 5
 ```
-
+2.Change the `PROVIDER_NAME` in .env file as well
 
 ## Contributing
 
