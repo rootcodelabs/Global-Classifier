@@ -61,6 +61,12 @@ provider:
 ```
 2.Change the `PROVIDER_NAME` in .env file as well
 
+## Data Migration
+
+In order to access the GUI, data migration script should be executed. It will add the initial configurations of the system
+run `migrate.sh` file and it will create the initial user with test Smart ID `EE30303039914` and the GUI can be accessed by logging in with the added Smart ID
+
+
 ## Contributing
 
 This section outlines the guidelines for contributing to the Global Classifier project. Please read through these before submitting any changes.
