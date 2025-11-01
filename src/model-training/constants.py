@@ -1,12 +1,18 @@
-UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
+UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = (
+    "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
+)
 
-CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/create"
+CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
+    "http://ruuter-public:8086/global-classifier/datamodels/progress/create"
+)
 
-UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = "http://ruuter-public:8086/global-classifier/datamodels/progress/update"
+UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
+    "http://ruuter-public:8086/global-classifier/datamodels/progress/update"
+)
 
 DEPLOYMENT_ENDPOINT = "http://ruuter-public:8086/global-classifier/inference/deploy"
 
-MODEL_TRAINING_SOURCE_PATH = "/app/src/training" #path in container
+MODEL_TRAINING_SOURCE_PATH = "/app/src/training"  # path in container
 
 TRAINING_LOGS_PATH = "/app/src/training/training_logs.log"
 
@@ -37,19 +43,25 @@ DEPLOYING_MODEL_PROGRESS_STATUS = "Deploying Model"
 
 MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS = "Model Trained And Deployed"
 
-TRAINING_FAILED_STATUS= "Training Failed"
+TRAINING_FAILED_STATUS = "Training Failed"
 
 DEPLOYMENT_FAILED_STATUS = "Deployment Failed"
 
 
 INITIATING_TRAINING_PROGRESS_MESSAGE = "Download and preparing dataset"
 
-TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = "The dataset is being trained on all selected models"
+TRAINING_IN_PROGRESS_PROGRESS_MESSAGE = (
+    "The dataset is being trained on all selected models"
+)
 
 
-DEPLOYING_MODEL_PROGRESS_MESSAGE = "Model training complete. The trained model is now being deployed"
+DEPLOYING_MODEL_PROGRESS_MESSAGE = (
+    "Model training complete. The trained model is now being deployed"
+)
 
-MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = "The model was trained and deployed successfully to the environment"
+MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE = (
+    "The model was trained and deployed successfully to the environment"
+)
 
 
 TRAINING_FAILED_STATUS_MESSAGE = "Model training has failed"

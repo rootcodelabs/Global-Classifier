@@ -8,7 +8,7 @@ SET
         ELSE 
             connected_models
     END,
-    updated_at = CURRENT_TIMESTAMP
+    last_trained = CURRENT_TIMESTAMP
 WHERE 
     id = :datasetId
 RETURNING 

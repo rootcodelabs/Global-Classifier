@@ -70,24 +70,24 @@ const TestModel: FC = () => {
     },
   });
 
-const processClassificationResult = (result: any) => {
-  if (!result || !Array.isArray(result) || result.length === 0) return [];
+  const processClassificationResult = (result: any) => {
+    if (!result || !Array.isArray(result) || result.length === 0) return [];
 
-  // Get the first array (which contains the classification results)
-  const resultData = result[0];
-  
-  // Check if resultData is an array of classification objects
-  if (!Array.isArray(resultData)) return [];
+    // Get the first array (which contains the classification results)
+    const resultData = result[0];
 
-  return resultData.map((item: any, index: number) => {
-    return {
-      rank: index + 1,
-      agencyId: item.agency_id,
-      agencyName: item.agency_name?.replace(/_/g, ' ') || `Agency ${item.agency_id}`,
-      confidence: item.confidence || 0
-    };
-  }).sort((a, b) => b.confidence - a.confidence); // Sort by confidence descending
-};
+    // Check if resultData is an array of classification objects
+    if (!Array.isArray(resultData)) return [];
+
+    return resultData.map((item: any, index: number) => {
+      return {
+        rank: index + 1,
+        agencyId: item.agency_id,
+        agencyName: item.agency_name?.replace(/_/g, ' ') || `Agency ${item.agency_id}`,
+        confidence: item.confidence || 0
+      };
+    }).sort((a, b) => b.confidence - a.confidence); // Sort by confidence descending
+  };
 
   const processedResults = classificationResult ? processClassificationResult(classificationResult) : [];
 
@@ -112,10 +112,11 @@ const processClassificationResult = (result: any) => {
                 placeholder={t('testModels.placeholder') ?? ''}
                 onSelectionChange={(selection) => {
                   handleChange('modelId', selection?.value as string);
+                  setIsClassifyEnabled(false);
                 }}
                 value={testModel?.modelId === null ? t('testModels.errors.modelNotExist') : undefined} defaultValue={testModel?.modelId ?? undefined}
               />
-              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId || mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
+              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId || mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""); mutation.mutate(testModel.modelId); setColor("#005aa3"); }}>
                 Load Model
               </Button>
               <div style={{ width: "100%", color: color }} >{modelLoadingStatus}</div>
@@ -135,8 +136,8 @@ const processClassificationResult = (result: any) => {
           <div className="testModalClassifyButton">
             <Button
               onClick={() => { classifyMutation.mutate(testModel) }}
-             disabled={!isClassifyEnabled || !testModel.modelId || !testModel.text || classifyMutation.isLoading}
-             showLoadingIcon={classifyMutation.isLoading}
+              disabled={!isClassifyEnabled || !testModel.modelId || !testModel.text || !testModel.text.trim() || classifyMutation.isLoading}
+              showLoadingIcon={classifyMutation.isLoading}
             >
               {t('testModels.classify')}
             </Button>

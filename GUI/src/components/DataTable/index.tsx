@@ -33,6 +33,7 @@ import { Icon, Track } from 'components';
 import Filter from './Filter';
 import './DataTable.scss';
 import DropdownFilter from './DropdownFilter';
+import NoDataView from 'components/molecules/NoDataView';
 
 type DataTableProps = {
   data: any;
@@ -54,9 +55,9 @@ type DataTableProps = {
   meta?: TableMeta<any>;
   dropdownFilters?: DropdownFilterConfig[];
   onSelect?: (value: string | number) => void | undefined
-  showPageSizeSelector?: boolean; 
+  showPageSizeSelector?: boolean;
   pageSizeOptions?: number[];
- rowSelection?: RowSelectionState;
+  rowSelection?: RowSelectionState;
   setRowSelection?: (state: RowSelectionState) => void;
 };
 
@@ -130,7 +131,7 @@ const DataTable: FC<DataTableProps> = (
   const id = useId();
   const { t } = useTranslation();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-const table = useReactTable({
+  const table = useReactTable({
     data,
     columns,
     filterFns: {
@@ -152,12 +153,12 @@ const table = useReactTable({
     enableRowSelection: !!setRowSelection,
     onRowSelectionChange: setRowSelection
       ? (updaterOrValue) => {
-          if (typeof updaterOrValue === 'function') {
-            setRowSelection(updaterOrValue(table.getState().rowSelection));
-          } else {
-            setRowSelection(updaterOrValue);
-          }
+        if (typeof updaterOrValue === 'function') {
+          setRowSelection(updaterOrValue(table.getState().rowSelection));
+        } else {
+          setRowSelection(updaterOrValue);
         }
+      }
       : undefined,
     onSortingChange: (updater) => {
       if (typeof updater !== 'function') return;
@@ -176,14 +177,14 @@ const table = useReactTable({
     pageCount: isClientSide ? undefined : pagesCount,
   });
 
-    const handlePageSizeChange = (newPageSize: number) => {
+  const handlePageSizeChange = (newPageSize: number) => {
     if (setPagination && pagination) {
       setPagination({
-        pageIndex: 0, 
+        pageIndex: 0,
         pageSize: newPageSize,
       });
     }
-  };  
+  };
 
   return (
     <div className='data-table__scrollWrapper'>
@@ -212,7 +213,7 @@ const table = useReactTable({
                             const dropdownConfig = dropdownFilters?.find(
                               (df) => df.columnId === header.column.id
                             );
-                            
+
                             if (dropdownConfig) {
                               return (
                                 <DropdownFilter
@@ -223,7 +224,7 @@ const table = useReactTable({
                                 />
                               );
                             }
-                           
+
                           })()
                         )}
                         {filterable && header.column.getCanFilter() && (
@@ -237,19 +238,32 @@ const table = useReactTable({
           </thead>
         )}
         <tbody>
-          {tableBodyPrefix}
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-              ))}
+          {!data || data.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} style={{ textAlign: 'center', padding: '20px' }}>
+                <NoDataView text='No data available' />
+              </td>
             </tr>
-          ))}
+          ) : (
+            <>
+              {tableBodyPrefix}
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} style={table.options.meta?.getRowStyles(row)}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))}
+            </>
+          )
+
+          }
+
         </tbody>
       </table>
       {pagination && (
         <div className='data-table__pagination-wrapper'>
-           {showPageSizeSelector && (
+          {showPageSizeSelector && (
             <div className='data-table__page-size-selector'>
               <span className='page-size-label'>
                 {t('global.showEntries') || 'Show'}

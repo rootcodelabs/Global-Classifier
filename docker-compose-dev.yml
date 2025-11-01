@@ -330,6 +330,8 @@ services:
       - PORT=3001
       - REACT_APP_SERVICE_ID=conversations,settings,monitoring
       - REACT_APP_ENABLE_HIDDEN_FEATURES=TRUE
+      - VITE_HOST=0.0.0.0
+      - VITE_ALLOWED_HOSTS=global-classifier-dev.rootcode.software,localhost,127.0.0.1
 
     build:
       context: ./GUI
@@ -349,10 +351,8 @@ services:
     container_name: dataset-gen-service
     ports:
       - "8000:8000"
-    environment:
-      - PROVIDER_API_URL=http://dataset-gen-ollama:11434
-      - SERVICE_DEBUG=false
-      - MLFLOW_TRACKING_URI=http://dataset-gen-mlflow:5000
+    env_file:
+      - .env
     volumes:
       - ./DSL/DatasetGenerator/config:/app/config
       - ./DSL/DatasetGenerator/templates:/app/templates
@@ -360,11 +360,29 @@ services:
       - cron_data:/app/data
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./DSL/DatasetGenerator/logs:/app/logs
-    depends_on:
-      - dataset-gen-ollama
     networks:
       - bykstack
-  
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-embeddings
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis_data:/data
+      - ./DSL/DatasetGenerator/config/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    restart: unless-stopped
+    networks:
+      - bykstack
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   dataset-gen-ollama:
     image: synthesisai/dataset-generator-ollama:latest
     container_name: dataset-gen-ollama
@@ -573,6 +591,8 @@ volumes:
     name: loki-data
   grafana-data:
     name: grafana-data
+  redis_data:
+    name: redis_data
 
 
 networks:
