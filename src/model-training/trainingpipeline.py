@@ -1146,13 +1146,13 @@ class TrainingPipeline:
             # save labelmappings, ood config to config.json
             config = {
                 "num_labels": len(label_encoder.classes_),
-                "model_name": self.full_name,
+                "model_name": MODEL_CONFIGS[self.model_name]["model_name"],
                 "hidden_dim": model.hidden_dim,
                 "dropout_rate": model.dropout_rate,
                 "sequence_length": SEQUENCE_LENGTH,
                 "ood_method": self.ood_method,
                 "ood_config": self.ood_config,
-                "base_model_name": self.model_name,
+                "base_model_name": MODEL_CONFIGS[self.model_name]["tokenizer_name"],
                 "base_model_type": model.base_model.__class__.__name__,
                 "model_label2id": self.model_label2id,
                 "model_id2label": self.model_id2label,
