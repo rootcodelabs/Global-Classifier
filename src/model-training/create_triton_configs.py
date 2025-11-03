@@ -180,7 +180,7 @@ output [
     data_type: TYPE_INT64
     dims: [ -1 ]
   }}"""
-    
+
     if supports_token_type_ids:
         config += """,
   {
