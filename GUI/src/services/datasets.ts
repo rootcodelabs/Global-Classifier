@@ -1,3 +1,11 @@
+export async function exportModel(datasetId: number | string) {
+  // Calls the new Ruuter endpoint to export the model as JSON
+  const response = await apiDev.get(datasetsEndpoints.EXPORT_MODEL(), {
+    params: { datasetId },
+    responseType: 'blob', // Expect a file
+  });
+  return response.data;
+}
 import { dataModelsEndpoints, datasetsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
 import { DATASET_PAGE_SIZE, OVERVIEW_PAGE_SIZE } from 'utils/constants';

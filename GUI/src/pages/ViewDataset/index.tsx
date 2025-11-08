@@ -12,7 +12,34 @@ import {
 import SkeletonTable from '../../components/molecules/TableSkeleton/TableSkeleton';
 import DynamicForm from 'components/FormElements/DynamicForm';
 import { datasetQueryKeys, integratedAgenciesQueryKeys } from 'utils/queryKeys';
-import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset } from 'services/datasets';
+import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset, exportModel } from 'services/datasets';
+  const [isExporting, setIsExporting] = useState(false);
+  // Export handler
+  const handleExport = async () => {
+    const id = searchParams.get('datasetId');
+    if (!id) return;
+    setIsExporting(true);
+    try {
+      const blob = await exportModel(id);
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `model-dataset-${id}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      open({
+        title: t('datasets.detailedView.exportFailedTitle') || 'Export Failed',
+        content: t('datasets.detailedView.exportFailedDesc') || 'Could not export the model as JSON.',
+        footer: null,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
@@ -415,9 +442,17 @@ const ViewDataset = () => {
               </div>
               <Button
                 appearance={ButtonAppearanceTypes.PRIMARY}
+                onClick={handleExport}
+                disabled={isExporting}
               >
-                {t('datasets.detailedView.export') ?? ''}
+                {isExporting ? (t('datasets.detailedView.exporting') || 'Exporting...') : (t('datasets.detailedView.export') ?? '')}
               </Button>
+      {/* Export loading banner */}
+      {isExporting && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', background: '#fffbe6', color: '#333', zIndex: 9999, textAlign: 'center', padding: 12, fontWeight: 500 }}>
+          {t('datasets.detailedView.exporting') || 'Exporting model as JSON...'}
+        </div>
+      )}
 
             </div>
           </Card>

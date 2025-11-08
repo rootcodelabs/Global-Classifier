@@ -22,6 +22,7 @@ export const datasetsEndpoints = {
   GET_DATA_GENERATION_PROGRESS: (): string => `/global-classifier/datasets/progress`,
   UPDATE_DATASET: (): string => `/global-classifier/datasets/update`,
   DELETE_DATASET: (): string => `/global-classifier/datasets/delete`,
+  EXPORT_MODEL: (): string => '/global-classifier/datasets/export-model',
 
 
 

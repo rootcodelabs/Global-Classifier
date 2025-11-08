@@ -1,0 +1,63 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Export dataset model (JSON metadata or presigned URL)"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    params:
+      - field: datasetId
+        type: number
+        description: "Dataset version id"
+
+extract:
+  assign:
+    datasetId: ${Number(incoming.params.datasetId)}
+  switch:
+    - condition: ${!datasetId || datasetId <= 0}
+      next: bad_request
+  next: fetchModel
+
+fetchModel:
+  call: http.get
+  args:
+    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/model/export/json"
+    query:
+      datasetId: ${datasetId}
+  result: res
+  switch:
+    - condition: ${!res || res.status !== 200}
+      next: upstream_error
+    - condition: ${!res.response.body}
+      next: not_found
+  next: respondSuccess
+
+respondSuccess:
+  assign:
+    body: ${res.response.body}
+    response:
+      datasetId: ${datasetId}
+      file: ${body.file}
+      presignedUrl: ${body.presignedUrl}
+      modelJson: ${body.modelJson}
+      message: ${body.message || 'Model JSON export successful'}
+  return: ${response}
+  status: 200
+  next: end
+
+bad_request:
+  return: '{"error":"Invalid datasetId"}'
+  status: 400
+  next: end
+
+upstream_error:
+  return: '{"error":"Failed to retrieve model export"}'
+  status: ${res.status || 502}
+  next: end
+
+not_found:
+  return: '{"error":"No model content available"}'
+  status: 404
+  next: end
