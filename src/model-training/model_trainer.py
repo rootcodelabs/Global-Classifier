@@ -439,6 +439,7 @@ class ModelTrainer:
             logger.info(f"BEST MODEL SELECTED: {best_variant['name']}")
             logger.info(f"BEST COMBINED SCORE: {best_result['combined_score']:.4f}")
             logger.info(f"BEST MODEL TYPE: {best_variant['type']}")
+            logger.info(f"BEST MODEL_BASE: {best_variant['base_model']}")
 
             # Save training summary
             training_summary = {
