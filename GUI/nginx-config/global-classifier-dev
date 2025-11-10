@@ -251,21 +251,23 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-
+    
     # Authentication Layer
     location /authentication-layer/ {
-        limit_req zone=api burst=20 nodelay;
-        rewrite ^/authentication-layer/(.*) /$1 break;
-        proxy_pass http://authentication_layer;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Authentication specific headers
-        proxy_set_header X-Original-URI $request_uri;
-        proxy_set_header X-Original-Method $request_method;
-    }
+    limit_req zone=api burst=20 nodelay;
+    proxy_pass http://authentication_layer/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # Handle React Router client-side routing
+    try_files $uri $uri/ /authentication-layer/index.html;
+    
+    # Authentication specific headers
+    proxy_set_header X-Original-URI $request_uri;
+    proxy_set_header X-Original-Method $request_method;
+}
 
     # ResQL
     location /resql/ {
