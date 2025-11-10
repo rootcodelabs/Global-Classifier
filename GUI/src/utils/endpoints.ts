@@ -15,6 +15,7 @@ export const integratedAgenciesEndPoints = {
 };
 
 export const datasetsEndpoints = {
+  EXPORT_MODEL: (): string => '/global-classifier/datasets/export-model',
   GET_OVERVIEW: (): string => '/global-classifier/datasets/list',
   GET_METADATA: (): string => `/global-classifier/datasets/metadata`,
   GET_DATASETS_DATA: (): string => '/global-classifier/datasets/data',
@@ -22,7 +23,6 @@ export const datasetsEndpoints = {
   GET_DATA_GENERATION_PROGRESS: (): string => `/global-classifier/datasets/progress`,
   UPDATE_DATASET: (): string => `/global-classifier/datasets/update`,
   DELETE_DATASET: (): string => `/global-classifier/datasets/delete`,
-  EXPORT_MODEL: (): string => '/global-classifier/datasets/export-model',
 
 
 
