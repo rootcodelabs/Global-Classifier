@@ -4,7 +4,8 @@ import { DATASET_PAGE_SIZE, OVERVIEW_PAGE_SIZE } from 'utils/constants';
 
 export async function getDatasetsOverview(
   pageNum: number,
-  sort: string
+  sort: string,
+  searchTerm: string = 'all'
 ) {
   const { data } = await apiDev.get(datasetsEndpoints.GET_OVERVIEW(), {
     params: {
@@ -13,6 +14,7 @@ export async function getDatasetsOverview(
       sortBy: sort?.split(" ")?.[0],
       sortType: sort?.split(" ")?.[1],
       pageSize: OVERVIEW_PAGE_SIZE,
+      datasetName: searchTerm,
     },
   });
   return data?.response ?? [];
