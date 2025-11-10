@@ -179,21 +179,18 @@ output [
     name: "attention_mask"
     data_type: TYPE_INT64
     dims: [ -1 ]
-  }},
-  """
+  }}"""
+
     if supports_token_type_ids:
-        config += """{{
+        config += """,
+  {
     name: "token_type_ids"
     data_type: TYPE_INT64
     dims: [ -1 ]
-  }}"""
-
-    # Note: No training flag needed for current SNGP implementation
+  }"""
 
     config += f"""
 ]
-
-
 
 parameters [
   {{
@@ -235,17 +232,6 @@ def generate_text_classifier_config(
 ) -> str:
     """
     Generate Triton text classifier config based on model type.
-
-    Args:
-        model_name: Name of the text classifier model (e.g., "text_classifier")
-        model_type: Type of model ("distilbert", "bert", "xlm-roberta", "roberta")
-        num_labels: Number of output labels/classes
-        sequence_length: Maximum sequence length for the model
-        max_batch_size: Maximum batch size for inference
-        ood_method: OOD method ("sngp", "energy", "softmax", or None)
-
-    Returns:
-        str: Complete Triton text classifier config as string
     """
 
     # Define which models support token_type_ids
@@ -268,16 +254,13 @@ input [
     dims: [ -1 ]
   }}"""
 
-    # Add token_type_ids input if supported
     if supports_token_type_ids:
         config += """,
-  {{
+  {
     name: "token_type_ids"
     data_type: TYPE_INT64
     dims: [ -1 ]
-  }}"""
-
-    # Note: No training flag needed for current SNGP implementation
+  }"""
 
     config += f"""
 ]
@@ -287,11 +270,8 @@ output [
     name: "logits"
     data_type: TYPE_FP32
     dims: [ {num_labels} ]
-  }}"""
-
-    config += """
+  }}
 ]
-
 
 dynamic_batching {{
   max_queue_delay_microseconds: 100
