@@ -13,33 +13,6 @@ import SkeletonTable from '../../components/molecules/TableSkeleton/TableSkeleto
 import DynamicForm from 'components/FormElements/DynamicForm';
 import { datasetQueryKeys, integratedAgenciesQueryKeys } from 'utils/queryKeys';
 import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset, exportModel } from 'services/datasets';
-  const [isExporting, setIsExporting] = useState(false);
-  // Export handler
-  const handleExport = async () => {
-    const id = searchParams.get('datasetId');
-    if (!id) return;
-    setIsExporting(true);
-    try {
-      const blob = await exportModel(id);
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/json' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `model-dataset-${id}.json`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      open({
-        title: t('datasets.detailedView.exportFailedTitle') || 'Export Failed',
-        content: t('datasets.detailedView.exportFailedDesc') || 'Could not export the model as JSON.',
-        footer: null,
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
@@ -103,6 +76,34 @@ const ViewDataset = () => {
    useEffect(() => {
     setRowSelection({});
   }, [pagination.pageIndex, pagination.pageSize,selectedAgencyId]);
+
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  // Export handler
+  const handleExport = async () => {
+    const id = searchParams.get('datasetId');
+    if (!id) return;
+    setIsExporting(true);
+    try {
+      const blob = await exportModel(id);
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `model-dataset-${id}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      open({
+        title: t('datasets.detailedView.exportFailedTitle') || 'Export Failed',
+        content: t('datasets.detailedView.exportFailedDesc') || 'Could not export the model as JSON.',
+        footer: null,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
    const handleBulkDelete = () => {
     if (selectedRowsCount === 0) return;
