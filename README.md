@@ -25,13 +25,13 @@ Windows:
 ## Cloning and setting up BYK stack
 
 - Clone [Ruuter](https://github.com/buerokratt/Ruuter)
-- Navigate to Ruuter and build the image using the command `docker build -t ruuter .`
+- Navigate to Ruuter `dev` branch and build the image using the command `docker build -t ruuter .`
 - Clone [Resql](https://github.com/buerokratt/Resql)
-- Navigate to Resql and build the image `docker build -t resql .`
+- Navigate to Resql `dev` branch and build the image `docker build -t resql .`
 - Clone [Data Mapper](https://github.com/buerokratt/DataMapper)
-- Navigate to Data Mapper and build the image using the command `docker build -t data-mapper .`
+- Navigate to Data Mapper `dev` branch and build the image using the command `docker build -t data-mapper .`
 - Clone [TIM](https://github.com/buerokratt/TIM)
-- Navigate to TIM and build the image using the command `docker build -t tim .`
+- Navigate to TIM `dev` branch, set the password property for key-store  and build the image using the command `docker build -t tim .`
 - Clone [Authentication Layer](https://github.com/buerokratt/Authentication-layer)
 - Go to public/env-config.js and update the RUUTER_API_URL to 'http://localhost:8086/global-classifier'
 - Navigate to Authentication Layer, checkout to the `dev` branch and build the image using the command `docker build -f Dockerfile.dev -t authentication-layer .`
