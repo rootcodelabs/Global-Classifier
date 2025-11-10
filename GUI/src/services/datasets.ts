@@ -1,11 +1,3 @@
-export async function exportDataset(datasetId: number | string) {
-  // Calls the new Ruuter endpoint to export the dataset as JSON
-  const response = await apiDev.get(datasetsEndpoints.EXPORT_DATASET(), {
-    params: { datasetId },
-    responseType: 'blob', // Expect a file
-  });
-  return response.data;
-}
 import { dataModelsEndpoints, datasetsEndpoints } from 'utils/endpoints';
 import apiDev from './api-dev';
 import { DATASET_PAGE_SIZE, OVERVIEW_PAGE_SIZE } from 'utils/constants';
@@ -77,4 +69,13 @@ export async function updateDataset(payload: {
 export async function deleteDataset(datasetVersionId: number | string) {
   const { data } = await apiDev.post(datasetsEndpoints.DELETE_DATASET(), { datasetVersionId });
   return data?.response ?? {};
+}
+
+export async function exportDataset(datasetId: number | string) {
+  // Calls the new Ruuter endpoint to export the dataset as JSON
+  const response = await apiDev.get(datasetsEndpoints.EXPORT_DATASET(), {
+    params: { datasetId },
+    responseType: 'blob', // Expect a file
+  });
+  return response.data;
 }
