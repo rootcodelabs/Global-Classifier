@@ -15,15 +15,25 @@ declaration:
 extract:
   assign:
     datasetId: ${Number(incoming.params.datasetId)}
+    file_path: "/global-classifier/resources/datasets/${datasetId}"
+    file_name: "aggregated_dataset.csv"
   switch:
     - condition: ${!datasetId || datasetId <= 0}
       next: bad_request
   next: fetchDataset
-  
+
 fetchDataset:
-  call: http.get
+  log: "Transferring file from S3: ${file_path}"
+  call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/global-classifier/resources/datasets/${datasetId}/aggregated_dataset.csv"
+    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/v1/files/copy"
+    headers:
+      Content-Type: "application/json"
+    body:
+      sourceFilePath: ${file_name}
+      sourceStorageType: "S3"
+      destinationFilePath: ${'downloads/' + file_name}
+      destinationStorageType: "FS"
   result: res
   switch:
     - condition: ${!res || res.status !== 200}
