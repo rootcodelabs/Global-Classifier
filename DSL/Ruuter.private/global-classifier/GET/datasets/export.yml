@@ -18,12 +18,12 @@ extract:
   switch:
     - condition: ${!datasetId || datasetId <= 0}
       next: bad_request
-  next: fetchModel
-
-fetchModel:
+  next: fetchDataset
+  
+fetchDataset:
   call: http.get
   args:
-    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/model/export/json"
+    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/dataset/export/json"
     query:
       datasetId: ${datasetId}
   result: res
@@ -41,8 +41,8 @@ respondSuccess:
       datasetId: ${datasetId}
       file: ${body.file}
       presignedUrl: ${body.presignedUrl}
-      modelJson: ${body.modelJson}
-      message: ${body.message || 'Model JSON export successful'}
+      datasetJson: ${body.datasetJson}
+      message: ${body.message || 'Dataset JSON export successful'}
   return: ${response}
   status: 200
   next: end
@@ -53,11 +53,11 @@ bad_request:
   next: end
 
 upstream_error:
-  return: '{"error":"Failed to retrieve model export"}'
+  return: '{"error":"Failed to retrieve dataset export"}'
   status: ${res.status || 502}
   next: end
 
 not_found:
-  return: '{"error":"No model content available"}'
+  return: '{"error":"No dataset content available"}'
   status: 404
   next: end
