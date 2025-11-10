@@ -23,9 +23,7 @@ extract:
 fetchDataset:
   call: http.get
   args:
-    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/dataset/export/json"
-    query:
-      datasetId: ${datasetId}
+    url: "[#GLOBAL_CLASSIFIER_S3_FERRY]/global-classifier/resources/datasets/${datasetId}/aggregated_dataset.csv"
   result: res
   switch:
     - condition: ${!res || res.status !== 200}
