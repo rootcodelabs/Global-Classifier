@@ -33,13 +33,38 @@ Windows:
 - Clone [TIM](https://github.com/buerokratt/TIM)
 - Navigate to TIM and build the image using the command `docker build -t tim .`
 - Clone [Authentication Layer](https://github.com/buerokratt/Authentication-layer)
-- Go to public/env-config.js and update the RUUTER_API_URL to 'http://localhost:8086/classifier'
+- Go to public/env-config.js and update the RUUTER_API_URL to 'http://localhost:8086/global-classifier'
 - Navigate to Authentication Layer, checkout to the `dev` branch and build the image using the command `docker build -f Dockerfile.dev -t authentication-layer .`
 - Clone [S3 Ferry](https://github.com/buerokratt/S3-Ferry)
 - Navigate to S3-Ferry and build the image using the command `docker build  -t s3-ferry .`
 - Clone [Cron Manager](https://github.com/buerokratt/CronManager) 
 - Navigate to Cron Manager `dev` branch and build the cron-manager-python image using the command `docker build -f Dockerfile.python -t cron-manager-python .`
+- Clone [Dataset Generator](https://github.com/buerokratt/Dataset-Generator)
+- Navigate to Dataset Generator `dev` branch and build the synthesisai/dataset-generator image using the command `docker compose build`
 
+## Using LLMs for data generation
+
+Currently 3 providers available in Global classifier for dataset generation
+- Bedrock Anthropic(bedrock-anthropic)
+- Azure Openai(azure-openai)
+- Ollama(ollama)
+
+To select a provider, navigate to DSL\DatasetGenerator\config\config.yaml
+
+1.Change the provider name in the below block. Dataset generator will use the selected provider for the generation.
+  ```yaml
+provider:
+  name: "azure-openai"  # THIS DETERMINES WHICH PROVIDER TO USE
+  timeout: 60
+  max_retries: 3
+  retry_delay: 5
+```
+2.Change the `PROVIDER_NAME` in .env file as well
+
+## Data Migration
+
+In order to access the GUI, data migration script should be executed. It will add the initial configurations of the system
+run `migrate.sh` file and it will create the initial user with test Smart ID `EE30303039914` and the GUI can be accessed by logging in with the added Smart ID
 
 
 ## Contributing
