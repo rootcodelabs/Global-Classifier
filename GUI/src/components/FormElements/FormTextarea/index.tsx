@@ -67,6 +67,7 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
           defaultValue={defaultValue}
           className={textareaAutosizeClasses}
           aria-label={hideLabel ? label : undefined}
+          disabled={disabled}
           onChange={(e) => {
             if (onChange) onChange(e);
             handleOnChange(e);

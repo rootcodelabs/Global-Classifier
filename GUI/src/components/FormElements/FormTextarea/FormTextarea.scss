@@ -95,7 +95,11 @@
     }
   }
 
-  &--disabled & {
+  &--disabled {
+    textarea {
+      cursor: not-allowed;
+      resize: none;
+    }
     input {
       background-color: get-color(black-coral-0);
     }

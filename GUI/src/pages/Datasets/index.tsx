@@ -22,8 +22,8 @@ const Datasets: FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('all');
 
   const { data: datasets, isLoading } = useQuery({
-    queryKey: datasetQueryKeys.DATASET_OVERVIEW(pageIndex, sortOption),
-    queryFn: () => getDatasetsOverview(pageIndex, sortOption),
+    queryKey: datasetQueryKeys.DATASET_OVERVIEW(pageIndex, sortOption, searchTerm),
+    queryFn: () => getDatasetsOverview(pageIndex, sortOption, searchTerm),
   });
 
   const pageCount = datasets?.[0]?.totalPages ?? 1;

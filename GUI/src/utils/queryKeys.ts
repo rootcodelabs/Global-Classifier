@@ -29,13 +29,15 @@ export const datasetQueryKeys = {
   DATASET_OVERVIEW: function (
     pageIndex?: number,
     generationStatus?: string,
-    sort?: string
+    sort?: string,
+    searchTerm?: string
   ) {
     return [
       'datasets/overview',
       pageIndex,
       generationStatus,
       sort,
+      searchTerm,
     ].filter((val) => val !== undefined);
   },
   GET_META_DATA: function (datasetId?: number|string) {

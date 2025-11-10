@@ -218,8 +218,8 @@ const ViewDataset = () => {
       header: ({ table }) => (
         <input
           type="checkbox"
-          checked={table?.getIsAllPageRowsSelected()}
-          onChange={table?.getToggleAllPageRowsSelectedHandler()}
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
           aria-label={t('global.selectAll') || 'Select all'}
         />
       ),
@@ -456,7 +456,7 @@ const ViewDataset = () => {
         {datasetIsLoading && <SkeletonTable rowCount={10} />}
         {!datasetIsLoading && (
           <DataTable
-            data={updatedDataset || []}
+            data={updatedDataset ?? []}
             columns={dataColumns as ColumnDef<string, string>[]}
             pagination={pagination}
             rowSelection={rowSelection}

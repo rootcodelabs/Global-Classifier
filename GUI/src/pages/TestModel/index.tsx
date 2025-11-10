@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, FormSelect, FormTextarea } from 'components';
 import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
@@ -91,6 +92,10 @@ const TestModel: FC = () => {
 
   const processedResults = classificationResult ? processClassificationResult(classificationResult) : [];
 
+  const selectOptions = modelVersions?.length > 0
+    ? toLabelValueArray(modelVersions, 'id', 'version') ?? []
+    : [{ label: t('testModels.noModels') ?? 'No models available', value: '', disabled: true }];
+
 
   return (
     <div>
@@ -108,15 +113,17 @@ const TestModel: FC = () => {
               <FormSelect
                 label=""
                 name="modelId"
-                options={modelVersions ? toLabelValueArray(modelVersions, 'id', 'version') ?? [] : []}
+                options={selectOptions}
                 placeholder={t('testModels.placeholder') ?? ''}
                 onSelectionChange={(selection) => {
-                  handleChange('modelId', selection?.value as string);
-                  setIsClassifyEnabled(false);
+                  if (selection && !selection.disabled) {
+                    handleChange('modelId', selection?.value as string);
+                    setIsClassifyEnabled(false);
+                  }
                 }}
                 value={testModel?.modelId === null ? t('testModels.errors.modelNotExist') : undefined} defaultValue={testModel?.modelId ?? undefined}
               />
-              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId || mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""); mutation.mutate(testModel.modelId); setColor("#005aa3"); }}>
+              <Button showLoadingIcon={mutation.isLoading} disabled={!testModel.modelId ||  mutation.isLoading} onClick={() => { setModelLoadingStatus(t('dataModels.loadDataModel.loading') ?? ""), mutation.mutate(testModel.modelId), setColor("#005aa3") }}>
                 Load Model
               </Button>
               <div style={{ width: "100%", color: color }} >{modelLoadingStatus}</div>
@@ -131,6 +138,7 @@ const TestModel: FC = () => {
               maxLength={1000}
               onChange={(e) => handleChange('text', e.target.value)}
               showMaxLength={true}
+              disabled={!isClassifyEnabled}
             />
           </div>
           <div className="testModalClassifyButton">

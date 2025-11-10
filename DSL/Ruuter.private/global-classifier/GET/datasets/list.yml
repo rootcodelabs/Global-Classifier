@@ -23,6 +23,9 @@ declaration:
       - field: sortType
         type: string
         description: "Query parameter 'sortType' for sort direction (asc, desc)"
+      - field: datasetName
+        type: string
+        description: "Query parameter 'datasetName' for filtering datasets by name"
 
 extractRequestData:
   assign:
@@ -31,6 +34,7 @@ extractRequestData:
     generationStatus: ${incoming.params.generationStatus || 'all'}
     sortBy: ${incoming.params.sortBy || ''}
     sortType: ${incoming.params.sortType || 'desc'}
+    datasetName: ${incoming.params.datasetName || 'all'}
 
 getAllDatasets:
   call: http.post
@@ -42,6 +46,7 @@ getAllDatasets:
       generation_status: ${generationStatus}
       sort_by: ${sortBy}
       sort_type: ${sortType}
+      dataset_name: ${datasetName}
   result: datasets_res
   next: return_result
 
