@@ -12,7 +12,7 @@ import {
 import SkeletonTable from '../../components/molecules/TableSkeleton/TableSkeleton';
 import DynamicForm from 'components/FormElements/DynamicForm';
 import { datasetQueryKeys, integratedAgenciesQueryKeys } from 'utils/queryKeys';
-import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset, exportModel } from 'services/datasets';
+import { deleteDataset, getDatasetData, getDatasetMetadata, updateDataset, exportDataset } from 'services/datasets';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useDialog } from 'hooks/useDialog';
 import { fetchAllAgencies } from 'services/agencies';
@@ -84,7 +84,7 @@ const ViewDataset = () => {
     if (!id) return;
     setIsExporting(true);
     try {
-      const blob = await exportModel(id);
+      const blob = await exportDataset(id);
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/json' }));
       const link = document.createElement('a');
