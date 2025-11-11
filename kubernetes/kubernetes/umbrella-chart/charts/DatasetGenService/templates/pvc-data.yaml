@@ -1,0 +1,22 @@
+{{- if and .Values.datasetGenService .Values.datasetGenService.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.release_name }}-data-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.release_name }}
+spec:
+  accessModes:
+    - {{ .Values.datasetGenService.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.datasetGenService.persistence.size }}
+  {{- if .Values.datasetGenService.persistence.storageClass }}
+  {{- if (eq "-" .Values.datasetGenService.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.datasetGenService.persistence.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,33 @@
+replicas: 1
+enabled: true
+images:
+  resql:
+    registry: "ghcr.io"
+    repository: "buerokratt/resql"
+    tag: "v1.3.4"
+
+release_name: "component-byk-resql"
+release_database: "component-resql"
+
+service:
+  type: ClusterIP
+  port: 8082
+
+env:
+  LOGGING_LEVEL_ROOT: "INFO"
+  SQLMS_DATASOURCES_0_NAME: "byk"
+  SQLMS_DATASOURCES_0_JDBCURL: "jdbc:postgresql://component-resql-users-db:5432/global-classifier"
+  SQLMS_DATASOURCES_0_USERNAME: "postgres"
+  SQLMS_DATASOURCES_0_PASSWORD: "dbadmin"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_BOOT: "INFO"
+  JAVA_OPTS: "-Xms1g -Xmx3g"
+
+resources:
+  requests:
+    memory: "1000Mi"
+    cpu: "50m"
+  limits:
+    memory: "4Gi"
+    cpu: "50m"
+
+pullPolicy: IfNotPresent

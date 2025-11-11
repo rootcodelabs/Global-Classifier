@@ -1,0 +1,66 @@
+replicas: 1
+
+release_name: "component-byk-s3-ferry"
+
+image:
+  registry: "ghcr.io"
+  repository: "buerokratt/s3-ferry"
+  pullPolicy: IfNotPresent
+  tag: "PRE-ALPHA-1.1.1"
+
+nameOverride: ""
+fullnameOverride: ""
+
+port: 3000
+
+service:
+  type: ClusterIP
+  port: 3006
+  targetPort: 3000
+
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  # Multiple volumes for different data types
+  outputDatasets:
+    size: 5Gi
+  shared:
+    size: 2Gi
+  models:
+    size: 10Gi
+  dummyModel:
+    size: 1Gi
+  cronData:
+    size: 3Gi
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Environment variables (from config.env)
+env:
+  API_CORS_ORIGIN: "*"
+  API_DOCUMENTATION_ENABLED: "true"
+  S3_REGION: "eu-west-1"
+  S3_ENDPOINT_URL: "http://minio:9000"
+  S3_ENDPOINT_NAME: "minio:9000"
+  S3_DATA_BUCKET_PATH: "resources"
+  S3_DATA_BUCKET_NAME: "global-classifier"
+  FS_DATA_DIRECTORY_PATH: "/app"
+  S3_SECRET_ACCESS_KEY: "minioadmin"
+  S3_ACCESS_KEY_ID: "minioadmin"
+  S3_HEALTH_ENDPOINT: "http://minio:9000/minio/health/live"
+  MINIO_BROWSER_REDIRECT_URL: "http://localhost:9001"
+  GF_SECURITY_ADMIN_USER: "admin"
+  GF_SECURITY_ADMIN_PASSWORD: "admin123"
+  GF_USERS_ALLOW_SIGN_UP: "false"
+  PORT: "3000"
+
+
+

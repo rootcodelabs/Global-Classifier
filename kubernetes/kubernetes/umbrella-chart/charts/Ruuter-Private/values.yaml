@@ -1,0 +1,56 @@
+replicas: 1
+enabled: true
+release_name: "component-byk-ruuter-private"
+
+images:
+  scope:
+    registry: "ghcr.io"
+    repository: "buerokratt/ruuter"
+    tag: "v2.2.1"
+
+service:
+  type: ClusterIP
+  port: 8088
+  targetPort: 8088
+
+env:
+  # Global Classifier specific configuration (from docker-compose)
+  APPLICATION_CORS_ALLOWEDORIGINS: "http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000"
+  APPLICATION_HTTPCODESALLOWLIST: "200,201,202,400,401,403,500"
+  APPLICATION_INTERNALREQUESTS_ALLOWEDIPS: "127.0.0.1"
+  APPLICATION_LOGGING_DISPLAYREQUESTCONTENT: "true"
+  APPLICATION_LOGGING_DISPLAYRESPONSECONTENT: "true"
+  APPLICATION_LOGGING_PRINTSTACKTRACE: "true"
+  APPLICATION_INTERNALREQUESTS_DISABLED: "true"
+  
+  
+  # NoOps platform standards (additional BYK Stack requirements)
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOG_LEVEL_TIMING: "INFO"
+  APPLICATION_DSL_ALLOWEDFILETYPES: ".yml,.yaml,.md,.tmp"
+  APPLICATION_HTTPRESPONSESIZELIMIT: "2000"
+  APPLICATION_OPENSEARCHCONFIGURATION_INDEX: "ruuterlog"
+  SERVER_PORT: "8088"
+
+resources:
+  requests:
+    memory: "1000Mi"
+    cpu: "50m"
+  limits:
+    memory: "2000Mi"
+    cpu: "50m"
+
+
+ingress:
+  enabled: false  
+  host: "global-classifier-ruuter-private.local"
+  corsAllowOrigin: "http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000"
+  ssl:
+    enabled: false
+    certIssuerName: "letsencrypt-prod"
+    secretName: "global-classifier-ruuter-private-tls"
+  annotations: {}
+
+pullPolicy: IfNotPresent
+
+

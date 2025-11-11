@@ -1,0 +1,15 @@
+apiVersion: v2
+name: database
+description: PostgreSQL databases for Global Classifier
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: postgresql
+    version: 12.2.6
+    repository: https://charts.bitnami.com/bitnami
+    alias: users-db
+  # - name: postgresql
+  #   version: 12.2.6
+  #   repository: https://charts.bitnami.com/bitnami
+  #   alias: tim-postgresql

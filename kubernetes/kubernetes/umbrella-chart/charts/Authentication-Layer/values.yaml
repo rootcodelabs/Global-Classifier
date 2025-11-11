@@ -1,0 +1,36 @@
+replicas: 1
+enabled: true
+
+
+release_name: "component-byk-authentication-layer"
+domain: "global-classifier.local"
+secretname: "authentication-layer-tls"
+
+ingress:
+  enabled: true
+  certIssuerName: "letsencrypt-prod"
+
+# Authentication Layer Configuration
+authentication:
+  image:
+    registry: ghcr.io
+    repository: buerokratt/authentication-layer
+    tag: "v1.1.1"
+    pullPolicy: IfNotPresent
+  
+  environment:
+    serverPort: "3004"
+    timServiceUrl: "http://component-byk-tim:8085"
+    corsOrigins: "http://localhost:3001,http://localhost:3003,http://localhost:8086"
+    
+service:
+  type: ClusterIP
+  port: 3004
+
+resources:
+  requests:
+    memory: "10Mi"
+    cpu: "1m"
+  limits:
+    memory: "50Mi"
+    cpu: "5m"

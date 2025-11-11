@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.global.mlflow.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.global.mlflow.name }}
+spec:
+  type: {{ .Values.global.mlflow.service.type }}
+  ports:
+  - port: {{ .Values.global.mlflow.service.port }}
+    targetPort: {{ .Values.global.mlflow.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.global.mlflow.name }}
+    release: {{ .Release.Name }}

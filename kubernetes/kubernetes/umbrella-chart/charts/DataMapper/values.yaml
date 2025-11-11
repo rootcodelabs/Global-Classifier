@@ -1,0 +1,31 @@
+replicas: 1
+enabled: true
+release_name: "component-byk-dmapper"
+
+images:
+  scope:
+    registry: "ghcr.io"
+    repository: "buerokratt/datamapper"
+    tag: "v2.2.9"
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+env:
+  # DataMapper specific configuration
+  PORT: "3000"
+  CONTENT_FOLDER: "/data"
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+
+pullPolicy: IfNotPresent
+

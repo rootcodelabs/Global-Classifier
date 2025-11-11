@@ -1,0 +1,45 @@
+global:
+   domain: example.com
+   tim_postgresql:
+    auth:
+      username: tim
+tim:
+  enabled: true
+  nameOverride: tim
+  ingress:
+    enabled: false
+    host: tim.example.com
+    secretName: tim-tls
+  image:
+    repository: ghcr.io/buerokratt/tim
+    tag: pre-apha-2.7.1
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8085
+  env:
+    - POSTGRES_PASSWORD: "tim"
+
+  config:
+    security_allowlist_jwt: "ruuter,ruuter-internal,data-mapper,resql,tim,tim-postgresql,chat-widget,authentication-layer,127.0.0.1,::1"
+    jwt_keystore_password: "defaultpassword"
+    jwt_issuer: "tim-issuer"
+    spring_profiles_active: "dev"
+    logging_level_root: "DEBUG"
+    legacy_cookie_name: "PHPSESSID"
+    legacy_cookie_domain: "example.com"
+    legacy_referer_marker: "NA"
+    legacy_url: "NA"
+    oauth2_client_id: "your-client-id"
+    oauth2_client_secret: "my-secret-value"
+    oauth2_client_scope: "read,write"
+    oauth2_user_auth_uri: "https://tara-test.ria.ee/oidc/authorize"
+    oauth2_access_token_uri: "https://tara-test.ria.ee/oidc/token"
+    oauth2_jwk_uri: "https://tara-test.ria.ee/oidc/jwks"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "250m"
+        memory: "256Mi"

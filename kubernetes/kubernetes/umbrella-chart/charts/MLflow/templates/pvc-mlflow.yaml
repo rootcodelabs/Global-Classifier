@@ -1,0 +1,52 @@
+{{- if .Values.global.mlflow.persistence.enabled }}
+# PVC for MLflow database (SQLite)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.global.mlflow.name }}-data-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.global.mlflow.name }}
+  
+spec:
+  accessModes:
+    - {{ .Values.global.mlflow.persistence.data.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.global.mlflow.persistence.data.size }}
+  {{- if .Values.global.mlflow.persistence.data.storageClass }}
+  {{- if (eq "-" .Values.global.mlflow.persistence.data.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.global.mlflow.persistence.data.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+
+---
+
+# PVC for MLflow artifacts (model files)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.global.mlflow.name }}-artifacts-pvc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.global.mlflow.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: artifacts
+spec:
+  accessModes:
+    - {{ .Values.global.mlflow.persistence.artifacts.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.global.mlflow.persistence.artifacts.size }}
+  {{- if .Values.global.mlflow.persistence.artifacts.storageClass }}
+  {{- if (eq "-" .Values.global.mlflow.persistence.artifacts.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.global.mlflow.persistence.artifacts.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

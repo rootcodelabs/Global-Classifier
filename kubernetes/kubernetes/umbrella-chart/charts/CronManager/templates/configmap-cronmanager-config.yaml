@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Values.release_name }}-config"
+  labels:
+    app: "{{ .Values.release_name }}"
+data:
+  constants.ini: |
+  
+    GLOBAL_CLASSIFIER_RUUTER_PRIVATE={{ .Values.constants.GLOBAL_CLASSIFIER_RUUTER_PRIVATE }}
+    GLOBAL_CLASSIFIER_RUUTER_PUBLIC={{ .Values.constants.GLOBAL_CLASSIFIER_RUUTER_PUBLIC }}
+    GLOBAL_CLASSIFIER_RESQL={{ .Values.constants.GLOBAL_CLASSIFIER_RESQL }}
+    GLOBAL_CLASSIFIER_TIM={{ .Values.constants.GLOBAL_CLASSIFIER_TIM }}
+    GLOBAL_CLASSIFIER_DATAMAPPER={{ .Values.constants.GLOBAL_CLASSIFIER_DATAMAPPER }}
+    MLFLOW_TRACKING_URI={{ .Values.constants.MLFLOW_TRACKING_URI }}

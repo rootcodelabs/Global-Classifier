@@ -1,0 +1,71 @@
+global:
+  mlflow:
+    name: mlflow
+    image:
+      repository: byk-mlflow
+      tag: latest
+      pullPolicy: IfNotPresent
+    
+    # MLflow server configuration
+    port: 5000
+    host: "0.0.0.0"
+    
+    # Authentication configuration
+    authentication:
+      username: mlflowadmin
+      password: value
+      secretKey: byk-mlflow-secret
+    
+    # Backend storage configuration
+    backend:
+      # SQLite database for metadata
+      storeUri: "sqlite:////mlflow/mlflow_data/mlflow.db"
+      # File system for artifacts
+      artifactRoot: "file:///mlflow/mlflow_artifacts"
+    
+    # Persistent storage configuration
+    persistence:
+      enabled: true
+      # Data volume for SQLite database
+      data:
+        size: 5Gi
+        storageClass: ""
+        accessMode: ReadWriteOnce
+        mountPath: /mlflow/mlflow_data
+      # Artifacts volume for model files
+      artifacts:
+        size: 20Gi
+        storageClass: ""
+        accessMode: ReadWriteOnce
+        mountPath: /mlflow/mlflow_artifacts
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    # Replica configuration
+    replicaCount: 1
+    
+    # Service configuration
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 5000
+    
+    # Ingress configuration (optional - for web UI access)
+    ingress:
+      enabled: false
+      className: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+      hosts:
+        - host: mlflow.global-classifier.local
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: []

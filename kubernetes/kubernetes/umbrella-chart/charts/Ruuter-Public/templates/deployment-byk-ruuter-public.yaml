@@ -1,0 +1,98 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.release_name }}"
+  labels:
+    app: "{{ .Values.release_name }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.release_name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.release_name }}"
+    spec:
+      initContainers:
+        - name: git-clone
+          image: alpine/git:latest
+          volumeMounts:
+          - name: dsl
+            mountPath: /DSL
+          command:
+            - sh
+            - -c
+            - |
+                git clone --single-branch --depth 1 --branch dev  https://github.com/rootcodelabs/Global-Classifier.git /tmp/ckb &&
+
+                cp -r /tmp/ckb/DSL/Ruuter.public/global-classifier/* /DSL/
+      containers:
+        - name: "{{ .Values.release_name }}"
+          image: "{{ .Values.images.scope.registry }}/{{ .Values.images.scope.repository }}:{{ .Values.images.scope.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+          env:
+             # Global Classifier specific (from docker-compose)
+            - name: application.cors.allowedOrigins
+              value: "{{ .Values.env.APPLICATION_CORS_ALLOWEDORIGINS }}"
+            - name: application.httpCodesAllowList
+              value: "{{ .Values.env.APPLICATION_HTTPCODESALLOWLIST }}"
+            - name: application.internalRequests.allowedIPs
+              value: "{{ .Values.env.APPLICATION_INTERNALREQUESTS_ALLOWEDIPS }}"
+            - name: application.logging.displayRequestContent
+              value: "{{ .Values.env.APPLICATION_LOGGING_DISPLAYREQUESTCONTENT }}"
+            - name: application.logging.displayResponseContent
+              value: "{{ .Values.env.APPLICATION_LOGGING_DISPLAYRESPONSECONTENT }}"
+            - name: application.logging.printStackTrace
+              value: "{{ .Values.env.APPLICATION_LOGGING_PRINTSTACKTRACE }}"
+            - name: application.internalRequests.disabled
+              value: "{{ .Values.env.APPLICATION_INTERNALREQUESTS_DISABLED }}"
+
+             # NoOps platform standards (additional BYK Stack requirements)
+            - name: logging.level.root
+              value: "{{ .Values.env.LOGGING_LEVEL_ROOT }}"
+            - name: LOG_LEVEL_TIMING
+              value: "{{ .Values.env.LOG_LEVEL_TIMING }}"
+            - name: application.DSL.allowedFiletypes
+              value: "{{ .Values.env.APPLICATION_DSL_ALLOWEDFILETYPES }}"
+            - name: application.httpResponseSizeLimit
+              value: "{{ .Values.env.APPLICATION_HTTPRESPONSESIZELIMIT }}"
+            - name: application.openSearchConfiguration.index
+              value: "{{ .Values.env.APPLICATION_OPENSEARCHCONFIGURATION_INDEX }}"
+          volumeMounts:
+            - name: dsl
+              mountPath: /DSL
+            - name: urls-env
+              mountPath: /app/constants.ini
+              subPath: constants.ini
+
+          # livenessProbe:
+          #   httpGet:
+          #     path: /healthz
+          #     port: {{ .Values.service.port }}
+          #   initialDelaySeconds: 90
+          #   periodSeconds: 15
+          # readinessProbe:
+          #   httpGet:
+          #     path: /healthz
+          #     port: {{ .Values.service.port }}
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 10
+          
+          resources:
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+      volumes:
+        - name: dsl
+          emptyDir: {}
+        - name: urls-env
+          configMap:
+            name: "{{ .Values.release_name }}-constants"
+{{- end }}

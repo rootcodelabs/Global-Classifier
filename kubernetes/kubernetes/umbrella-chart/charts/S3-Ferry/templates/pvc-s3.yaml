@@ -1,0 +1,86 @@
+{{- if .Values.persistence.enabled }}
+# Output datasets PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-ferry-output-datasets
+  labels:
+    app: s3-ferry
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.outputDatasets.size }}
+---
+# Shared volume PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-ferry-shared
+  labels:
+    app: s3-ferry
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.shared.size }}
+---
+# Models PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-ferry-models
+  labels:
+    app: s3-ferry
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.models.size }}
+---
+# Dummy model PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-ferry-dummy-model
+  labels:
+    app: s3-ferry
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.dummyModel.size }}
+---
+# Cron data PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: s3-ferry-cron-data
+  labels:
+    app: s3-ferry
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.cronData.size }}
+{{- end }}

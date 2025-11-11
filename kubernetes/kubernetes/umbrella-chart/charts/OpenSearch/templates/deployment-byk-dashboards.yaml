@@ -1,0 +1,62 @@
+{{- if .Values.dashboards.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.dashboards_release_name }}
+  labels:
+    app: {{ .Values.dashboards_release_name }}
+
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.dashboards_release_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dashboards_release_name }}
+    spec:
+      containers:
+      - name: opensearch-dashboards
+        image: "{{ .Values.dashboards.image.repository }}:{{ .Values.dashboards.image.tag }}"
+        imagePullPolicy: {{ .Values.dashboards.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.dashboards.port }}
+          protocol: TCP
+        env:
+        # OpenSearch connection via values.yaml file configurations
+        - name: OPENSEARCH_HOSTS
+          value: "http://{{ .Values.release_name }}:{{ .Values.opensearch.service.apiPort }}"
+        
+        # Security configuration
+        {{- if not .Values.dashboards.security.enabled }}
+        - name: DISABLE_SECURITY_DASHBOARDS_PLUGIN
+          value: "true"
+        {{- end }}
+        
+        resources:
+          limits:
+            cpu: {{ .Values.dashboards.resources.limits.cpu }}
+            memory: {{ .Values.dashboards.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.dashboards.resources.requests.cpu }}
+            memory: {{ .Values.dashboards.resources.requests.memory }}
+        
+        # livenessProbe:
+        #   httpGet:
+        #     path: /api/status
+        #     port: {{ .Values.dashboards.port }}
+        #   initialDelaySeconds: 60
+        #   periodSeconds: 30
+        #   timeoutSeconds: 10
+        
+        # readinessProbe:
+        #   httpGet:
+        #     path: /api/status
+        #     port: {{ .Values.dashboards.port }}
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 10
+        #   timeoutSeconds: 5
+      
+      restartPolicy: Always
+{{- end }}

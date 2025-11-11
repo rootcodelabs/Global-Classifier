@@ -1,0 +1,41 @@
+replicas: 1
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+release_name: "dataset-gen-service"
+
+datasetGenService:
+  image:
+    repository: synthesisai/dataset-generator
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  port: 8000
+  
+  environment:
+    serviceDebug: false
+    mlflowTrackingUri: "http://mlflow:5000"  #change these urls accordingly
+    providerApiUrl: "http://ollama:11434"
+  
+  # Single PVC for persistent data
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000

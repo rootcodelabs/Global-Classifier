@@ -1,0 +1,34 @@
+# PostgreSQL Database Configuration for Global Classifier
+users-db:
+  image:
+    tag: 14.1
+  auth:
+    postgresPassword: dbadmin
+    username: postgres
+    password: dbadmin
+    database: global-classifier
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# TIM PostgreSQL Database Configuration  
+# tim-postgresql:
+#   image:
+#     tag: 14.1
+#   auth:
+#     postgresPassword: postgres
+#     username: tim
+#     password: "123"
+#     database: tim
+#   primary:
+#     persistence:
+#       enabled: true
+#       size: 1Gi
+#     resources:
+#       requests:
+#         memory: "256Mi"
+#         cpu: "100m"
+#       limits:
+#         memory: "512Mi"
+#         cpu: "200m"

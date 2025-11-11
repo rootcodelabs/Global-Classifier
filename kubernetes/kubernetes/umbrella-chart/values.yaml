@@ -1,0 +1,41 @@
+# Global configuration for Global Classifier
+global:
+  domain: "global-classifier.local"
+  namespace: "global-classifier"
+
+# Individual service configurations
+database:
+  enabled: true
+  
+resql:
+  enabled: true
+  
+ruuter:
+  enabled: true
+
+gui:
+  enabled: true
+
+mlflow:
+  enabled: true
+
+notifications-node:
+  enabled: true
+
+opensearch:
+  enabled: true
+
+datasetgenservice:
+  enabled: true
+
+ollama:
+  enabled: true
+
+Loki:
+  enabled: true
+
+Grafana:
+  enabled: true
+
+S3-Ferry:
+  enabled: true

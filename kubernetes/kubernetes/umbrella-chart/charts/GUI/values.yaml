@@ -1,0 +1,60 @@
+
+  gui:
+    enabled: true
+    release_name: component-byk-gui
+    image:
+      repository: byk-gui   #need to change this accordinly later 
+      tag: latest
+      pullPolicy: IfNotPresent
+    
+    # React application configuration
+    nodeEnv: production
+    port: 3001
+    debugEnabled: true
+    enableHiddenFeatures: false
+    
+    # BYK Stack service URLs 
+    services:
+      ruuterPublic: "http://component-byk-ruuter-public:8086"
+      ruuterPrivate: "http://component-byk-ruuter-private:8088"
+      authenticationLayer: "http://component-byk-authentication-layer:3004"
+      notificationNode: "http://component-byk-notification-node:4040"
+      datasetGenerator: "http://component-byk-dataset-gen-service:8000"
+
+    # Content Security Policy
+    csp: "upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' http://ruuter-public:8086 http://ruuter-private:8088 http://authentication-layer:3004 http://notification-node:4040 http://dataset-gen-service:8000;"
+    
+    # Service configuration
+    serviceId: "conversations,settings,monitoring"
+    
+    # Vite development server (for development mode)
+    vite:
+      host: "0.0.0.0"
+      allowedHosts: "localhost,127.0.0.1"
+  
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    replicas: 1
+    
+    service:
+      type: ClusterIP
+      port: 3003
+      targetPort: 3001
+    
+    ingress:
+      enabled: true
+      className: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+      hosts:
+        - host: global-classifier.local   # Change this to our domain
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: []

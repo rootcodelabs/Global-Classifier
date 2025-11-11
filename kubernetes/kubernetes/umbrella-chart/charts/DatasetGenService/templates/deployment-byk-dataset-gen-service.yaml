@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.release_name }}
+  labels:
+    app: {{ .Values.release_name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.release_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.release_name }}
+    spec:
+     
+      initContainers:
+      - name: config-initializer
+        image: busybox:1.36
+        command: ['sh', '-c', 'echo "Config init complete" && sleep 5']
+        volumeMounts:
+        - name: config-volume
+          mountPath: /shared-config
+      
+      - name: templates-initializer
+        image: busybox:1.36
+        command: ['sh', '-c', 'echo "Templates init complete" && sleep 5']
+        volumeMounts:
+        - name: templates-volume
+          mountPath: /shared-templates
+      
+      containers:
+      - name: {{ .Values.release_name }}
+        image: "{{ .Values.datasetGenService.image.repository }}:{{ .Values.datasetGenService.image.tag }}"
+        imagePullPolicy: {{ .Values.datasetGenService.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.datasetGenService.port }}
+          protocol: TCP
+        env:
+        - name: PROVIDER_API_URL
+          value: "{{ .Values.datasetGenService.environment.providerApiUrl }}"
+        - name: SERVICE_DEBUG
+          value: "{{ .Values.datasetGenService.environment.serviceDebug }}"
+        - name: MLFLOW_TRACKING_URI
+          value: "{{ .Values.datasetGenService.environment.mlflowTrackingUri }}"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: templates-volume
+          mountPath: /app/templates
+        {{- if .Values.datasetGenService.persistence.enabled }}
+        - name: data-volume
+          mountPath: /app/data
+          subPath: data
+        - name: data-volume
+          mountPath: /app/output_datasets
+          subPath: outputs
+        {{- end }}
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: user-configs-volume
+          mountPath: /app/user_configs
+        - name: tmp-volume
+          mountPath: /app/tmp
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.datasetGenService.resources | nindent 10 }}
+      volumes:
+      - name: config-volume
+        emptyDir: {}
+      - name: templates-volume
+        emptyDir: {}
+      {{- if .Values.datasetGenService.persistence.enabled }}
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.release_name }}-data-pvc
+      {{- end }}
+      - name: logs-volume
+        emptyDir: {}    
+      - name: user-configs-volume
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+

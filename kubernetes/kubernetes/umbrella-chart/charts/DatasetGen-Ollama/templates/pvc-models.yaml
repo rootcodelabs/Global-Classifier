@@ -1,0 +1,21 @@
+{{- if and .Values.ollama .Values.ollama.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ .Values.release_name }}-models"
+  labels:
+    app: {{ .Values.release_name }}
+spec:
+  accessModes:
+    - {{ .Values.ollama.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.ollama.persistence.size }}
+  {{- if .Values.ollama.persistence.storageClass }}
+  {{- if (eq "-" .Values.ollama.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.ollama.persistence.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+{{- end }}

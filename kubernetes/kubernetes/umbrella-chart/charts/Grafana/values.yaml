@@ -1,0 +1,62 @@
+replicas: 1
+
+release_name: "component-byk-grafana"
+
+image:
+  repository: grafana/grafana
+  pullPolicy: IfNotPresent
+  tag: "10.0.0"
+
+nameOverride: ""
+fullnameOverride: ""
+
+port: 3000
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+admin:
+  user: admin
+  password: admin
+
+# Datasources configuration
+datasources:
+  - name: Loki
+    type: loki
+    url: http://loki:3100
+    access: proxy
+    isDefault: true
+
+# Dashboard providers
+dashboardProviders:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+
+# Environment variables
+env:
+  GF_SECURITY_ADMIN_USER: admin
+  GF_SECURITY_ADMIN_PASSWORD: admin123
+  GF_USERS_ALLOW_SIGN_UP: "false"

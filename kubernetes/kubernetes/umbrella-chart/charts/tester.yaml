@@ -1,0 +1,10 @@
+# Save as tester.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-tester
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl
+    command: ["sleep", "3600"]

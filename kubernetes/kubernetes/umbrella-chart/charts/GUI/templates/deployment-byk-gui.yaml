@@ -1,0 +1,87 @@
+{{- if .Values.gui.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.gui.release_name }}
+  labels:
+    app: {{ .Values.gui.release_name }}
+spec:
+  replicas: {{ .Values.gui.replicas  }}
+  selector:
+    matchLabels:
+      app: {{ .Values.gui.release_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.gui.release_name }}
+        
+    spec:
+      containers:
+      - name: {{ .Values.gui.release_name }}
+        image: "{{ .Values.gui.image.repository }}:{{ .Values.gui.image.tag }}"
+        imagePullPolicy: {{ .Values.gui.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.gui.port }}
+          protocol: TCP
+        env:
+        # Node.js environment configuration
+        - name: NODE_ENV
+          value: {{ .Values.gui.nodeEnv | quote }}
+        - name: PORT
+          value: {{ .Values.gui.port | quote }}
+        - name: DEBUG_ENABLED
+          value: {{ .Values.gui.debugEnabled | quote }}
+        - name: CHOKIDAR_USEPOLLING
+          value: "true"
+        
+        # React application configuration
+        - name: REACT_APP_RUUTER_API_URL
+          value: {{ .Values.gui.services.ruuterPublic | quote }}
+        - name: REACT_APP_RUUTER_PRIVATE_API_URL
+          value: {{ .Values.gui.services.ruuterPrivate | quote }}
+        - name: REACT_APP_EXTERNAL_API_URL
+          value: {{ .Values.gui.services.datasetGenerator | quote }}
+        - name: REACT_APP_CUSTOMER_SERVICE_LOGIN
+          value: {{ printf "%s/et/dev-auth" .Values.gui.services.authenticationLayer | quote }}
+        - name: REACT_APP_NOTIFICATION_NODE_URL
+          value: {{ .Values.gui.services.notificationNode | quote }}
+        - name: REACT_APP_CSP
+          value: {{ .Values.gui.csp | quote }}
+        - name: REACT_APP_SERVICE_ID
+          value: {{ .Values.gui.serviceId | quote }}
+        - name: REACT_APP_ENABLE_HIDDEN_FEATURES
+          value: {{ .Values.gui.enableHiddenFeatures | quote | upper }}
+
+        # Vite development server configuration
+        - name: VITE_HOST
+          value: {{ .Values.gui.vite.host | quote }}
+        - name: VITE_ALLOWED_HOSTS
+          value: {{ .Values.gui.vite.allowedHosts | quote }}
+        
+        resources:
+          limits:
+            cpu: {{ .Values.gui.resources.limits.cpu }}
+            memory: {{ .Values.gui.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.gui.resources.requests.cpu }}
+            memory: {{ .Values.gui.resources.requests.memory }}
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.gui.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.gui.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+      
+      restartPolicy: Always
+
+{{- end }}

@@ -1,0 +1,44 @@
+replicas: 1
+enabled: true
+release_name: "component-byk-cronmanager"
+
+cronmanager:
+  image:
+    registry: ghcr.io
+    repository: buerokratt/cronmanager     #update this image 
+    tag: "v1.1.1"
+    pullPolicy: IfNotPresent
+
+  environment:
+    containerPort: "8080"
+    mlflowTrackingUri: "http://component-byk-mlflow:5000"
+    pythonPath: "/app:/app/src/model_training:/app/src/s3_dataset_processor:/app/src"
+
+service:
+  type: ClusterIP
+  port: 9010
+  targetPort: 8080
+
+# PVC Configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# Service URLs 
+constants:
+  GLOBAL_CLASSIFIER_RUUTER_PRIVATE: "http://component-byk-ruuter-private:8088"
+  GLOBAL_CLASSIFIER_RUUTER_PUBLIC: "http://component-byk-ruuter-public:8086"
+  GLOBAL_CLASSIFIER_RESQL: "http://component-byk-resql:8082"
+  GLOBAL_CLASSIFIER_TIM: "http://component-byk-tim:8085"
+  GLOBAL_CLASSIFIER_DATAMAPPER: "http://component-byk-datamapper:3000"
+  MLFLOW_TRACKING_URI: "http://component-byk-mlflow:5000"
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "4Gi"
+    cpu: "2000m"

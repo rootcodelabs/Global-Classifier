@@ -1,0 +1,42 @@
+replicas: 1
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+release_name: "ollama"
+
+ollama:
+  image:
+    repository: synthesisai/dataset-generator-ollama
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  port: 11434
+  
+  
+  environment:
+    ollamaUseGpu: 1
+    ollamaHost: "0.0.0.0"
+  
+
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    mountPath: /root/.ollama
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+ 
+  service:
+    type: ClusterIP
+    port: 11434
+    targetPort: 11434

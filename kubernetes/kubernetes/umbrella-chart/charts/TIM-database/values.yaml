@@ -1,0 +1,29 @@
+timPostgresql:
+  enabled: true
+  nameOverride: tim-postgresql
+  image:
+    repository: postgres
+    tag: "14.1"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+    externalPort: 9876
+  env:
+    - name: POSTGRES_USER
+      value: "tim"
+    - name: POSTGRES_DB
+      value: "tim"
+    - name: POSTGRES_HOST_AUTH_METHOD
+      value: "trust"
+  secret:
+    create: true
+    name: tim-postgres-secret
+    keys:
+      POSTGRES_PASSWORD: "Ab123"
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+    accessModes: ["ReadWriteOnce"]
+    existingClaim: ""

@@ -1,0 +1,58 @@
+apiVersion: v2
+name: global-classifier
+description: Umbrella chart for Global Classifier
+version: 0.1.0
+type: application
+
+dependencies:
+  - name: database
+    version: 0.1.0
+    repository: "file://./charts/database"
+  - name: resql
+    version: 0.1.0
+    repository: "file://./charts/Resql"
+  - name: ruuter-public
+    version: 0.1.0
+    repository: "file://./charts/Ruuter-Public"
+  - name: ruuter-private
+    version: 0.1.0
+    repository: "file://./charts/Ruuter-Private"
+  - name: datamapper
+    version: 0.1.0
+    repository: "file://./charts/DataMapper"
+  - name: tim
+    version: 0.1.0
+    repository: "file://./charts/TIM"
+  - name: authentication-layer
+    version: 0.1.0
+    repository: "file://./charts/Authentication-Layer"
+  - name: cronmanager
+    version: 0.1.0
+    repository: "file://./charts/CronManager"
+  - name: gui
+    version: 0.1.0
+    repository: "file://./charts/GUI"
+  - name: mlflow
+    version: 0.1.0
+    repository: "file://./charts/MLflow"
+  - name: notifications-node
+    version: 0.1.0
+    repository: "file://./charts/Notifications-Node"
+  - name: opensearch
+    version: 0.1.0
+    repository: "file://./charts/OpenSearch"
+  - name: datasetgenservice
+    version: 0.1.0
+    repository: "file://./charts/DatasetGenService"
+  - name: ollama
+    version: 0.1.0
+    repository: "file://./charts/Ollama"
+  - name: Loki
+    version: 0.1.0
+    repository: "file://./charts/Loki"
+  - name: Grafana
+    version: 0.1.0
+    repository: "file://./charts/Grafana"
+  - name: S3-Ferry
+    version: 0.1.0
+    repository: "file://./charts/S3-Ferry"

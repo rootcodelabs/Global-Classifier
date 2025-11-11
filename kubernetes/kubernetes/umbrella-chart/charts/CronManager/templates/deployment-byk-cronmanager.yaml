@@ -1,0 +1,101 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.release_name }}"
+  labels:
+    app: "{{ .Values.release_name }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.release_name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.release_name }}"
+    spec:
+      initContainers:
+        - name: git-clone
+          image: alpine/git:latest
+          volumeMounts:
+          - name: dsl
+            mountPath: /DSL
+          command:
+            - sh
+            - -c
+            - |
+                git clone --single-branch --depth 1 --branch dev  https://github.com/rootcodelabs/Global-Classifier.git /tmp/ckb &&
+                
+                mkdir -p /DSL/DSL /DSL/config /DSL/script &&
+                cp -r /tmp/ckb/DSL/CronManager/DSL/* /DSL/DSL/ &&
+                cp -r /tmp/ckb/DSL/CronManager/config/* /DSL/config/ &&
+                cp -r /tmp/ckb/DSL/CronManager/script/* /DSL/script/
+       
+      containers:
+        - name: "{{ .Values.release_name }}"
+          image: "{{ .Values.cronmanager.image.registry }}/{{ .Values.cronmanager.image.repository }}:{{ .Values.cronmanager.image.tag }}"
+          imagePullPolicy: {{ .Values.cronmanager.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.cronmanager.environment.containerPort }}
+              protocol: TCP
+          env:
+            # - name: SERVER_PORT
+            #   value: {{ .Values.cronmanager.environment.serverPort | quote }}
+            # - name: MLFLOW_TRACKING_URI
+            #   value: {{ .Values.cronmanager.environment.mlflowTrackingUri | quote }}
+            - name: PYTHONPATH
+              value: {{ .Values.cronmanager.environment.pythonPath | quote }}
+            - name: GLOBAL_CLASSIFIER_RUUTER_PRIVATE
+              value: {{ .Values.constants.GLOBAL_CLASSIFIER_RUUTER_PRIVATE | quote }}
+            - name: GLOBAL_CLASSIFIER_RESQL
+              value: {{ .Values.constants.GLOBAL_CLASSIFIER_RESQL | quote }}
+            - name: GLOBAL_CLASSIFIER_TIM
+              value: {{ .Values.constants.GLOBAL_CLASSIFIER_TIM | quote }}
+        
+          volumeMounts:
+            - name: dsl
+              mountPath: /DSL
+            - name: cronmanager-data
+              mountPath: /app/data
+            - name: config-volume
+              mountPath: /app/inference_scripts/constants.ini
+              subPath: constants.ini
+            - name: config-volume
+              mountPath: /app/src/training/constants.ini
+              subPath: constants.ini
+          # resources:
+          #   requests:
+          #     memory: "{{ .Values.resources.requests.memory }}"
+          #     cpu: "{{ .Values.resources.requests.cpu }}"
+          #   limits:
+          #     memory: "{{ .Values.resources.limits.memory }}"
+          #     cpu: "{{ .Values.resources.limits.cpu }}"
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: http
+          #   initialDelaySeconds: 120
+          #   periodSeconds: 30
+          #   timeoutSeconds: 10
+          #   failureThreshold: 3
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: http
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 15
+          #   timeoutSeconds: 5
+          #   failureThreshold: 3
+      volumes:
+        - name: dsl
+          emptyDir: {}
+        - name: cronmanager-data
+          persistentVolumeClaim:
+            claimName: "{{ .Values.release_name }}-data"
+        - name: config-volume
+          configMap:
+            name: "{{ .Values.release_name }}-config"
+
+{{- end }}

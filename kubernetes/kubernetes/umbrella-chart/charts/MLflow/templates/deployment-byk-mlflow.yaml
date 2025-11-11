@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.global.mlflow.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.global.mlflow.name }}
+    
+spec:
+  replicas: {{ .Values.global.mlflow.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.global.mlflow.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.global.mlflow.name }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Values.global.mlflow.name }}
+        image: "{{ .Values.global.mlflow.image.repository }}:{{ .Values.global.mlflow.image.tag }}"
+        imagePullPolicy: {{ .Values.global.mlflow.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.global.mlflow.port }}
+          protocol: TCP
+        env:
+        # MLflow server configuration
+        - name: MLFLOW_HOST
+          value: {{ .Values.global.mlflow.host | quote }}
+        - name: MLFLOW_PORT
+          value: {{ .Values.global.mlflow.port | quote }}
+        
+        # Authentication configuration
+        - name: MLFLOW_TRACKING_USERNAME
+          value: {{ .Values.global.mlflow.authentication.username | quote }}
+        - name: MLFLOW_TRACKING_PASSWORD
+          value: {{ .Values.global.mlflow.authentication.password | quote }}
+        - name: MLFLOW_FLASK_SERVER_SECRET_KEY
+          value: {{ .Values.global.mlflow.authentication.secretKey | quote }}
+        
+        # Backend storage configuration
+        - name: MLFLOW_BACKEND_STORE_URI
+          value: {{ .Values.global.mlflow.backend.storeUri | quote }}
+        - name: MLFLOW_DEFAULT_ARTIFACT_ROOT
+          value: {{ .Values.global.mlflow.backend.artifactRoot | quote }}
+        
+        volumeMounts:
+        {{- if .Values.global.mlflow.persistence.enabled }}
+        # SQLite database volume
+        - name: mlflow-data
+          mountPath: {{ .Values.global.mlflow.persistence.data.mountPath }}
+        # Artifacts volume
+        - name: mlflow-artifacts
+          mountPath: {{ .Values.global.mlflow.persistence.artifacts.mountPath }}
+        {{- end }}
+        
+        resources:
+          limits:
+            cpu: {{ .Values.global.mlflow.resources.limits.cpu }}
+            memory: {{ .Values.global.mlflow.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.global.mlflow.resources.requests.cpu }}
+            memory: {{ .Values.global.mlflow.resources.requests.memory }}
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.global.mlflow.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.global.mlflow.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+      
+      {{- if .Values.global.mlflow.persistence.enabled }}
+      volumes:
+      # Persistent volume for MLflow database
+      - name: mlflow-data
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.mlflow.name }}-data-pvc
+      # Persistent volume for MLflow artifacts
+      - name: mlflow-artifacts
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.mlflow.name }}-artifacts-pvc
+      {{- end }}
+      
+      restartPolicy: Always
