@@ -193,21 +193,21 @@ def send_status_update(dataset_id: int, encoded_results: str) -> None:
 def cleanup_temporary_files() -> None:
     """Clean up all temporary files and directories after successful S3 upload."""
     cleanup_summary = []
-    
+
     try:
         # Clean up /app/data directory (downloaded and extracted source datasets)
         data_dir = "/app/data"
         if os.path.exists(data_dir):
             _cleanup_directory_contents(data_dir, cleanup_summary)
-        
+
         # Clean up ENTIRE /app/output_datasets directory (all generated files)
         output_dir = OUTPUT_DATA_DIR
         if os.path.exists(output_dir):
             _cleanup_directory_contents(output_dir, cleanup_summary)
-        
+
         # Log cleanup results
         _log_cleanup_results(cleanup_summary)
-            
+
     except Exception as e:
         logger.error(f"Error during cleanup: {e}")
 
@@ -304,10 +304,10 @@ def process_callback_background(
         send_status_update(dataset_id, encoded_results)
 
         logger.info("Processing completed successfully")
-        
+
         # Clean up temporary files before final notification
         cleanup_temporary_files()
-        
+
         notify_progress_uploading_to_s3(session_id)
 
     except Exception as e:
