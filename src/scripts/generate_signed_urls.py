@@ -5,6 +5,16 @@ import json
 import urllib.parse
 import requests
 from typing import List, Dict
+from src.scripts.constants import (
+    DATA_URL_INSERT_URL,
+    DATA_URL_UPDATE_URL,
+    MINIO_ENDPOINT,
+    MINIO_USER_ID,
+    MINIO_USER_KEY,
+    REGION_NAME,
+    SIGNATURE_VERSION,
+    BUCKET_NAME,
+)
 
 
 def upsert_agency_to_database(agency_id: str, agency_name: str, data_url: str) -> bool:
@@ -22,7 +32,7 @@ def upsert_agency_to_database(agency_id: str, agency_name: str, data_url: str) -
         }
 
         # Try INSERT first
-        insert_url = "http://resql:8082/global-classifier/insert-agency-presigned-url"
+        insert_url = DATA_URL_INSERT_URL
         response = requests.post(insert_url, json=payload, timeout=30)
 
         if response.status_code == 200:
@@ -32,9 +42,7 @@ def upsert_agency_to_database(agency_id: str, agency_name: str, data_url: str) -
             # If INSERT fails due to duplicate key, try UPDATE
             print(f"Agency {agency_id} exists, updating...")
 
-            update_url = (
-                "http://resql:8082/global-classifier/update-agency-presigned-url"
-            )
+            update_url = DATA_URL_UPDATE_URL
             update_response = requests.post(update_url, json=payload, timeout=30)
 
             if update_response.status_code == 200:
@@ -88,11 +96,11 @@ def main():
     try:
         s3_client = boto3.client(
             "s3",
-            endpoint_url="http://minio:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-            config=Config(signature_version="s3v4"),
-            region_name="us-east-1",
+            endpoint_url=MINIO_ENDPOINT,
+            aws_access_key_id=MINIO_USER_ID,
+            aws_secret_access_key=MINIO_USER_KEY,
+            config=Config(signature_version=SIGNATURE_VERSION),
+            region_name=REGION_NAME,
         )
     except Exception as e:
         print(f"Error creating S3 client: {e}")
@@ -107,7 +115,7 @@ def main():
         if agency_name:
             files_to_process.append(
                 {
-                    "bucket": "ckb",
+                    "bucket": BUCKET_NAME,
                     "key": f"{agency_name}/{agency_name}.zip",
                     "agencyId": agency_id,
                 }

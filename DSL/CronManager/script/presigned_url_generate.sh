@@ -43,7 +43,7 @@ export PYTHONPATH="/app:/app/src:$PYTHONPATH"
 
 # Call Python script with the agencies data
 echo "Calling Python script..."
-python3 "/app/src/generate_signed_urls.py" "$centopsAgencies" 2>&1
+python3 "/app/src/scripts/generate_signed_urls.py" "$centopsAgencies" 2>&1
 
 # Check if Python script execution was successful
 if [ $? -eq 0 ]; then
