@@ -384,29 +384,6 @@ services:
       timeout: 3s
       retries: 3
 
-  # dataset-gen-ollama:
-  #   image: synthesisai/dataset-generator-ollama:latest
-  #   container_name: dataset-gen-ollama
-  #   ports:
-  #     - "11434:11434"
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #     - OLLAMA_USE_GPU=1
-  #     - OLLAMA_HOST=0.0.0.0
-  #   volumes:
-  #     - dataset_gen_ollama_models:/root/.ollama
-  #     - ./DSL/DatasetGenerator/ollama-entrypoint.sh:/ollama-entrypoint.sh
-  #   entrypoint: ["bash", "/ollama-entrypoint.sh"]
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-  #   networks:
-  #     - bykstack
-
   #temporarary container to initialize S3 storage with necessary buckets and models  
   init-storage:
 
