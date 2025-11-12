@@ -23,6 +23,7 @@ from constants import (
     SYNC_WITH_CKB_FAILED,
     SCRIPT_DIR,
     PROGRESS_UPDATE_URL,
+    DATA_DIRECTORY,
 )
 
 # --- Logging Setup ---
@@ -196,7 +197,7 @@ def cleanup_temporary_files() -> None:
 
     try:
         # Clean up /app/data directory (downloaded and extracted source datasets)
-        data_dir = "/app/data"
+        data_dir = DATA_DIRECTORY
         if os.path.exists(data_dir):
             _cleanup_directory_contents(data_dir, cleanup_summary)
 
