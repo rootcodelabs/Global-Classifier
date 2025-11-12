@@ -62,6 +62,11 @@ const DataModelForm: FC<DataModelFormType> = ({
               error={errors?.modelName}
             />
           </div>
+          {dataModel.modelName && dataModel.modelName.length > 256 && (
+            <div style={{ color: 'red', fontSize: '13px', marginTop: '8px', marginBottom: '16px' }}>
+              {t('dataModels.dataModelForm.errors.modelNameLength')}
+            </div>
+          )}
           <div className="grey-card">
             {t('dataModels.dataModelForm.modelVersion')}{' '}
             <Label type="success">{dataModel?.version}</Label>

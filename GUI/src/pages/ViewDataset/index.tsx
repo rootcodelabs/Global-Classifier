@@ -456,7 +456,7 @@ const ViewDataset = () => {
         {datasetIsLoading && <SkeletonTable rowCount={10} />}
         {!datasetIsLoading && (
           <DataTable
-            data={updatedDataset}
+            data={updatedDataset ?? []}
             columns={dataColumns as ColumnDef<string, string>[]}
             pagination={pagination}
             rowSelection={rowSelection}

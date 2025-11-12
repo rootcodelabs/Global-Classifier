@@ -16,7 +16,7 @@ SELECT
 FROM 
     integrated_agencies
 WHERE
-    (:agency_name = 'all' OR agency_name ILIKE '%' || :agency_name || '%')
+    (:agency_name = 'all' OR agency_name ILIKE '%' || REPLACE(:agency_name,'_', '\_') || '%' ESCAPE '\')
 ORDER BY
     CASE WHEN :sort_by = 'agency_name' AND :sort_type = 'asc' THEN agency_name END ASC,
     CASE WHEN :sort_by = 'agency_name' AND :sort_type = 'desc' THEN agency_name END DESC,

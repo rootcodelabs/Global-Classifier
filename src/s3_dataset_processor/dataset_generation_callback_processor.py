@@ -12,6 +12,7 @@ import re
 import requests
 import traceback
 import os
+import shutil
 import pandas as pd
 from constants import (
     DATASET_UPDATE_URL,
@@ -22,6 +23,7 @@ from constants import (
     SYNC_WITH_CKB_FAILED,
     SCRIPT_DIR,
     PROGRESS_UPDATE_URL,
+    DATA_DIRECTORY,
 )
 
 # --- Logging Setup ---
@@ -189,6 +191,53 @@ def send_status_update(dataset_id: int, encoded_results: str) -> None:
         traceback.print_exc()
 
 
+def cleanup_temporary_files() -> None:
+    """Clean up all temporary files and directories after successful S3 upload."""
+    cleanup_summary = []
+
+    try:
+        # Clean up /app/data directory (downloaded and extracted source datasets)
+        data_dir = DATA_DIRECTORY
+        if os.path.exists(data_dir):
+            _cleanup_directory_contents(data_dir, cleanup_summary)
+
+        # Clean up ENTIRE /app/output_datasets directory (all generated files)
+        output_dir = OUTPUT_DATA_DIR
+        if os.path.exists(output_dir):
+            _cleanup_directory_contents(output_dir, cleanup_summary)
+
+        # Log cleanup results
+        _log_cleanup_results(cleanup_summary)
+
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
+
+
+def _cleanup_directory_contents(directory: str, cleanup_summary: list) -> None:
+    """Clean up all contents of a directory while preserving the directory itself."""
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        try:
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+                cleanup_summary.append(f"Removed file: {item_path}")
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+                cleanup_summary.append(f"Removed directory: {item_path}")
+        except Exception as e:
+            logger.warning(f"Failed to remove {item_path}: {e}")
+
+
+def _log_cleanup_results(cleanup_summary: list) -> None:
+    """Log the results of the cleanup operation."""
+    if cleanup_summary:
+        logger.info("Cleanup completed successfully:")
+        for item in cleanup_summary:
+            logger.info(f"  - {item}")
+    else:
+        logger.info("No temporary files found to clean up")
+
+
 def process_callback_background(
     file_path: str, encoded_results: str, session_id: int
 ) -> None:
@@ -256,6 +305,10 @@ def process_callback_background(
         send_status_update(dataset_id, encoded_results)
 
         logger.info("Processing completed successfully")
+
+        # Clean up temporary files before final notification
+        cleanup_temporary_files()
+
         notify_progress_uploading_to_s3(session_id)
 
     except Exception as e:
