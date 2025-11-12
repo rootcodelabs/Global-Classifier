@@ -152,11 +152,38 @@ done
 if [ ${#missing_pkgs[@]} -ne 0 ]; then
     echo "[ACTION] Missing packages detected: ${missing_pkgs[*]}"
 
-    if ! command -v uv &>/dev/null; then
-        echo "[ACTION] Installing uv inside virtualenv..."
-        pip install uv || { echo "[ERROR] Failed to install uv"; exit 1; }
-    else
-        echo "uv already installed."
+    # Install uv using secure unmanaged installation (same as presigned_url_generate.sh)
+    UV_INSTALL_DIR="/app/tools/uv"
+    UV_BIN="$UV_INSTALL_DIR/uv"
+
+    if [ ! -f "$UV_BIN" ]; then
+        echo "[UV] Installing uv to isolated directory..."
+        
+        # Create installation directory
+        mkdir -p "$UV_INSTALL_DIR" || {
+            echo "[ERROR] Failed to create UV installation directory"
+            exit 1
+        }
+        
+        # Use unmanaged installation to avoid root directory modifications
+        curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="$UV_INSTALL_DIR" sh || {
+            echo "[ERROR] Failed to install uv"
+            exit 1
+        }
+        
+        # Verify installation
+        if [ ! -x "$UV_BIN" ]; then
+            echo "[ERROR] UV installation failed or not executable"
+            exit 1
+        fi
+        
+        # Verify functionality
+        "$UV_BIN" --version || {
+            echo "[ERROR] UV installation corrupted"
+            exit 1
+        }
+        
+        echo "[UV] Successfully installed uv (unmanaged) to $UV_INSTALL_DIR"
     fi
 
     if [ ! -f /app/src/training/requirements-gpu.txt ]; then
@@ -164,8 +191,8 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
         exit 1
     fi
 
-    echo "[INSTALL] Installing from /app/src/training/requirements-gpu.txt using uv..."
-    uv pip install -r /app/src/training/requirements-gpu.txt || {
+    echo "[INSTALL] Installing from /app/src/training/requirements-gpu.txt using secure uv..."
+    "$UV_BIN" pip install --python "$VIRTUAL_ENV/bin/python3" -r /app/src/training/requirements-gpu.txt || {
         echo "[WARNING] uv install failed — trying pip as fallback..."
         pip install -r /app/src/training/requirements-gpu.txt || {
             echo "[ERROR] Both uv and pip install failed inside virtualenv"
