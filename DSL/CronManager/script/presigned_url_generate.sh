@@ -14,14 +14,38 @@ echo "Received centopsAgencies: $centopsAgencies"
 decoded_agencies=$(python3 -c "import urllib.parse, sys; print(urllib.parse.unquote(sys.argv[1]))" "$centopsAgencies" 2>/dev/null)
 echo "Decoded agencies: $decoded_agencies"
 
-# Install uv if not found
-UV_BIN="/root/.local/bin/uv"
+# Install uv if not found (using unmanaged installation for security)
+UV_INSTALL_DIR="/app/tools/uv"
+UV_BIN="$UV_INSTALL_DIR/uv"
+
 if [ ! -f "$UV_BIN" ]; then
-    echo "[UV] Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh || {
+    echo "[UV] Installing uv to isolated directory..."
+    
+    # Create installation directory
+    mkdir -p "$UV_INSTALL_DIR" || {
+        echo "[ERROR] Failed to create UV installation directory"
+        exit 1
+    }
+    
+    # Use unmanaged installation to avoid root directory modifications
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="$UV_INSTALL_DIR" sh || {
         echo "[ERROR] Failed to install uv"
         exit 1
     }
+    
+    # Verify installation
+    if [ ! -x "$UV_BIN" ]; then
+        echo "[ERROR] UV installation failed or not executable"
+        exit 1
+    fi
+    
+    # Verify functionality
+    "$UV_BIN" --version || {
+        echo "[ERROR] UV installation corrupted"
+        exit 1
+    }
+    
+    echo "[UV] Successfully installed uv (unmanaged) to $UV_INSTALL_DIR"
 fi
 
 # Activate Python virtual environment
