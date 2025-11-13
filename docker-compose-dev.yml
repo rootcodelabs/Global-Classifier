@@ -194,8 +194,8 @@ services:
     container_name: mlflow
     ports:
       - "5001:5000"
-    env_file:
-      - sidecar.env
+    # env_file:
+    #   - sidecar.env
     environment:
       - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME}
       - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD}
