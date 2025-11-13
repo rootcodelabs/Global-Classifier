@@ -84,6 +84,68 @@ response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
     -d "{\"jobId\": $job_id, \"jobStatus\": \"training-in-progress\"}")
 echo "[DEBUG] Update job status response: '$response_update_job_status'"
 
+# Create training progress session
+echo "[SESSION] Creating training progress session..."
+CREATE_PROGRESS_SESSION_ENDPOINT="http://ruuter-public:8086/global-classifier/datamodels/progress/create"
+
+response_create_session=$(curl -s -X POST "$CREATE_PROGRESS_SESSION_ENDPOINT" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"modelId\": $model_id,
+        \"modelName\": \"$model_name\",
+        \"majorVersion\": $major_version,
+        \"minorVersion\": $minor_version,
+        \"latest\": $latest
+    }")
+
+echo "[DEBUG] Create session response: '$response_create_session'"
+
+# Extract session ID from response
+if [ -z "$response_create_session" ]; then
+    echo "[ERROR] Failed to create training progress session - empty response"
+    exit 1
+fi
+
+# Check if session creation was successful
+if echo "$response_create_session" | grep -q '"operationSuccessful":true'; then
+    session_id=$(echo "$response_create_session" | sed -E 's/.*"sessionId":"?([0-9]+)"?.*/\1/')
+    
+    if [ -z "$session_id" ] || [ "$session_id" = "$response_create_session" ]; then
+        echo "[ERROR] Failed to extract session ID from response"
+        echo "[DEBUG] Raw response: '$response_create_session'"
+        exit 1
+    fi
+    
+    echo "[SESSION] Training progress session created successfully with ID: $session_id"
+else
+    echo "[ERROR] Training progress session creation failed"
+    echo "[DEBUG] Raw response: '$response_create_session'"
+    exit 1
+fi
+
+# Update initial training progress
+echo "[PROGRESS] Updating initial training progress..."
+UPDATE_PROGRESS_SESSION_ENDPOINT="http://ruuter-public:8086/global-classifier/datamodels/progress/update"
+
+response_update_progress=$(curl -s -X POST "$UPDATE_PROGRESS_SESSION_ENDPOINT" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"sessionId\": $session_id,
+        \"trainingStatus\": \"Initiating Training\",
+        \"trainingMessage\": \"Download and preparing dataset\",
+        \"progressPercentage\": 20,
+        \"processComplete\": false
+    }")
+
+echo "[DEBUG] Update progress response: '$response_update_progress'"
+
+# Check if progress update was successful
+if [ -z "$response_update_progress" ]; then
+    echo "[WARNING] Failed to update initial training progress - empty response"
+else
+    echo "[PROGRESS] Initial training progress updated successfully"
+fi
+
 # Get dataset ID
 response_get_dataset_id=$(curl -s -X POST "$GET_DATA_MODEL_BY_MODEL_ID_SQL" \
     -H "Content-Type: application/json" \
@@ -242,6 +304,7 @@ python3 "$TRAINING_SCRIPT" \
     --minor_version "$minor_version" \
     --latest "$latest" \
     --deployment_environment "$deployment_environment" \
+    --session_id "$session_id" \
 
 training_exit_code=$?
 
@@ -264,6 +327,33 @@ else
     response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
     -H "Content-Type: application/json" \
     -d "{\"jobId\": $job_id, \"jobStatus\": \"training-failed\"}")
+
+    echo "[MODEL] Updating model training status to failed..."
+    UPDATE_MODEL_TRAINING_STATUS_FAILED="http://resql:8082/global-classifier/update-training_status-failed"
+    response_update_model_status=$(curl -s -X POST "$UPDATE_MODEL_TRAINING_STATUS_FAILED" \
+    -H "Content-Type: application/json" \
+    -d "{\"model_id\": $model_id}")
+
+    echo "[DEBUG] Update model training status response: '$response_update_model_status'"
+
+    echo "[PROGRESS] Updating progress session to show training failure..."
+    response_update_progress_failure=$(curl -s -X POST "$UPDATE_PROGRESS_SESSION_ENDPOINT" \
+    -H "Content-Type: application/json" \
+    -d "{
+        \"sessionId\": $session_id,
+        \"trainingStatus\": \"Training Failed\",
+        \"trainingMessage\": \"Model training has failed\",
+        \"progressPercentage\": 100,
+        \"processComplete\": false
+    }")
+
+    echo "[DEBUG] Update progress failure response: '$response_update_progress_failure'"
+
+    if [ -z "$response_update_progress_failure" ]; then
+        echo "[WARNING] Failed to update progress session with failure status"
+    else
+        echo "[PROGRESS] Progress session updated with failure status successfully"
+    fi
 
     exit 1
 fi

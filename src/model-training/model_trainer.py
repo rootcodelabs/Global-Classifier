@@ -15,23 +15,20 @@ from constants import (
     SEQUENCE_LENGTH,
     MODEL_TRAINING_SOURCE_PATH,
     DEPLOYMENT_ENDPOINT,
-    CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
     UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
     UPDATE_MODEL_TRAINING_STATUS_ENDPOINT,
-    INITIATING_TRAINING_PROGRESS_STATUS,
     TRAINING_IN_PROGRESS_PROGRESS_STATUS,
     DEPLOYING_MODEL_PROGRESS_STATUS,
     MODEL_TRAINED_AND_DEPLOYED_PROGRESS_STATUS,
     TRAINING_FAILED_STATUS,
-    INITIATING_TRAINING_PROGRESS_PERCENTAGE,
     TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
     MODEL_TRAINED_AND_DEPLOYED_PROGRESS_PERCENTAGE,
-    INITIATING_TRAINING_PROGRESS_MESSAGE,
     TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
     DEPLOYING_MODEL_PROGRESS_MESSAGE,
     MODEL_TRAINED_AND_DEPLOYED_PROGRESS_MESSAGE,
     TRAINING_FAILED_STATUS_MESSAGE,
     TRAINING_FAILED_PROGRESS_PERCENTAGE,
+    TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE_AFTER_DATA_PREPARATION,
 )
 
 import requests
@@ -69,7 +66,7 @@ class ModelTrainer:
             self.current_deployment_platform = current_deployment_env
             self.target_deployment_platform = target_deployment_platform
 
-            self.progress_session_id = ""
+            self.progress_session_id = progress_session_id
 
         except Exception as e:
             logger.error(f"EXCEPTION IN MODEL_TRAINER INIT : {e}")
@@ -89,68 +86,6 @@ class ModelTrainer:
     def get_current_timestamp(self):
         current_timestamp = int(datetime.now(timezone.utc).timestamp())
         return current_timestamp
-
-    def create_training_progress_session(self):
-        """
-        Create a training progress session in the database.
-        This function should be implemented to create a training progress session in the database.
-        """
-        logger.info("Creating training progress session")
-
-        payload = {
-            "modelId": int(self.model_id),
-            "modelName": self.model_name,
-            "majorVersion": self.major_version,
-            "minorVersion": self.minor_version,
-            "latest": self.latest,
-        }
-
-        logger.info(f"Prepared training progress session payload {payload}")
-
-        try:
-            # Make request to create training progress session endpoint
-            response = requests.post(
-                url=CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT,
-                json=payload,
-                headers={"Content-Type": "application/json"},
-                timeout=300,  # 5 minute timeout for creating progress session
-            )
-
-            logger.info(
-                f"Create training progress session response - {response.status_code} - {response.text}"
-            )
-
-            # Check if request was successful
-
-            logger.info("Training progress session created successfully")
-
-            session_data = response.json()
-            session_id = session_data["response"]["sessionId"]
-
-            self.progress_session_id = session_id
-
-            return response.json()
-
-        except requests.HTTPError as e:
-            error_msg = f"HTTP error during creating training progress session: {e.response.status_code} - {e.response.text}"
-            logger.error(
-                error_msg, model_id=self.model_id, status_code=e.response.status_code
-            )
-            raise
-
-        except requests.RequestException as e:
-            error_msg = (
-                f"Network error during creating training progress session: {str(e)}"
-            )
-            logger.error(error_msg, model_id=self.model_id)
-            raise
-
-        except Exception as e:
-            error_msg = (
-                f"Unexpected error during creating training progress session: {str(e)}"
-            )
-            logger.error(error_msg, model_id=self.model_id)
-            raise
 
     def update_training_progression_session(
         self,
@@ -175,7 +110,7 @@ class ModelTrainer:
 
         else:
             payload = {
-                "sessionId": self.progress_session_id,
+                "sessionId": int(self.progress_session_id),
                 "trainingStatus": training_status,
                 "trainingMessage": training_message,
                 "progressPercentage": progress_percentage,
@@ -318,10 +253,12 @@ class ModelTrainer:
             logger.info("ENTERING UNIFIED TRAINING FUNCTION")
             logger.info(f"DEPLOYMENT PLATFORM - {self.current_deployment_platform}")
 
+            # Initial progress is now handled in bash script
+            # Start with data preparation progress update
             trainer.update_training_progression_session(
-                training_status=INITIATING_TRAINING_PROGRESS_STATUS,
-                training_message=INITIATING_TRAINING_PROGRESS_MESSAGE,
-                progress_percentage=INITIATING_TRAINING_PROGRESS_PERCENTAGE,
+                training_status=TRAINING_IN_PROGRESS_PROGRESS_STATUS,
+                training_message=TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
+                progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
                 process_complete=False,
             )
 
@@ -343,7 +280,7 @@ class ModelTrainer:
             trainer.update_training_progression_session(
                 training_status=TRAINING_IN_PROGRESS_PROGRESS_STATUS,
                 training_message=TRAINING_IN_PROGRESS_PROGRESS_MESSAGE,
-                progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE,
+                progress_percentage=TRAINING_IN_PROGRESS_PROGRESS_PERCENTAGE_AFTER_DATA_PREPARATION,
                 process_complete=False,
             )
 
@@ -735,6 +672,12 @@ def parse_args():
         required=True,
         help="Deployment Environment",
     )
+    parser.add_argument(
+        "--session_id",
+        type=str,
+        required=True,
+        help="Training Progress Session ID",
+    )
     return parser.parse_args()
 
 
@@ -752,7 +695,7 @@ if __name__ == "__main__":
     minor_version = args.minor_version
     latest = args.latest.lower() == "true"
     current_deployment_env = "undeployed"
-    progress_session_id = args.job_id
+    progress_session_id = args.session_id
     target_deployment_platform = args.deployment_environment
 
     trainer = ModelTrainer(
@@ -768,6 +711,5 @@ if __name__ == "__main__":
         target_deployment_platform=target_deployment_platform,
     )
 
-    trainer.create_training_progress_session()
     trainer.train()
     trainer.deploy()
