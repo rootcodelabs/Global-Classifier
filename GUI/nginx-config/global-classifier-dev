@@ -156,14 +156,13 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-     location ~* ^/(static/|env-config\.js|favicon\.ico) {
-            if ($http_referer ~* "/authentication-layer/") {
-            rewrite ^/(.*)$ /authentication-layer/$1 break;
-            proxy_pass http://authentication_layer;
-            }
+    location ~* ^/(static/|env-config\.js|favicon\.ico) {
+            #if ($http_referer ~* "/authentication-layer/") {
+        rewrite ^/(.*)$ /authentication-layer/$1 last;
+                #}
 
-        If not from authentication-layer, handle normally (e.g., for GUI)
-        proxy_pass http://gui_backend;
+        # If not from authentication-layer, handle normally (e.g., for GUI)
+        # proxy_pass http://gui_backend;
         proxy_set_header Host $host;
     }
 
