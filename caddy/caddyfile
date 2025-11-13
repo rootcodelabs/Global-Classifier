@@ -1,0 +1,128 @@
+# =========================================================
+# 🌐 Global Classifier - Caddy Reverse Proxy Configuration
+# Domain: global-classifier-dev.rootcode.software
+# Network: bykstack
+# =========================================================
+
+(common) {
+    encode gzip
+    log {
+        output file /var/log/caddy/{host}.log {
+            roll_size 5MB
+            roll_keep 5
+        }
+    }
+    tls {
+        issuer acme
+    }
+}
+
+# ------------------- FRONTEND -------------------
+gui.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy gui:3001
+}
+
+# ------------------- RUUTER ---------------------
+ruuter-public.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy ruuter-public:8086
+}
+
+ruuter-private.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy ruuter-private:8088
+}
+
+# ------------------- DATA MAPPER ----------------
+data-mapper.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy data-mapper:3000
+}
+
+# ------------------- TIM ------------------------
+tim.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy tim:8085
+}
+
+# ------------------- AUTH LAYER -----------------
+authentication-layer.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy authentication-layer:3004
+}
+
+# ------------------- RESQL ----------------------
+resql.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy resql:8082
+}
+
+# ------------------- NOTIFICATIONS --------------
+notifications-node.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy notifications-node:4040
+}
+
+# ------------------- OPENSEARCH -----------------
+opensearch-dashboards.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy opensearch-dashboards:5601
+}
+
+opensearch-node.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy opensearch-node:9200
+}
+
+# ------------------- GRAFANA --------------------
+grafana.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy grafana:3000
+}
+
+# ------------------- MLFLOW ---------------------
+mlflow.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy mlflow:5000
+}
+
+# ------------------- MINIO ----------------------
+minio.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy minio:9001
+}
+
+# ------------------- CRON MANAGER ---------------
+cron-manager.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy cron-manager:8080
+}
+
+# ------------------- GC S3 FERRY ----------------
+gc-s3-ferry.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy gc-s3-ferry:3000
+}
+
+# ------------------- TRITON SERVERS -------------
+triton-production-server.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy triton-production-server:8000
+}
+
+triton-test-server.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy triton-test-server:8000
+}
+
+# ------------------- REDIS ----------------------
+redis-embeddings.global-classifier-dev.rootcode.software {
+    import common
+    reverse_proxy redis-embeddings:6379
+}
+
+# ------------------- DEFAULT FALLBACK -----------
+:80 {
+    respond "Caddy reverse proxy for Global Classifier is running." 200
+}

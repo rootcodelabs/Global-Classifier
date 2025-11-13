@@ -575,6 +575,20 @@ services:
       - loki
     restart: unless-stopped
 
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+      - /var/log/caddy:/var/log/caddy
+    networks:
+      - bykstack
 
 volumes:
   shared-volume:
@@ -593,6 +607,10 @@ volumes:
     name: grafana-data
   redis_data:
     name: redis_data
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config
 
 
 networks:
