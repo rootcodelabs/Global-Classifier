@@ -25,7 +25,7 @@ declare:
         description: "List of agency IDs for which the dataset generation was completed"
 
 log_callback_received:
-  log: "📞 Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}"
+  log: "Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}"
   next: extract_callback_data
 
 extract_callback_data:
@@ -38,7 +38,7 @@ extract_callback_data:
   next: log_detailed_info
 
 log_detailed_info:
-  log: "📋 Callback Details - Task: ${task_id}, Status: ${status}, Message: ${message}, filePath: ${file_path}, results: ${results}"
+  log: "Callback Details - Task: ${task_id}, Status: ${status}, Message: ${message}, filePath: ${file_path}, results: ${results}"
   next: check_for_request_data
 
 check_for_request_data:

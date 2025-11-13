@@ -327,7 +327,7 @@
     "title": "Data Generation Sessions",
     "inprogress": "Data Generation in-Progress",
     "fail": "Data Generation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
-    "noSessions": "No ongoing Data Generation sessions available"
+    "noSessions": "No ongoing data generation sessions available"
   },
   "correctedTexts": {
     "title": "Corrected Texts",
@@ -447,7 +447,8 @@
       "baseModels": "Select Base Models",
       "deploymentPlatform": "Select Deployment Environment",
       "errors": {
-        "datasetVersionNotExist": "Dataset version does not exist"
+        "datasetVersionNotExist": "Dataset version does not exist",
+        "modelNameLength": "Model name must be less than 256 characters"
       }
     }
   },
@@ -455,13 +456,14 @@
     "title": "Training Sessions",
     "inprogress": "Validation in-Progress",
     "fail": "Validation failed because {{class}} class found in the {{column}} column does not exist in hierarchy",
-    "noSessions": "No Active Training Sessions",
+    "noSessions": "No active training sessions",
     "noSessionsDesc": "There are currently no active training sessions. Once you start a training session, it will appear here. In the meantime, you can initiate a new training session to begin improving your models."
   },
   "testModels": {
     "title": "Test Model",
     "selectionLabel": "Model",
     "placeholder": "Choose model",
+    "noModels": "No models available",
     "classifyTextLabel": "Enter Text",
     "classify": "Classify",
     "predictedHierarchy": "Predicted Class Hierarchy : ",

@@ -1,0 +1,5 @@
+mock_signed_url_generate:
+  trigger: off
+  type: exec
+  command: "../app/scripts/presigned_url_generate.sh"
+  allowedEnvs: ['centopsAgencies']

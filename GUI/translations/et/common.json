@@ -447,7 +447,10 @@
       "datasetGroup": "Vali andmestiku grupp",
       "baseModels": "Vali baasmudelid",
       "deploymentPlatform": "Vali rakenduse platvorm",
-      "maturityLabel": "Vali valmiduse silt"
+      "maturityLabel": "Vali valmiduse silt",
+      "errors": {
+        "modelNameLength": "Mudeli nimi peab olema vähem kui 256 tähemärki"
+      }
     }
   },
   "trainingSessions": {
@@ -461,6 +464,7 @@
     "title": "Testige mudelit",
     "selectionLabel": "Mudel",
     "placeholder": "Valige mudel",
+    "noModels": "Mudeleid pole saadaval",
     "classifyTextLabel": "Sisestage tekst",
     "classify": "Klassifitseeri",
     "predictedHierarchy": "Prognoositud klassihierarhia: ",

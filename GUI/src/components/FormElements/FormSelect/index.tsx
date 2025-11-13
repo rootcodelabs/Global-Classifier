@@ -18,6 +18,7 @@ import { ControllerRenderProps } from 'react-hook-form';
 type FormSelectOption = {
   label: string;
   value: string | { name: string; id: string };
+  disabled?: boolean;
 };
 
 type FormSelectProps = Partial<ControllerRenderProps> &
@@ -130,9 +131,10 @@ const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
                 <li
                   className={clsx('select__option', {
                     'select__option--selected': highlightedIndex === index,
+                    'select__option--disabled': item.disabled,
                   })}
                   key={`${item.value}${index}`}
-                  {...getItemProps({ item, index })}
+                  {...getItemProps({ item, index, disabled: item.disabled })}
                 >
                   {item.label}
                 </li>

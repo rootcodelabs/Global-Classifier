@@ -1,0 +1,8 @@
+DATA_URL_INSERT_URL = "http://resql:8082/global-classifier/insert-agency-presigned-url"
+DATA_URL_UPDATE_URL = "http://resql:8082/global-classifier/update-agency-presigned-url"
+MINIO_ENDPOINT = "http://minio:9000"
+MINIO_USER_ID = "minioadmin"
+MINIO_USER_KEY = "minioadmin"
+REGION_NAME = "us-east-1"
+SIGNATURE_VERSION = "s3v4"
+BUCKET_NAME = "ckb"

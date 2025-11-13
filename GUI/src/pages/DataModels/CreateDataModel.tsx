@@ -73,7 +73,7 @@ const CreateDataModel: FC = () => {
       open({
         title: t('dataModels.createDataModel.successTitle'),
         content: t('dataModels.createDataModel.successDesc'),
-        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'); close(); }}>View all Data Models</Button></div>)
+        footer: (<div className='flex-grid'><Button appearance={ButtonAppearanceTypes.SECONDARY} onClick={() => { close() }}>Close</Button><Button onClick={() => { navigate('/data-models'), close() }}>View all Data Models</Button></div>)
       });
 
     },
@@ -110,6 +110,7 @@ const CreateDataModel: FC = () => {
   const isCreateDisabled = () => {
     return (
       !dataModel.modelName ||
+      dataModel.modelName.length > 256 ||
       !dataModel.datasetId ||
       !dataModel.baseModels ||
       (Array.isArray(dataModel.baseModels) && dataModel.baseModels.length === 0) ||
