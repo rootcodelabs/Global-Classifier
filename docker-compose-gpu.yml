@@ -6,7 +6,7 @@ services:
     container_name: ruuter-public
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=http://localhost:8086,http://localhost:3001,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8000,http://localhost:8090
+      - application.cors.allowedOrigins=https://global-classifier-dev.rootcode.software/ruuter-public,https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service
       - application.httpCodesAllowList=200,201,202,204,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -28,7 +28,7 @@ services:
     container_name: ruuter-private
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
+      - application.cors.allowedOrigins=https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/ruuter-private,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service
       - application.httpCodesAllowList=200,201,202,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -296,7 +296,7 @@ services:
       OPENSEARCH_PASSWORD: admin
       PORT: 4040
       REFRESH_INTERVAL: 1000
-      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
+      CORS_WHITELIST_ORIGINS: https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service,https://global-classifier-dev.rootcode.software/ruuter-public,https://global-classifier-dev.rootcode.software/ruuter-private
       RUUTER_URL: http://ruuter-public:8086
     volumes:
       - /app/node_modules
@@ -319,12 +319,11 @@ services:
     container_name: gui
     environment:
       - NODE_ENV=local
-      - REACT_APP_RUUTER_API_URL=http://localhost:8086
-      - REACT_APP_RUUTER_PRIVATE_API_URL=http://localhost:8088
-      - REACT_APP_EXTERNAL_API_URL=http://localhost:8000
-      - REACT_APP_CUSTOMER_SERVICE_LOGIN=http://localhost:3004/et/dev-auth
-      - REACT_APP_NOTIFICATION_NODE_URL=http://localhost:4040
-      - REACT_APP_CSP=upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' http://localhost:8086 http://localhost:8088 http://localhost:8085 http://localhost:4040 http://localhost:3001 http://localhost:8000;
+      - REACT_APP_RUUTER_API_URL=https://global-classifier-dev.rootcode.software/ruuter-public
+      - REACT_APP_RUUTER_PRIVATE_API_URL=https://global-classifier-dev.rootcode.software/ruuter-private
+      - REACT_APP_CUSTOMER_SERVICE_LOGIN=https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth
+      - REACT_APP_NOTIFICATION_NODE_URL=https://global-classifier-dev.rootcode.software/notifications_node
+      - REACT_APP_CSP=upgrade-insecure-requests; default-src 'self'; font-src 'self' data:; img-src 'self' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; connect-src 'self' https://global-classifier-dev.rootcode.software/ruuter-public https://global-classifier-dev.rootcode.software/ruuter-private https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth https://global-classifier-dev.rootcode.software/notifications_node;
       - DEBUG_ENABLED=true
       - CHOKIDAR_USEPOLLING=true
       - PORT=3001
@@ -335,7 +334,7 @@ services:
 
     build:
       context: ./GUI
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.dev
     ports:
       - 3003:3001
     volumes:
