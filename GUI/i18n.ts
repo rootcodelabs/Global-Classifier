@@ -10,7 +10,7 @@ i18n
   .use(initReactI18next)
   .init({
     debug: import.meta.env.NODE_ENV === 'development',
-    fallbackLng: 'et',
+    fallbackLng: 'en',
     supportedLngs: ['et','en'],
     resources: {
       en: {
