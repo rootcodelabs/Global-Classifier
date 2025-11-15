@@ -6,7 +6,7 @@ services:
     container_name: ruuter-public
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=https://global-classifier-dev.rootcode.software/ruuter-public,https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service
+      - application.cors.allowedOrigins=http://localhost:8086,http://localhost:3001,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8000,http://localhost:8090
       - application.httpCodesAllowList=200,201,202,204,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -28,7 +28,7 @@ services:
     container_name: ruuter-private
     image: ruuter
     environment:
-      - application.cors.allowedOrigins=https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/ruuter-private,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service
+      - application.cors.allowedOrigins=http://localhost:3001,http://localhost:3003,http://localhost:8088,http://localhost:3002,http://localhost:3004,http://localhost:8000
       - application.httpCodesAllowList=200,201,202,400,401,403,500
       - application.internalRequests.allowedIPs=127.0.0.1
       - application.logging.displayRequestContent=true
@@ -296,7 +296,7 @@ services:
       OPENSEARCH_PASSWORD: admin
       PORT: 4040
       REFRESH_INTERVAL: 1000
-      CORS_WHITELIST_ORIGINS: https://global-classifier-dev.rootcode.software,https://global-classifier-dev.rootcode.software/authentication-layer/et/dev-auth,https://global-classifier-dev.rootcode.software/cron-manager,https://global-classifier-dev.rootcode.software/dataset-gen-service,https://global-classifier-dev.rootcode.software/ruuter-public,https://global-classifier-dev.rootcode.software/ruuter-private
+      CORS_WHITELIST_ORIGINS: http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:8080,http://localhost:8088
       RUUTER_URL: http://ruuter-public:8086
     volumes:
       - /app/node_modules
