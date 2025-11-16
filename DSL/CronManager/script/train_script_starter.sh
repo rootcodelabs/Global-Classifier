@@ -7,6 +7,48 @@ GET_FIRST_COME_TRAINING_JOB_SQL="http://resql:8082/global-classifier/get-queued-
 GET_DATA_MODEL_BY_MODEL_ID_SQL="http://resql:8082/global-classifier/get-data-model-info-by-given-model-id"
 UPDATE_JOB_STATUS="http://resql:8082/global-classifier/update-training-job-status"
 
+# Centralized error handling function
+handle_training_failure() {
+    local error_message="$1"
+    echo "[FAILED] $error_message"
+    
+    # Only proceed with status updates if we have the required variables
+    if [ -n "$job_id" ] && [ -n "$model_id" ] && [ -n "$session_id" ]; then
+        echo "[UPDATE] Updating job status to training-failed..."
+        response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
+            -H "Content-Type: application/json" \
+            -d "{\"jobId\": $job_id, \"jobStatus\": \"training-failed\"}")
+        
+        echo "[MODEL] Updating model training status to failed..."
+        UPDATE_MODEL_TRAINING_STATUS_FAILED="http://resql:8082/global-classifier/update-training_status-failed"
+        response_update_model_status=$(curl -s -X POST "$UPDATE_MODEL_TRAINING_STATUS_FAILED" \
+            -H "Content-Type: application/json" \
+            -d "{\"model_id\": $model_id}")
+        
+        echo "[PROGRESS] Updating progress session to show training failure..."
+        UPDATE_PROGRESS_SESSION_ENDPOINT="http://ruuter-public:8086/global-classifier/datamodels/progress/update"
+        response_update_progress_failure=$(curl -s -X POST "$UPDATE_PROGRESS_SESSION_ENDPOINT" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"sessionId\": $session_id,
+                \"trainingStatus\": \"Training Failed\",
+                \"trainingMessage\": \"Training Failed\",
+                \"progressPercentage\": 100,
+                \"processComplete\": false
+            }")
+        
+        if [ -z "$response_update_progress_failure" ]; then
+            echo "[WARNING] Failed to update progress session with failure status"
+        else
+            echo "[PROGRESS] Progress session updated with failure status successfully"
+        fi
+    else
+        echo "[WARNING] Cannot update training status - missing required variables (job_id, model_id, or session_id)"
+    fi
+    
+    exit 1
+}
+
 echo "[START] Training script starter"
 
 # Check if training is in progress
@@ -102,8 +144,7 @@ echo "[DEBUG] Create session response: '$response_create_session'"
 
 # Extract session ID from response
 if [ -z "$response_create_session" ]; then
-    echo "[ERROR] Failed to create training progress session - empty response"
-    exit 1
+    handle_training_failure "Failed to create training progress session - empty response"
 fi
 
 # Check if session creation was successful
@@ -113,14 +154,14 @@ if echo "$response_create_session" | grep -q '"operationSuccessful":true'; then
     if [ -z "$session_id" ] || [ "$session_id" = "$response_create_session" ]; then
         echo "[ERROR] Failed to extract session ID from response"
         echo "[DEBUG] Raw response: '$response_create_session'"
-        exit 1
+        handle_training_failure "Failed to extract session ID from response"
     fi
     
     echo "[SESSION] Training progress session created successfully with ID: $session_id"
 else
     echo "[ERROR] Training progress session creation failed"
     echo "[DEBUG] Raw response: '$response_create_session'"
-    exit 1
+    handle_training_failure "Training progress session creation failed"
 fi
 
 # Update initial training progress
@@ -154,8 +195,7 @@ echo "[DEBUG] Dataset ID response: '$response_get_dataset_id'"
 
 # Handle empty response
 if [ -z "$response_get_dataset_id" ] || [ "$response_get_dataset_id" = "[]" ]; then
-    echo "[ERROR] No dataset information found for model ID: $model_id"
-    exit 1
+    handle_training_failure "No dataset information found for model ID: $model_id"
 fi
 
 dataset_id=$(echo "$response_get_dataset_id" | sed -E 's/.*"connectedDsId":([0-9]+).*/\1/')
@@ -163,7 +203,7 @@ dataset_id=$(echo "$response_get_dataset_id" | sed -E 's/.*"connectedDsId":([0-9
 if [ -z "$dataset_id" ] || [ "$dataset_id" = "$response_get_dataset_id" ]; then
     echo "[ERROR] Connected Dataset ID not found in response"
     echo "[DEBUG] Raw response: '$response_get_dataset_id'"
-    exit 1
+    handle_training_failure "Connected Dataset ID not found in response"
 fi
 
 echo "[DATASET] Dataset ID: $dataset_id"
@@ -177,12 +217,12 @@ else
     echo "[ERROR] Failed to extract base models from response"
     echo "[ERROR] Raw response: $response_get_dataset_id"
     echo "[ERROR] Extracted base_models: $base_models_json"
-    exit 1
+    handle_training_failure "Failed to extract base models from response"
 fi
 
 # Activate existing virtualenv
 echo "[INFO] Activating existing virtualenv at /app/python_virtual_env"
-source /app/python_virtual_env/bin/activate || { echo "[ERROR] Failed to activate virtualenv"; exit 1; }
+source /app/python_virtual_env/bin/activate || { echo "[ERROR] Failed to activate virtualenv"; handle_training_failure "Failed to activate Python virtual environment"; }
 export PYTHONPATH="/app:/app/src:/app/src/training:/app/src/s3_dataset_processor:$PYTHONPATH"
 echo "[DEBUG] PYTHONPATH set to: $PYTHONPATH"
 # Add these debug commands
@@ -224,25 +264,25 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
         # Create installation directory
         mkdir -p "$UV_INSTALL_DIR" || {
             echo "[ERROR] Failed to create UV installation directory"
-            exit 1
+            handle_training_failure "Failed to create UV installation directory"
         }
         
         # Use unmanaged installation to avoid root directory modifications
         curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="$UV_INSTALL_DIR" sh || {
             echo "[ERROR] Failed to install uv"
-            exit 1
+            handle_training_failure "Failed to install UV package manager"
         }
         
         # Verify installation
         if [ ! -x "$UV_BIN" ]; then
             echo "[ERROR] UV installation failed or not executable"
-            exit 1
+            handle_training_failure "UV installation failed or not executable"
         fi
         
         # Verify functionality
         "$UV_BIN" --version || {
             echo "[ERROR] UV installation corrupted"
-            exit 1
+            handle_training_failure "UV installation corrupted"
         }
         
         echo "[UV] Successfully installed uv (unmanaged) to $UV_INSTALL_DIR"
@@ -250,7 +290,7 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
 
     if [ ! -f /app/src/training/requirements-gpu.txt ]; then
         echo "/app/src/training/requirements-gpu.txt not found!"
-        exit 1
+        handle_training_failure "Training requirements file not found"
     fi
 
     echo "[INSTALL] Installing from /app/src/training/requirements-gpu.txt using secure uv..."
@@ -258,7 +298,7 @@ if [ ${#missing_pkgs[@]} -ne 0 ]; then
         echo "[WARNING] uv install failed — trying pip as fallback..."
         pip install -r /app/src/training/requirements-gpu.txt || {
             echo "[ERROR] Both uv and pip install failed inside virtualenv"
-            exit 1
+            handle_training_failure "Failed to install required Python packages"
         }
     }
 
@@ -321,41 +361,7 @@ if [ $training_exit_code -eq 0 ]; then
         
     echo "[DEBUG] Update job status to trained response: '$response_update_job_status_trained'"
 else
-    echo "[FAILED] Training failed with exit code: $training_exit_code"
-
-    echo "[UPDATE] Updating job status to training-failed..."
-    response_update_job_status=$(curl -s -X POST "$UPDATE_JOB_STATUS" \
-    -H "Content-Type: application/json" \
-    -d "{\"jobId\": $job_id, \"jobStatus\": \"training-failed\"}")
-
-    echo "[MODEL] Updating model training status to failed..."
-    UPDATE_MODEL_TRAINING_STATUS_FAILED="http://resql:8082/global-classifier/update-training_status-failed"
-    response_update_model_status=$(curl -s -X POST "$UPDATE_MODEL_TRAINING_STATUS_FAILED" \
-    -H "Content-Type: application/json" \
-    -d "{\"model_id\": $model_id}")
-
-    echo "[DEBUG] Update model training status response: '$response_update_model_status'"
-
-    echo "[PROGRESS] Updating progress session to show training failure..."
-    response_update_progress_failure=$(curl -s -X POST "$UPDATE_PROGRESS_SESSION_ENDPOINT" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"sessionId\": $session_id,
-        \"trainingStatus\": \"Training Failed\",
-        \"trainingMessage\": \"Model training has failed\",
-        \"progressPercentage\": 100,
-        \"processComplete\": false
-    }")
-
-    echo "[DEBUG] Update progress failure response: '$response_update_progress_failure'"
-
-    if [ -z "$response_update_progress_failure" ]; then
-        echo "[WARNING] Failed to update progress session with failure status"
-    else
-        echo "[PROGRESS] Progress session updated with failure status successfully"
-    fi
-
-    exit 1
+    handle_training_failure "Model training script failed with exit code: $training_exit_code"
 fi
 
 echo "[DONE] Training script starter completed"
