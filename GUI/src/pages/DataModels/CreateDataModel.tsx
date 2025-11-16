@@ -12,9 +12,9 @@ import {
   DataModel,
   ErrorsType,
 } from 'types/dataModels';
-import { da } from 'date-fns/locale';
 import { createDataModel, getProductionDataModel } from 'services/datamodels';
 import { dataModelsQueryKeys } from 'utils/queryKeys';
+import { getAllDatasetVersions } from 'services/datasets';
 
 const CreateDataModel: FC = () => {
   const { t } = useTranslation();
@@ -34,7 +34,35 @@ const CreateDataModel: FC = () => {
     queryFn: () => getProductionDataModel(),
   });
 
+  const { data: datasetVersions } = useQuery({
+    queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
+    queryFn: () => getAllDatasetVersions(),
+  });
+
   const handleDataModelAttributesChange = (name: string, value: string) => {
+    // Update version when dataset is changed
+    if (name === 'datasetId' && value && datasetVersions) {
+      const selectedDataset = datasetVersions.find(
+        (dataset: any) => dataset.id.toString() === value
+      );
+      if (selectedDataset?.version) {
+        setDataModel((prevDataModel) => ({
+          ...prevDataModel,
+          [name]: value,
+          version: selectedDataset.version,
+        }));
+        
+        // Clear datasetId error
+        setErrors((prevErrors) => {
+          const updatedErrors = { ...prevErrors };
+          delete updatedErrors.datasetId;
+          return updatedErrors;
+        });
+        return; // Early return to avoid the second setDataModel call
+      }
+    }
+
+    // Default case - just update the field
     setDataModel((prevFilters) => ({
       ...prevFilters,
       [name]: value,
@@ -86,14 +114,18 @@ const CreateDataModel: FC = () => {
   });
 
   const handleCreate = () => {
+    // Parse version correctly - version format is "V1.0"
+    const versionParts = dataModel?.version?.split('.');
+    const majorVersion = versionParts?.[0]?.substring(1); // Remove 'V' prefix
+    const minorVersion = versionParts?.[1];
 
     const paylod = {
       modelName: dataModel.modelName ?? "",
       deploymentEnv: dataModel.deploymentEnvironment ?? "",
       baseModels: dataModel.baseModels ?? [],
       connectedDsId: Number(dataModel.datasetId) ?? 0,
-      connectedDsMajorVersion: Number(dataModel?.version?.split('.')[0]?.[1]) ?? "",
-      connectedDsMinorVersion: Number(dataModel?.version?.split('.')[1]) ?? "",
+      connectedDsMajorVersion: Number(majorVersion) ?? 1,
+      connectedDsMinorVersion: Number(minorVersion) ?? 0,
     }
 
     if (prodDataModel && dataModel.deploymentEnvironment === "production") {
@@ -134,6 +166,7 @@ const CreateDataModel: FC = () => {
           dataModel={dataModel}
           handleChange={handleDataModelAttributesChange}
           type="create"
+          datasetVersions={datasetVersions}
         />
       </div>
       <div className="flex data-model-buttons">
