@@ -379,6 +379,24 @@ EOF
     else
         log "S3 download failed - success status: $success_status"
         log "Response: $response_body"
+        
+        # Update progress status to indicate failure
+        progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Fail",
+  "generationMessage": "Generation Failed",
+  "progressPercentage": 100,
+  "processComplete": true
+}
+EOF
+)
+
+        progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+        -H "Content-Type: application/json" \
+        -d "$progress_update_payload")
+        log "Progress status updated to failed: $progress_update_response"
+        
         send_failure_status_update "S3 download and extraction failed" "$CURRENT_DATASET_ID" "$response_body" "extraction_failure"
         rm -f /tmp/download_response.json
         exit 1
@@ -386,10 +404,33 @@ EOF
     
 else
     log "Python script execution failed with exit code: $exit_code"
+    
+    # Update progress status to indicate failure
+    progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Fail",
+  "generationMessage": "Generation Failed",
+  "progressPercentage": 100,
+  "processComplete": true
+}
+EOF
+)
+
+    progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+    -H "Content-Type: application/json" \
+    -d "$progress_update_payload")
+    log "Progress status updated to failed: $progress_update_response"
+    
     if [ -f "$temp_response" ]; then
         log "Error response: $(cat $temp_response)"
-        rm -f /tmp/download_response.json
+        response_body=$(cat "$temp_response")
+        send_failure_status_update "Python script execution failed" "$CURRENT_DATASET_ID" "$response_body" "extraction_failure"
+    else
+        send_failure_status_update "Python script execution failed - no response data" "$CURRENT_DATASET_ID" "" "extraction_failure"
     fi
+    
+    rm -f /tmp/download_response.json
     exit 1
 fi
 
