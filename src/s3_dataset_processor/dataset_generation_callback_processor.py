@@ -101,6 +101,23 @@ def upload_csv_to_s3(local_csv_path: str, dataset_id: int) -> None:
         raise RuntimeError(f"Failed to upload CSV to S3: {response.text}")
 
 
+def upload_metrics_to_s3(metrics_file_path: str, dataset_id: int) -> None:
+    """Upload the metrics file to S3 using S3Ferry."""
+    destination_file_path = f"/datasets/{dataset_id}/metrics.json"
+    source_file_path = metrics_file_path.replace("/app/", "")
+    logger.info(f"Uploading {metrics_file_path} to S3 as {destination_file_path}")
+    response = s3_ferry_service.transfer_file(
+        destination_file_path=destination_file_path,
+        destination_storage_type="S3",
+        source_file_path=source_file_path,
+        source_storage_type="FS",
+    )
+    logger.info(f"Metrics S3 upload status: {response.status_code}")
+    logger.info(f"Metrics S3 upload response: {response.text}")
+    if response.status_code not in [200, 201]:
+        raise RuntimeError(f"Failed to upload metrics to S3: {response.text}")
+
+
 def notify_progress_uploading_to_s3(session_id: int) -> None:
     """Notify progress update: New Dataset Uploading to S3."""
     payload = {
@@ -239,7 +256,7 @@ def _log_cleanup_results(cleanup_summary: list) -> None:
 
 
 def process_callback_background(
-    file_path: str, encoded_results: str, session_id: int
+    file_path: str, encoded_results: str, session_id: int, metrics_file: str
 ) -> None:
     """Process the dataset generation callback: upload CSV to S3 and send status update."""
     try:
@@ -257,13 +274,13 @@ def process_callback_background(
         current_csv_path = file_path
         output_csv_path = f"{OUTPUT_DATA_DIR}/{dataset_id}_aggregated.csv"
 
-        if dataset_id <= 2:
+        if dataset_id == 1:
             logger.info("No previous dataset. Using current CSV only.")
             df = pd.read_csv(current_csv_path)
             df = update_item_ids(df, dataset_id)
             df = update_dataset_version_id(df, dataset_id)
             df.to_csv(output_csv_path, index=False)
-        else:
+        elif dataset_id >= 2:
             prev_dataset_id = dataset_id - 1
             prev_csv_local = f"{OUTPUT_DATA_DIR}/{prev_dataset_id}_prev.csv"
             prev_csv_s3_path = f"datasets/{prev_dataset_id}/{AGGREGATED_CSV_FILE}"
@@ -302,6 +319,13 @@ def process_callback_background(
 
         notify_dataset_update(output_csv_path)
         upload_csv_to_s3(output_csv_path, dataset_id)
+        
+        try:
+            upload_metrics_to_s3(metrics_file, dataset_id)
+            logger.info(f"Metrics file uploaded successfully for dataset {dataset_id}")
+        except Exception as e:
+            logger.warning(f"S3 upload failure for metrics file: {e}")
+            
         send_status_update(dataset_id, encoded_results)
 
         logger.info("Processing completed successfully")
@@ -330,6 +354,9 @@ def parse_args():
     parser.add_argument(
         "--session-id", required=True, help="Session ID for the callback"
     )
+    parser.add_argument(
+        "--metrics-file", required=True, help="Metrics file path for the callback"
+    )
     return parser.parse_args()
 
 
@@ -339,10 +366,11 @@ def main():
     try:
         logger.info("Starting callback processing...")
         logger.info(f"File path: {args.file_path}")
+        logger.info(f"Metrics file: {args.metrics_file}")
         logger.info(f"Encoded results length: {len(args.encoded_results)} characters")
 
         process_callback_background(
-            args.file_path, args.encoded_results, args.session_id
+            args.file_path, args.encoded_results, args.session_id, args.metrics_file
         )
 
         response = {

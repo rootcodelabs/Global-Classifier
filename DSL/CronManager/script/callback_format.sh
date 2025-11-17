@@ -3,8 +3,8 @@
 echo "Started Shell Script for Dataset Generation Callback Processing"
 
 # Check if environment variables are set
-if [ -z "$filePath" ] || [ -z "$results" ] || [ -z "$taskId" ]; then
-  echo "Please set the filePath, results, and taskId environment variables."
+if [ -z "$filePath" ] || [ -z "$results" ] || [ -z "$taskId" ] || [ -z "$metricsFile" ]; then
+  echo "Please set the filePath, results, taskId, and metricsFile environment variables."
   exit 1
 fi
 
@@ -62,6 +62,7 @@ python3 "$CALLBACK_SCRIPT" \
   --encoded-results "$results" \
   --output-json "$temp_response" \
   --session-id "$taskId" \
+  --metrics-file "$metricsFile" \
   > /tmp/callback_stdout.log 2> /tmp/callback_stderr.log
 exit_code=$?
 

@@ -23,6 +23,9 @@ declare:
       - field: results
         type: array
         description: "List of agency IDs for which the dataset generation was completed"
+      - field: metrics_file
+        type: string
+        description: "Path to the metrics file for the dataset generation"
 
 log_callback_received:
   log: "Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}"
@@ -35,10 +38,11 @@ extract_callback_data:
     message: ${incoming.body.message}
     file_path: ${incoming.body.filePath}
     results: ${encodeURIComponent(JSON.stringify(incoming.body.results))}
+    metrics_file: ${incoming.body.metrics_file}
   next: log_detailed_info
 
 log_detailed_info:
-  log: "Callback Details - Task: ${task_id}, Status: ${status}, Message: ${message}, filePath: ${file_path}, results: ${results}"
+  log: "Callback Details - Task: ${task_id}, Status: ${status}, Message: ${message}, filePath: ${file_path}, results: ${results}, metrics_file: ${metrics_file}"
   next: check_for_request_data
 
 check_for_request_data:
@@ -76,6 +80,7 @@ execute_cron_manager:
       taskId: ${task_id}
       filePath: ${file_path}
       results: ${results}
+      metricsFile: ${metrics_file}
   result: cron_res
   next: assign_success_cron_response
 

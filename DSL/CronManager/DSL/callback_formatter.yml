@@ -2,4 +2,4 @@ callback_format:
   trigger: off
   type: exec
   command: "../app/scripts/callback_format.sh"
-  allowedEnvs: ['filePath', 'results', 'taskId']
+  allowedEnvs: ['filePath', 'results', 'taskId', 'metricsFile']
