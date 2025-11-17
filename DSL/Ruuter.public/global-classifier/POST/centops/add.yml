@@ -39,9 +39,9 @@ insertAgencyData:
 # Check Insert Result
 checkInsertResult:
   switch:
-    - condition: ${!insert_agency_res || !insert_agency_res.response.body || insert_agency_res.response.body.length === 0}
-      next: return_insert_failed
-  next: return_success
+    - condition: ${200 <= insert_agency_res.response.statusCodeValue && insert_agency_res.response.statusCodeValue < 300}
+      next: return_success
+  next: return_insert_failed
 
 return_success:
   return: "Agency created successfully in centops"
