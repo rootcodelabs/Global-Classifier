@@ -1,0 +1,54 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Create a new data model record in data_models, update connected dataset and initiate training"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  # Input Validation Schema
+  allowlist:
+    body:
+      - field: agency_id
+        type: string
+        description: "ID of the agency (required)"
+      - field: agency_name
+        type: string
+        description: "Name of the agency (required)"
+        next: extractRequestData
+
+# Data Extraction
+extractRequestData:
+  assign:
+    agency_id: ${incoming.body.agency_id}
+    agency_name: ${incoming.body.agency_name}
+  next: insertAgencyData
+
+# Insert Agency Data
+insertAgencyData:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-agency-centops"
+    body:
+      agencyId: ${agency_id}
+      agencyName: ${agency_name}
+      createdAt: ${new Date().toISOString()}
+  result: insert_agency_res
+  next: checkInsertResult
+
+# Check Insert Result
+checkInsertResult:
+  switch:
+    - condition: ${!insert_agency_res || !insert_agency_res.response.body || insert_agency_res.response.body.length === 0}
+      next: return_insert_failed
+  next: return_success
+
+return_success:
+  return: "Agency created successfully in centops"
+  status: 200
+  next: end
+
+return_insert_failed:
+  return: "error: failed to add agency to centops"
+  status: 500
+  next: end
