@@ -28,7 +28,7 @@ declare:
         description: "Path to the metrics file for the dataset generation"
 
 log_callback_received:
-  log: "Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}"
+  log: "Dataset generation callback received - Task ID: ${incoming.body.task_id}, Status: ${incoming.body.status}, File Path: ${incoming.body.filePath}, Result: ${incoming.body.results}"
   next: extract_callback_data
 
 extract_callback_data:

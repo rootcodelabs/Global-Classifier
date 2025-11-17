@@ -15,6 +15,7 @@ import { dataModelsQueryKeys } from 'utils/queryKeys';
 import { useTranslation } from 'react-i18next';
 import './DataModels.scss';
 import { configureDataModel, deleteDataModel, deployDataModel, getDataModelMetadata, getProductionDataModel } from 'services/datamodels';
+import { getAllDatasetVersions } from 'services/datasets';
 import { use } from 'i18next';
 import { set } from 'date-fns';
 import { areArraysEqual } from 'utils/commonUtilts';
@@ -39,6 +40,11 @@ const ConfigureDataModel: FC = () => {
   const { data: prodDataModel, isLoading: isProdDataModelLoading } = useQuery({
     queryKey: dataModelsQueryKeys.GET_PROD_DATA_MODEL(),
     queryFn: () => getProductionDataModel(),
+  });
+
+  const { data: datasetVersions } = useQuery({
+    queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
+    queryFn: () => getAllDatasetVersions(),
   });
 
   const [initialData, setInitialData] = useState<Partial<DataModel>>({
@@ -85,6 +91,22 @@ const ConfigureDataModel: FC = () => {
     name: keyof DataModel,
     value: any
   ) => {
+    // Update version when dataset is changed
+    if (name === 'datasetId' && value && datasetVersions) {
+      const selectedDataset = datasetVersions.find(
+        (dataset: any) => dataset.id.toString() === value
+      );
+      if (selectedDataset?.version) {
+        setDataModel((prevDataModel) => ({
+          ...prevDataModel,
+          [name]: value,
+          version: selectedDataset.version,
+        }));
+        return; // Early return to avoid the second setDataModel call
+      }
+    }
+
+    // Default case - just update the field
     setDataModel((prevDataModel) => ({
       ...prevDataModel,
       [name]: value,
@@ -185,17 +207,24 @@ const ConfigureDataModel: FC = () => {
     return undefined;
   };
 
-  const buildUpdatedPayload = (updateType: string | undefined) => ({
-    modelGroupKey: modelMetadata.modelGroupKey ?? "",
-    modelName: dataModel.modelName ?? "",
-    connectedDsId: Number(dataModel.datasetId) ?? 0,
-    deploymentEnv: dataModel.deploymentEnvironment ?? "",
-    baseModels: dataModel.baseModels ?? [],
-    connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
-    connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
-    updateType: updateType ?? "",
-    isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
-  });
+  const buildUpdatedPayload = (updateType: string | undefined) => {
+    // Parse version correctly - version format is "V1.0"
+    const versionParts = dataModel.version?.split('.');
+    const majorVersion = versionParts?.[0]?.substring(1); // Remove 'V' prefix
+    const minorVersion = versionParts?.[1];
+
+    return {
+      modelGroupKey: modelMetadata.modelGroupKey ?? "",
+      modelName: dataModel.modelName ?? "",
+      connectedDsId: Number(dataModel.datasetId) ?? 0,
+      deploymentEnv: dataModel.deploymentEnvironment ?? "",
+      baseModels: dataModel.baseModels ?? [],
+      connectedDsMajorVersion: Number(majorVersion) ?? 1,
+      connectedDsMinorVersion: Number(minorVersion) ?? 0,
+      updateType: updateType ?? "",
+      isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
+    };
+  };
 
   const deleteDataModelMutation = useMutation({
     mutationFn: deleteDataModel,
@@ -288,6 +317,7 @@ const ConfigureDataModel: FC = () => {
             }
             handleChange={handleDataModelAttributesChange}
             type="configure"
+            datasetVersions={datasetVersions}
           />
         )}
       </div>

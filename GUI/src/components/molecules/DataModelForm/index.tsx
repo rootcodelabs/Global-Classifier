@@ -21,6 +21,7 @@ type DataModelFormType = {
   handleChange: (name: keyof DataModel, value: any) => void;
   errors?: Record<string, string>;
   type: string;
+  datasetVersions?: any;
 };
 
 const DataModelForm: FC<DataModelFormType> = ({
@@ -28,6 +29,7 @@ const DataModelForm: FC<DataModelFormType> = ({
   handleChange,
   errors,
   type,
+  datasetVersions: propDatasetVersions,
 }) => {
   const { t } = useTranslation();
   const [showTrainingResults, setShowTrainingResults] = useState(true);
@@ -39,7 +41,11 @@ const DataModelForm: FC<DataModelFormType> = ({
   const { data: datasetVersions } = useQuery({
     queryKey: dataModelsQueryKeys.DATA_MODEL_DEPLOYMENT_ENVIRONMENTS(),
     queryFn: () => getAllDatasetVersions(),
+    enabled: !propDatasetVersions, // Only fetch if not provided as prop
   });
+
+  // Use prop datasetVersions if provided, otherwise use the queried data
+  const finalDatasetVersions = propDatasetVersions || datasetVersions;
 
  let trainingResults = null;
   if (dataModel?.trainingResults?.value) {
@@ -91,10 +97,19 @@ const DataModelForm: FC<DataModelFormType> = ({
             }} >
               <FormSelect
                 name="datasetId"
-                options={toLabelValueArray(datasetVersions, 'id', 'version') ?? []}
+                options={toLabelValueArray(finalDatasetVersions, 'id', 'version') ?? []}
                 label=""
                 onSelectionChange={(selection) => {
                   handleChange('datasetId', selection?.value);
+                  // Update version when dataset is selected
+                  if (selection?.value && finalDatasetVersions) {
+                    const selectedDataset = finalDatasetVersions.find(
+                      (dataset: any) => dataset.id.toString() === selection.value
+                    );
+                    if (selectedDataset?.version) {
+                      handleChange('version', selectedDataset.version);
+                    }
+                  }
                 }}
                 value={dataModel?.datasetId === null && ""}
                 defaultValue={dataModel?.datasetId ? dataModel?.datasetId : ""}
