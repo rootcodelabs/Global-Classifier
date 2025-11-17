@@ -33,7 +33,7 @@ export default defineConfig({
         'Content-Security-Policy': process.env.REACT_APP_CSP,
       }),
     },
-    allowedHosts: ['global-classifier-dev.rootcode.software', 'est-global-classifier-rtc.rootcode.software', 'localhost', '127.0.0.1'],
+    allowedHosts: ['dev-gloclf.buerokratt.ee', 'est-global-classifier-rtc.rootcode.software', 'localhost', '127.0.0.1'],
   },
   resolve: {
     alias: {

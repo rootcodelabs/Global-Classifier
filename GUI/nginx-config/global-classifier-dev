@@ -1,6 +1,6 @@
 # Global Classifier Development Environment
 # /etc/nginx/sites-available/global-classifier-dev
-# Domain: global-classifier-dev.rootcode.software
+# Domain: dev-gloclf.buerokratt.ee
 # Public IP: 193.40.152.204
 #
 # To enable this site:
@@ -51,7 +51,7 @@ limit_req_zone $binary_remote_addr zone=general:10m rate=50r/s;
 # Main server block
 server {
     listen 80;
-    server_name global-classifier-dev.rootcode.software 193.40.152.204;
+    server_name dev-gloclf.buerokratt.ee 193.40.152.204;
 
     # Basic security headers
     add_header X-Frame-Options SAMEORIGIN always;
@@ -539,22 +539,3 @@ server {
         add_header Content-Type text/plain;
     }
 }
-
-# HTTPS server block (ready for SSL certificate)
-# server {
-#     listen 443 ssl http2;
-#     server_name global-classifier-dev.rootcode.software;
-
-#     ssl_certificate     /etc/ssl/certs/global-classifier-dev.rootcode.software.pem;
-#     ssl_certificate_key /etc/ssl/private/global-classifier-dev.rootcode.software.key;
-
-#     ssl_protocols TLSv1.2 TLSv1.3;
-#     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
-#     ssl_prefer_server_ciphers off;
-#     ssl_session_cache shared:SSL:10m;
-#     ssl_session_timeout 1d;
-#     ssl_session_tickets off;
-#     add_header Strict-Transport-Security "max-age=63072000" always;
-
-#     # Mirror locations from the HTTP server block
-# }

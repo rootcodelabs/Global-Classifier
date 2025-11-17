@@ -329,7 +329,7 @@ services:
       - REACT_APP_SERVICE_ID=conversations,settings,monitoring
       - REACT_APP_ENABLE_HIDDEN_FEATURES=TRUE
       - VITE_HOST=0.0.0.0
-      - VITE_ALLOWED_HOSTS=global-classifier-dev.rootcode.software,localhost,127.0.0.1
+      - VITE_ALLOWED_HOSTS=dev-gloclf.buerokratt.ee,localhost,127.0.0.1
 
     build:
       context: ./GUI
