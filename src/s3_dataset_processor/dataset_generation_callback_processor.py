@@ -257,13 +257,13 @@ def process_callback_background(
         current_csv_path = file_path
         output_csv_path = f"{OUTPUT_DATA_DIR}/{dataset_id}_aggregated.csv"
 
-        if dataset_id <= 2:
+        if dataset_id == 1:
             logger.info("No previous dataset. Using current CSV only.")
             df = pd.read_csv(current_csv_path)
             df = update_item_ids(df, dataset_id)
             df = update_dataset_version_id(df, dataset_id)
             df.to_csv(output_csv_path, index=False)
-        else:
+        elif dataset_id >= 2:
             prev_dataset_id = dataset_id - 1
             prev_csv_local = f"{OUTPUT_DATA_DIR}/{prev_dataset_id}_prev.csv"
             prev_csv_s3_path = f"datasets/{prev_dataset_id}/{AGGREGATED_CSV_FILE}"
