@@ -22,6 +22,23 @@ extractRequestData:
   assign:
     agency_id: ${incoming.body.agency_id}
     agency_name: ${incoming.body.agency_name}
+  next: checkAgencyExists
+
+# Check if Agency Already Exists
+checkAgencyExists:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agency-centops"
+    body:
+      agencyId: ${agency_id}
+  result: agency_check_res
+  next: evaluateAgencyExistence
+
+# Evaluate Agency Existence
+evaluateAgencyExistence:
+  switch:
+    - condition: "${agency_check_res.response.body.length > 0}"
+      next: return_agency_exists
   next: insertAgencyData
 
 # Insert Agency Data
@@ -46,6 +63,11 @@ checkInsertResult:
 return_success:
   return: "Agency created successfully in centops"
   status: 200
+  next: end
+
+return_agency_exists:
+  return: "error: agency already exists in centops"
+  status: 400
   next: end
 
 return_insert_failed:
