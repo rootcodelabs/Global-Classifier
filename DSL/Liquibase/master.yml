@@ -39,3 +39,7 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v21-rename-inference-time-to-milliseconds.sql
   - include:
       file: changelog/global-classifier-script-v22-model-training-jobs.sql
+  - include:
+      file: changelog/global-classifier-script-v23-agency-data-requests.sql
+  - include:
+      file: changelog/global-classifier-script-v24-integrated-agencies-part-of-network.sql
