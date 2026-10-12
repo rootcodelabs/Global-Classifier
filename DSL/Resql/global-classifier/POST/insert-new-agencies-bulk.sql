@@ -39,7 +39,7 @@ upserted AS (
         '',
         CURRENT_TIMESTAMP,
         '1970-01-01T00:00:00Z'::timestamp with time zone,
-        'Unavailable_in_CKB'::sync_status,
+        'Sync_pending_with_CKB'::sync_status,
         CURRENT_TIMESTAMP,
         i.part_of_network
     FROM incoming i

@@ -43,3 +43,5 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v23-agency-data-requests.sql
   - include:
       file: changelog/global-classifier-script-v24-integrated-agencies-part-of-network.sql
+  - include:
+      file: changelog/global-classifier-script-v25-sync-pending-with-ckb-status.sql
