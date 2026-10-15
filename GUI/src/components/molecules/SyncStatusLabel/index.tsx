@@ -23,6 +23,12 @@ const SyncStatusLabel = ({
         {t('integratedAgencies.agencyCard.syncStatus.unavailable')}
       </Label>
     );
+  } else if (status === SyncStatus.PENDING) {
+    return (
+      <Label type={LabelType.INFO}>
+        {t('integratedAgencies.agencyCard.syncStatus.pending')}
+      </Label>
+    );
   }else if (status === SyncStatus.FAILED ) {
     return (
       <Label type={LabelType.ERROR}>
