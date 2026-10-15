@@ -37,10 +37,10 @@ export const fetchAgencies = async (
 }
 
  export async function resync(agencyId: string) {
-  const { data } = await apiDev.post('global-classifier/agencies/data/resync', {
+  const { data } = await apiDev.post('global-classifier/agencies/data/retry', {
     "agencyId": agencyId
   });
-  return data;
+  return data?.response;
 }
 
 export const fetchAllAgencies = async () => {

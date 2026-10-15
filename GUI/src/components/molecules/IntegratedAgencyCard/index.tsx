@@ -94,18 +94,31 @@ const IntegratedAgencyCard: FC<PropsWithChildren<IntegratedAgencyCardProps>> = (
       id }: {
         id: string | number
       }) => resync(id as string),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result && result.retried === false) {
+        toast.open({
+          type: ToastTypes.ERROR,
+          title: t('global.notificationError'),
+          message: t('integratedAgencies.agencyCard.resyncNotPossible'),
+        });
+        return;
+      }
+      toast.open({
+        type: ToastTypes.SUCCESS,
+        title: t('global.notification'),
+        message: t('integratedAgencies.agencyCard.resyncStarted'),
+      });
       await queryClient.invalidateQueries(
         integratedAgenciesQueryKeys.INTEGRATED_AGENCIES_LIST()
       );
-    }
-    // onError: (error: AxiosError) => {
-    //   toast.open({
-    //     type: ToastTypes.ERROR,
-    //     title: t('global.notificationError'),
-    //     message: error?.message ?? '',
-    //   });
-    // },
+    },
+    onError: (error: AxiosError) => {
+      toast.open({
+        type: ToastTypes.ERROR,
+        title: t('global.notificationError'),
+        message: error?.message ?? '',
+      });
+    },
   });
 
   const handleCheckedChange = (checked: boolean) => {
@@ -152,7 +165,7 @@ const IntegratedAgencyCard: FC<PropsWithChildren<IntegratedAgencyCardProps>> = (
             appearance={ButtonAppearanceTypes.SECONDARY}
             size="s"
             onClick={() => resyncAgencyMutation.mutate({ id: agencyId })}
-            disabled={syncStatus !== SyncStatus.RESYNC_NEEDED}
+            disabled={syncStatus !== SyncStatus.FAILED || resyncAgencyMutation.isLoading}
           >
             {t('integratedAgencies.agencyCard.resync')}
           </Button>

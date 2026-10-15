@@ -141,7 +141,9 @@
         "resyncInProgress": "Resync in Progress with CKB",
         "failed": "Sync with CKB Failed"
       },
-      "resync": "Resync"
+      "resync": "Resync",
+      "resyncNotPossible": "This agency can't be resynced now. Its download link may have expired. A new link will arrive with the next CentOps poll.",
+      "resyncStarted": "Resync started. The agency's status will update when data generation finishes."
     }
   },
   "integration": {

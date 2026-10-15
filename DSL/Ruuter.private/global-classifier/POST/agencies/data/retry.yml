@@ -1,0 +1,84 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Retry an agency's failed data request and start dataset generation"
+  method: post
+  accepts: json
+  returns: json
+  namespace: global-classifier
+  allowlist:
+    body:
+      - field: agencyId
+        type: string
+        description: "Agency ID to retry"
+
+extractRequestData:
+  assign:
+    agencyId: ${incoming.body.agencyId}
+
+validateInput:
+  switch:
+    - condition: ${!agencyId}
+      next: returnMissingAgencyId
+  next: resetFailedRequest
+
+resetFailedRequest:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-failed-agency-data-request-pending"
+    body:
+      agencyId: ${agencyId}
+  result: resetResult
+  error: returnRetryFailed
+  next: checkResetResult
+
+checkResetResult:
+  switch:
+    - condition: ${Number(resetResult.response.body[0].resetCount) === 0}
+      next: returnNotRetryable
+  next: startGeneration
+
+startGeneration:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/agencies/data/start-generation"
+    body: {}
+  result: startResult
+  error: returnRetryQueued
+  next: returnRetryStarted
+
+returnRetryStarted:
+  assign:
+    retryResponse:
+      retried: true
+      generation: ${startResult.response.body.response}
+  next: returnRetryResponse
+
+returnRetryQueued:
+  assign:
+    retryResponse:
+      retried: true
+      generation: null
+  next: returnRetryResponse
+
+returnNotRetryable:
+  assign:
+    retryResponse:
+      retried: false
+      reason: "not retryable"
+  next: returnRetryResponse
+
+returnRetryResponse:
+  status: 200
+  return: ${retryResponse}
+  next: end
+
+returnMissingAgencyId:
+  return: "missing agencyId"
+  status: 400
+  next: end
+
+returnRetryFailed:
+  return: "unable to retry agency"
+  status: 500
+  next: end
