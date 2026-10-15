@@ -1,6 +1,7 @@
 export enum SyncStatus {
   SYNCED = 'Synced_with_CKB',
   UNAVAILABLE = 'Unavailable_in_CKB',
+  PENDING = 'Sync_pending_with_CKB',
   RESYNC_NEEDED = 'Resync_needed_with_CKB',
   IN_PROGRESS ='Sync_in_progress_with_CKB',
   RESYNC_IN_PROGRESS ='Resync_in_progress_with_CKB',

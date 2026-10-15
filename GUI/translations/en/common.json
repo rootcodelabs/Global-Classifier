@@ -136,6 +136,7 @@
       "syncStatus": {
         "synced": "Synced with CKB",
         "unavailable": "Unavailable in CKB",
+        "pending": "Sync Pending with CKB",
         "resync": "Resync needed with CKB",
         "inProgress": "Sync in Progress with CKB",
         "resyncInProgress": "Resync in Progress with CKB",
