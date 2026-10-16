@@ -347,3 +347,26 @@ export function filterDataByAgency(aggregatedData, startIndex, agencyId, pageSiz
   return JSON.stringify(result);
   
 }
+
+/**
+ * Keeps only the classification results of agencies that are still in the network.
+ * The out_of_distribution item is always kept, and is returned on its own when no agency is left.
+ * @param {Array} results - Triton's top-k predictions, one list per message
+ * @param {Array} agencies - The rows of get-agencies-in-network: [{ agencyId }]
+ * @returns {string} JSON string: { results }
+ */
+export function filterClassificationToNetwork(results, agencies) {
+  const inNetwork = new Set(agencies.map((agency) => String(agency.agencyId)));
+  const isOutOfDistribution = (item) => item.agency_name === "out_of_distribution";
+
+  const filtered = results.map((predictions) => {
+    const kept = predictions.filter(
+      (item) => isOutOfDistribution(item) || inNetwork.has(String(item.agency_id))
+    );
+    return kept.length > 0
+      ? kept
+      : [{ agency_id: 0, agency_name: "out_of_distribution", confidence: 1 }];
+  });
+
+  return JSON.stringify({ results: filtered });
+}
