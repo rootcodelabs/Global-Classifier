@@ -78,6 +78,34 @@ process_classification_result:
     # Parse the JSON string output from Triton to get agency classification array
     rawOutput: ${inference_result.response.body.outputs[0].data[0]}
     parsedOutput: ${JSON.parse(rawOutput)}
+  next: get_agencies_in_network
+
+# The deployed model may still know agencies that left the network, so drop them before returning
+get_agencies_in_network:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agencies-in-network"
+    body: {}
+  result: network_result
+  next: filter_to_network
+  error: return_network_filter_error
+
+filter_to_network:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/filter_classification_to_network"
+    headers:
+      type: json
+    body:
+      results: ${parsedOutput}
+      agencies: ${network_result.response.body}
+  result: filtered_result
+  next: assign_filtered_output
+  error: return_network_filter_error
+
+assign_filtered_output:
+  assign:
+    parsedOutput: ${filtered_result.response.body.results}
   next: log_inference_result
 
 log_inference_result:
@@ -124,4 +152,9 @@ return_model_error:
 return_inference_error:
   status: 500
   return: "Classification service temporarily unavailable"
+  next: end
+
+return_network_filter_error:
+  status: 500
+  return: "Failed to filter classification to agencies in the network"
   next: end

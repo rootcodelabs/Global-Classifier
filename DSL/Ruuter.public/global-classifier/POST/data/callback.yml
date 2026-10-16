@@ -102,7 +102,7 @@ extract_failed_file_name:
 
 extract_failed_dataset_id:
   assign:
-    failed_dataset_id: ${failed_file_name.endsWith('.csv') ? failed_file_name.slice(0, -4) : ''}
+    failed_dataset_id: "${failed_file_name.endsWith('.csv') ? failed_file_name.slice(0, -4) : ''}"
   next: check_failed_dataset_id
 
 check_failed_dataset_id:
