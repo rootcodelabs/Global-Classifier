@@ -14,3 +14,11 @@ dependencies = [
     "torch>=2.7.0",
 ]
 
+[tool.ruff]
+# Keep Markdown out of formatting (newer Ruff formats code blocks in .md files)
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+# Fix the rule set, so a new Ruff release doesn't turn on extra rules in CI
+select = ["E4", "E7", "E9", "F"]
+

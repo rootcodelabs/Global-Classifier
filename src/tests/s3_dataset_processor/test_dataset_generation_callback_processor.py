@@ -1,16 +1,11 @@
 """Tests for the dataset merge in dataset_generation_callback_processor."""
 
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import dataset_generation_callback_processor as processor
 import pandas as pd
 import pytest
-
-PROCESSOR_DIR = Path(__file__).resolve().parents[2] / "s3_dataset_processor"
-sys.path.insert(0, str(PROCESSOR_DIR))
-
-import dataset_generation_callback_processor as processor
 
 COLUMNS = ["item_id", "agency_name", "agency_id", "data_item", "dataset_version_id"]
 
