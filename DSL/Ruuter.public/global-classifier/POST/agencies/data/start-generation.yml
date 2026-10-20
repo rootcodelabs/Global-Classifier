@@ -56,8 +56,81 @@ claimPendingRequests:
 evaluateClaimedRequests:
   switch:
     - condition: ${claimResult.response.body.length === 0}
-      next: returnNothingPending
+      next: getAgenciesToRemove
   next: extractClaimedRequests
+
+getAgenciesToRemove:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/get-agencies-to-remove-from-dataset"
+  result: agenciesToRemoveResult
+  error: returnDatabaseError
+  next: evaluateAgenciesToRemove
+
+evaluateAgenciesToRemove:
+  switch:
+    - condition: ${agenciesToRemoveResult.response.body.length === 0}
+      next: returnNothingPending
+  next: extractAgenciesToRemove
+
+extractAgenciesToRemove:
+  assign:
+    agencyIdsToRemove: ${agenciesToRemoveResult.response.body.map(row => row.agencyId).join(',')}
+    agenciesToRemoveCount: ${agenciesToRemoveResult.response.body.length}
+    previousDatasetId: ${agenciesToRemoveResult.response.body[0].previousDatasetId}
+  next: logAgenciesToRemove
+
+logAgenciesToRemove:
+  log: "Removing ${agenciesToRemoveCount} agencies that left the network from dataset version ${previousDatasetId}"
+  next: createRemovalDatasetVersion
+
+createRemovalDatasetVersion:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/datasets/version/minor"
+  result: removalVersionResult
+  error: returnStartFailed
+  next: validateRemovalDatasetVersion
+
+validateRemovalDatasetVersion:
+  switch:
+    - condition: ${!removalVersionResult.response.body?.response || removalVersionResult.response.body.response.length === 0}
+      next: returnStartFailed
+  next: extractRemovalDatasetVersion
+
+extractRemovalDatasetVersion:
+  assign:
+    removalDatasetId: ${removalVersionResult.response.body.response[0].id}
+  next: startAgencyRemoval
+
+startAgencyRemoval:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_CRON_MANAGER]/execute/dataset_remove_agencies/dataset_remove_agencies"
+    query:
+      datasetId: ${String(removalDatasetId)}
+      previousDatasetId: ${String(previousDatasetId)}
+      agencyIds: ${agencyIdsToRemove}
+  result: agencyRemovalResult
+  error: markRemovalVersionFailed
+  next: validateAgencyRemoval
+
+validateAgencyRemoval:
+  switch:
+    - condition: ${200 <= agencyRemovalResult.response.statusCodeValue && agencyRemovalResult.response.statusCodeValue < 300}
+      next: returnRemovingAgencies
+  next: markRemovalVersionFailed
+
+markRemovalVersionFailed:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-data-generation-status"
+    body:
+      datasetId: ${String(removalDatasetId)}
+      generationStatus: "Generation_Failed"
+  result: removalVersionFailedResult
+  error: returnStartFailed
+  next: returnStartFailed
 
 extractClaimedRequests:
   assign:
@@ -192,6 +265,17 @@ returnGenerationStarted:
       started: true
       datasetId: ${datasetId}
       agencies: ${claimedRequests.length}
+  status: 200
+  return: ${startResponse}
+  next: end
+
+returnRemovingAgencies:
+  assign:
+    startResponse:
+      started: true
+      reason: "removing agencies that left the network"
+      datasetId: ${removalDatasetId}
+      agencies: ${agenciesToRemoveCount}
   status: 200
   return: ${startResponse}
   next: end
