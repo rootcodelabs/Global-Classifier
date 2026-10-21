@@ -153,6 +153,7 @@ services:
     volumes:
       - ./DSL/CronManager/DSL:/DSL
       - ./DSL/CronManager/script:/app/scripts
+      - ./constants.ini:/app/constants.ini
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
       - ./DSL/DatasetGenerator/config:/app/config

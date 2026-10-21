@@ -1,9 +1,8 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 # DEFINING ENDPOINTS
-
-SYNC_CLIENT_DATA_ENDPOINT=http://ruuter-public:8086/global-classifier/agencies/data/sync
-
+SYNC_CLIENT_DATA_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/sync"
 # Construct payload to update training status using cat
 payload=$(cat <<EOF
 {}
