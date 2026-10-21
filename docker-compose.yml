@@ -168,6 +168,9 @@ services:
       - server.port=9010
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PYTHONPATH=/app:/app/src/model_training:/app/src/s3_dataset_processor:/app/src
+      - CENTOPS_URL=${CENTOPS_URL:-}
+      - CENTOPS_API_KEY=${CENTOPS_API_KEY:-}
+      - CENTOPS_API_SECRET=${CENTOPS_API_SECRET:-}
     ports:
       - 9010:8080
     networks:
