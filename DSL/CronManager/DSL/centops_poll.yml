@@ -1,4 +1,0 @@
-centops_poll:
-  trigger: "0 0 * * * ?"
-  type: exec
-  command: "../app/scripts/centops_poll.sh"
