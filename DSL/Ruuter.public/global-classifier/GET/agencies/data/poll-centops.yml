@@ -1,0 +1,231 @@
+declaration:
+  call: declare
+  version: 0.1
+  description: "Poll CentOps for the agency list, save new agencies and changed data, then start generation"
+  method: get
+  accepts: json
+  returns: json
+  namespace: global-classifier
+
+validateCentopsSettings:
+  switch:
+    - condition: ${'[#CENTOPS_URL]' === '' || '[#CENTOPS_API_KEY]' === '' || '[#CENTOPS_API_SECRET]' === ''}
+      next: returnMissingSettings
+  next: buildCentopsAuthorization
+
+# Authorization is base64("key:secret"). Ruuter's engine has no btoa, and a DMapper call would log
+# the secret as request body, so it's encoded here. The expression can't contain "}" or "a.b".
+buildCentopsAuthorization:
+  assign:
+    centopsAuthorization: ${((c, k) => k['replace'](/[\s\S][\s\S]?[\s\S]?/g, (t) => ((n) => c[(n >> 18) & 63] + c[(n >> 12) & 63] + (t['length'] > 1 ?c[(n >> 6) & 63]:'=') + (t['length'] > 2 ?c[n & 63]:'='))((t['charCodeAt'](0) << 16) | ((t['charCodeAt'](1) || 0) << 8) | (t['charCodeAt'](2) || 0))))('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', '[#CENTOPS_API_KEY]:[#CENTOPS_API_SECRET]')}
+  next: getCkbList
+
+getCkbList:
+  call: http.get
+  args:
+    url: "[#CENTOPS_URL]/centops/integration/global-classifier/common-knowledge-bases"
+    headers:
+      authorization: ${centopsAuthorization}
+  result: centopsResult
+  error: logCentopsUnavailable
+  next: checkCentopsResponse
+
+checkCentopsResponse:
+  switch:
+    - condition: ${centopsResult.response.statusCodeValue === 401}
+      next: logCentopsUnauthorized
+    - condition: ${centopsResult.response.statusCodeValue === 403}
+      next: logCentopsForbidden
+    - condition: ${centopsResult.response.statusCodeValue < 200 || centopsResult.response.statusCodeValue >= 300}
+      next: logCentopsError
+  next: mapCentopsAgencies
+
+mapCentopsAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_DMAPPER]/hbs/global-classifier/map_centops_agencies"
+    headers:
+      type: json
+    body:
+      agencies: ${centopsResult.response.body.response ?? centopsResult.response.body}
+  result: mappedResult
+  error: returnMappingError
+  next: checkMappedAgencies
+
+checkMappedAgencies:
+  switch:
+    - condition: ${mappedResult.response.body.reason === 'NOT_A_LIST'}
+      next: logCentopsNotAList
+    - condition: ${!mappedResult.response.body.valid}
+      next: returnInvalidAgencyList
+    - condition: ${mappedResult.response.body.agencies.length === 0}
+      next: returnEmptyList
+  next: assignMappedAgencies
+
+assignMappedAgencies:
+  assign:
+    receivedCount: ${mappedResult.response.body.agencies.length}
+    agenciesJson: ${JSON.stringify(mappedResult.response.body.agencies)}
+  next: insertNewAgencies
+
+insertNewAgencies:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-new-agencies-bulk"
+    body:
+      agencies: ${agenciesJson}
+  result: insertResult
+  error: returnDatabaseError
+  next: saveAgencyDataRequests
+
+saveAgencyDataRequests:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-agency-data-requests"
+    body:
+      agencies: ${agenciesJson}
+  result: requestsResult
+  error: returnDatabaseError
+  next: assignPollCounts
+
+assignPollCounts:
+  assign:
+    acceptedCount: ${requestsResult.response.body.length}
+    newAgencyCount: ${insertResult.response.body.filter(agency => agency.isNewAgency).length}
+  next: startGeneration
+
+startGeneration:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/agencies/data/start-generation"
+  result: startGenerationResult
+  error: logPollSummary
+  next: logPollSummary
+
+logPollSummary:
+  log: "CentOps poll - received: ${receivedCount}, accepted: ${acceptedCount}, skipped: ${receivedCount - acceptedCount}, new agencies: ${newAgencyCount}"
+  next: returnPollSummary
+
+returnPollSummary:
+  assign:
+    pollResponse:
+      operationSuccessful: true
+      received: ${receivedCount}
+      accepted: ${acceptedCount}
+      skipped: ${receivedCount - acceptedCount}
+      newAgencies: ${newAgencyCount}
+  next: respond200
+
+returnEmptyList:
+  assign:
+    pollResponse:
+      operationSuccessful: true
+      received: 0
+      accepted: 0
+      skipped: 0
+      newAgencies: 0
+  next: respond200
+
+returnMissingSettings:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "CENTOPS_URL, CENTOPS_API_KEY and CENTOPS_API_SECRET must be set in constants.ini"
+  next: respond500
+
+returnInvalidAgencyList:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: ${mappedResult.response.body.error}
+  next: respond400
+
+logCentopsUnauthorized:
+  log: "CentOps poll failed - status: 401"
+  next: returnCentopsUnauthorized
+
+returnCentopsUnauthorized:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "CentOps rejected GC's credentials"
+  next: respond502
+
+logCentopsForbidden:
+  log: "CentOps poll failed - status: 403"
+  next: returnCentopsForbidden
+
+returnCentopsForbidden:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "GC's CentOps client is missing the GLOBAL_CLASSIFIER role"
+  next: respond502
+
+logCentopsError:
+  log: "CentOps poll failed - status: ${centopsResult.response.statusCodeValue}"
+  next: returnCentopsError
+
+returnCentopsError:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "CentOps request failed"
+      statusCode: ${centopsResult.response.statusCodeValue}
+  next: respond502
+
+logCentopsUnavailable:
+  log: "CentOps poll failed - CentOps could not be reached or returned an error"
+  next: returnCentopsUnavailable
+
+returnCentopsUnavailable:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "CentOps could not be reached"
+  next: respond502
+
+logCentopsNotAList:
+  log: "CentOps poll failed - reply is not a list"
+  next: returnCentopsNotAList
+
+returnCentopsNotAList:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "CentOps reply is not a list"
+  next: respond502
+
+returnMappingError:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "Could not process the CentOps reply"
+  next: respond500
+
+returnDatabaseError:
+  assign:
+    pollResponse:
+      operationSuccessful: false
+      message: "Could not save the CentOps agency list"
+  next: respond500
+
+respond200:
+  status: 200
+  return: ${pollResponse}
+  next: end
+
+respond400:
+  status: 400
+  return: ${pollResponse}
+  next: end
+
+respond500:
+  status: 500
+  return: ${pollResponse}
+  next: end
+
+respond502:
+  status: 502
+  return: ${pollResponse}
+  next: end
