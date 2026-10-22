@@ -7,9 +7,7 @@ source /app/scripts/load_constants.sh
 POLL_CENTOPS_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/poll-centops"
 
 echo "SENDING REQUEST TO POLL_CENTOPS_ENDPOINT"
-response=$(curl -s -w "\n%{http_code}" -X POST "$POLL_CENTOPS_ENDPOINT" \
-    -H "Content-Type: application/json" \
-    -d '{}')
+response=$(curl -s -w "\n%{http_code}" -X GET "$POLL_CENTOPS_ENDPOINT")
 
 http_code=$(echo "$response" | tail -n 1)
 body=$(echo "$response" | sed '$d')
