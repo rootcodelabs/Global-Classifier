@@ -1,9 +1,8 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 # DEFINING ENDPOINTS
-
-SYNC_CLIENT_DATA_ENDPOINT=http://ruuter-public:8086/global-classifier/agencies/data/start-generation
-
+SYNC_CLIENT_DATA_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/sync"
 # Construct payload to update training status using cat
 payload=$(cat <<EOF
 {}
@@ -15,12 +14,11 @@ response=$(curl -s -X POST "$SYNC_CLIENT_DATA_ENDPOINT" \
     -H "Content-Type: application/json" \
     -d "$payload")
 
-started=$(echo "$response" | sed -n 's/.*"started":[[:space:]]*\(true\|false\).*/\1/p')
-reason=$(echo "$response" | sed -n 's/.*"reason":[[:space:]]*"\([^"]*\)".*/\1/p')
+sync_summary=$(echo "$response" | sed -n 's/.*"syncSummary":\({[^}]*}\).*/{"syncSummary":\1}/p')
 
-if [ -n "$started" ]; then
-  echo "START GENERATION: started=$started reason=${reason:-none}"
+if [ -n "$sync_summary" ]; then
+  echo "SYNC SUMMARY: $sync_summary"
 else
-  echo "START GENERATION RESPONSE:"
+  echo "DATA IMPORT SUMMARY:"
   echo "$response"
 fi
