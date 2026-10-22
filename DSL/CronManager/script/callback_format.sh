@@ -1,4 +1,5 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 echo "Started Shell Script for Dataset Generation Callback Processing"
 
@@ -12,7 +13,7 @@ fi
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
-PROGRESS_UPDATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/update"
+PROGRESS_UPDATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datasets/progress/update"
 # Debug: Check Python environment
 log "Python version: $(python3 --version)"
 log "Python path: $(which python3)"

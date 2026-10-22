@@ -1,9 +1,9 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 # DEFINING ENDPOINTS
 
-CHECK_RESYNC_DATA_AVAILABILITY_ENDPOINT=http://ruuter-public:8086/global-classifier/agencies/data/update
-
+CHECK_RESYNC_DATA_AVAILABILITY_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/update"
 # Construct payload to update training status using cat
 payload=$(cat <<EOF
 {}

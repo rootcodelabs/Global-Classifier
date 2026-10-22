@@ -1,16 +1,29 @@
+import configparser
+import os
+
+# Service endpoints come from constants.ini (shared with Ruuter and the CronManager scripts).
+_CONSTANTS_FILE = os.environ.get("CONSTANTS_FILE", "/app/constants.ini")
+_config = configparser.ConfigParser(interpolation=None)
+_config.optionxform = str
+if not _config.read(_CONSTANTS_FILE):
+    raise RuntimeError(f"Constants file not found: {_CONSTANTS_FILE}")
+_dsl = _config["DSL"]
+
+
 UPDATE_MODEL_TRAINING_STATUS_ENDPOINT = (
-    "http://ruuter-public:8086/global-classifier/datamodels/training/status/update"
+    f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/datamodels/training/status/update"
 )
 
 CREATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-public:8086/global-classifier/datamodels/progress/create"
+    f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/datamodels/progress/create"
 )
 
 UPDATE_TRAINING_PROGRESS_SESSION_ENDPOINT = (
-    "http://ruuter-public:8086/global-classifier/datamodels/progress/update"
+    f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/datamodels/progress/update"
 )
 
-DEPLOYMENT_ENDPOINT = "http://ruuter-public:8086/global-classifier/inference/deploy"
+
+DEPLOYMENT_ENDPOINT = f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/inference/deploy"
 
 MODEL_TRAINING_SOURCE_PATH = "/app/src/training"  # path in container
 
@@ -26,8 +39,8 @@ LOCAL_LABEL_ENCODER_SAVE_PATH = "/app/shared/model_trainer/results/{model_id}/la
 
 S3_FERRY_MODEL_STORAGE_PATH = "/models/undeployed"  # folder path in s3 bucket
 
-S3_FERRY_ENDPOINT = "http://gc-s3-ferry:3000/v1/files/copy"
 
+S3_FERRY_ENDPOINT = f"{_dsl['GLOBAL_CLASSIFIER_S3_FERRY']}/v1/files/copy"
 BASE_MODEL_FILENAME = "base_model_trainable_layers_{model_id}"
 
 CLASSIFIER_MODEL_FILENAME = "classifier_{model_id}.pth"
