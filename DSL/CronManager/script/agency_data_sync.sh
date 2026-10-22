@@ -2,7 +2,9 @@
 source /app/scripts/load_constants.sh
 
 # DEFINING ENDPOINTS
-SYNC_CLIENT_DATA_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/sync"
+
+SYNC_CLIENT_DATA_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/start-generation"
+
 # Construct payload to update training status using cat
 payload=$(cat <<EOF
 {}
@@ -14,11 +16,12 @@ response=$(curl -s -X POST "$SYNC_CLIENT_DATA_ENDPOINT" \
     -H "Content-Type: application/json" \
     -d "$payload")
 
-sync_summary=$(echo "$response" | sed -n 's/.*"syncSummary":\({[^}]*}\).*/{"syncSummary":\1}/p')
+started=$(echo "$response" | sed -n 's/.*"started":[[:space:]]*\(true\|false\).*/\1/p')
+reason=$(echo "$response" | sed -n 's/.*"reason":[[:space:]]*"\([^"]*\)".*/\1/p')
 
-if [ -n "$sync_summary" ]; then
-  echo "SYNC SUMMARY: $sync_summary"
+if [ -n "$started" ]; then
+  echo "START GENERATION: started=$started reason=${reason:-none}"
 else
-  echo "DATA IMPORT SUMMARY:"
+  echo "START GENERATION RESPONSE:"
   echo "$response"
 fi
