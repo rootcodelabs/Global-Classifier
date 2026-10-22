@@ -5,6 +5,9 @@ import logging
 import traceback
 from typing import Dict
 
+from config.settings import settings
+
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -12,7 +15,7 @@ logger = logging.getLogger(__name__)
 class S3Ferry:
     """Service class for handling S3Ferry file transfer operations."""
 
-    def __init__(self, base_url: str = "http://gc-s3-ferry:3000"):
+    def __init__(self, base_url: str = settings.S3_FERRY_URL):
         """
         Initialize the S3Ferry service.
 

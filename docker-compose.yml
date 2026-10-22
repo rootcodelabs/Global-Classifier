@@ -163,7 +163,12 @@ services:
       - shared-volume:/app/shared
       - cron_data:/app/data
       - ./models:/app/models
-    runtime: nvidia  
+      - ./src/inference/inference_scripts:/app/inference_scripts
+      - ./grafana-configs/loki_logger.py:/app/inference_scripts/loki_logger.py
+      - ./grafana-configs/loki_logger.py:/app/src/training/loki_logger.py
+      - ./constants.ini:/app/inference_scripts/constants.ini
+      - ./src/scripts:/app/src/scripts
+    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - server.port=9010
