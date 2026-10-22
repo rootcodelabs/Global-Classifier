@@ -286,7 +286,7 @@ function getPresignedUrlExpiry(presignedUrl, updatedAt) {
 
 /**
  * Validates the CentOps Common Knowledge Base list and maps it to GC's agency fields.
- * @param {Array} agencies - The reply of GET /centops/integration/common-knowledge-bases
+ * @param {Array} agencies - The reply of GET /centops/integration/global-classifier/common-knowledge-bases
  * @returns {string} JSON string: { valid, reason, error, agencies }
  */
 export function mapCentopsAgencies(agencies) {
