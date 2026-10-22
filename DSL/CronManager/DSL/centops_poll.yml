@@ -1,4 +1,5 @@
 centops_poll:
   trigger: "0 0 * * * ?"
-  type: exec
-  command: "../app/scripts/centops_poll.sh"
+  type: http
+  method: POST
+  url: http://ruuter-public:8086/global-classifier/agencies/data/poll-centops

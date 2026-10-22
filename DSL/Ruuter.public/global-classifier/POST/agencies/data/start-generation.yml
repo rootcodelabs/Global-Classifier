@@ -181,7 +181,7 @@ extractDatasetVersion:
 linkRequestsToDatasetVersion:
   call: http.post
   args:
-    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-agency-data-requests-dataset-version"
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/update-requests-dataset-version-and-agencies-sync-status"
     body:
       datasetVersionId: ${datasetId}
       requestIds: ${claimedRequestIds}
@@ -246,18 +246,14 @@ returnGenerationAlreadyRunning:
     startResponse:
       started: false
       reason: "generation already running"
-  status: 200
-  return: ${startResponse}
-  next: end
+  next: respond200
 
 returnNothingPending:
   assign:
     startResponse:
       started: false
       reason: "nothing pending"
-  status: 200
-  return: ${startResponse}
-  next: end
+  next: respond200
 
 returnGenerationStarted:
   assign:
@@ -265,9 +261,7 @@ returnGenerationStarted:
       started: true
       datasetId: ${datasetId}
       agencies: ${claimedRequests.length}
-  status: 200
-  return: ${startResponse}
-  next: end
+  next: respond200
 
 returnRemovingAgencies:
   assign:
@@ -276,24 +270,28 @@ returnRemovingAgencies:
       reason: "removing agencies that left the network"
       datasetId: ${removalDatasetId}
       agencies: ${agenciesToRemoveCount}
-  status: 200
-  return: ${startResponse}
-  next: end
+  next: respond200
 
 returnStartFailed:
   assign:
     startResponse:
       started: false
       reason: "generation could not be started"
-  status: 500
-  return: ${startResponse}
-  next: end
+  next: respond500
 
 returnDatabaseError:
   assign:
     startResponse:
       started: false
       reason: "database error"
+  next: respond500
+
+respond200:
+  status: 200
+  return: ${startResponse}
+  next: end
+
+respond500:
   status: 500
   return: ${startResponse}
   next: end
