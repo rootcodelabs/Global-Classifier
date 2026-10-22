@@ -1,11 +1,13 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 # File: DSL/CronManager/script/train_script_starter.sh
 
 # API Endpoints
-CHECK_JOB_STATUS_IN_PROGRESS_SQL="http://resql:8082/global-classifier/get-training-job-status-in-progress"
-GET_FIRST_COME_TRAINING_JOB_SQL="http://resql:8082/global-classifier/get-queued-training-job"
-GET_DATA_MODEL_BY_MODEL_ID_SQL="http://resql:8082/global-classifier/get-data-model-info-by-given-model-id"
-UPDATE_JOB_STATUS="http://resql:8082/global-classifier/update-training-job-status"
+
+CHECK_JOB_STATUS_IN_PROGRESS_SQL="${GLOBAL_CLASSIFIER_RESQL}/get-training-job-status-in-progress"
+GET_FIRST_COME_TRAINING_JOB_SQL="${GLOBAL_CLASSIFIER_RESQL}/get-queued-training-job"
+GET_DATA_MODEL_BY_MODEL_ID_SQL="${GLOBAL_CLASSIFIER_RESQL}/get-data-model-info-by-given-model-id"
+UPDATE_JOB_STATUS="${GLOBAL_CLASSIFIER_RESQL}/update-training-job-status"
 
 echo "[START] Training script starter"
 
@@ -86,8 +88,7 @@ echo "[DEBUG] Update job status response: '$response_update_job_status'"
 
 # Create training progress session
 echo "[SESSION] Creating training progress session..."
-CREATE_PROGRESS_SESSION_ENDPOINT="http://ruuter-public:8086/global-classifier/datamodels/progress/create"
-
+CREATE_PROGRESS_SESSION_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datamodels/progress/create"
 response_create_session=$(curl -s -X POST "$CREATE_PROGRESS_SESSION_ENDPOINT" \
     -H "Content-Type: application/json" \
     -d "{
@@ -125,8 +126,7 @@ fi
 
 # Update initial training progress
 echo "[PROGRESS] Updating initial training progress..."
-UPDATE_PROGRESS_SESSION_ENDPOINT="http://ruuter-public:8086/global-classifier/datamodels/progress/update"
-
+UPDATE_PROGRESS_SESSION_ENDPOINT="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datamodels/progress/update"
 response_update_progress=$(curl -s -X POST "$UPDATE_PROGRESS_SESSION_ENDPOINT" \
     -H "Content-Type: application/json" \
     -d "{
@@ -329,7 +329,7 @@ else
     -d "{\"jobId\": $job_id, \"jobStatus\": \"training-failed\"}")
 
     echo "[MODEL] Updating model training status to failed..."
-    UPDATE_MODEL_TRAINING_STATUS_FAILED="http://resql:8082/global-classifier/update-training_status-failed"
+    UPDATE_MODEL_TRAINING_STATUS_FAILED="${GLOBAL_CLASSIFIER_RESQL}/update-training_status-failed"
     response_update_model_status=$(curl -s -X POST "$UPDATE_MODEL_TRAINING_STATUS_FAILED" \
     -H "Content-Type: application/json" \
     -d "{\"model_id\": $model_id}")

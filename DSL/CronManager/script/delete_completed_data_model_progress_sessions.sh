@@ -2,7 +2,8 @@
 
 cd "$(dirname "$0")"
 
-source ../config/config.ini
+#source ../config/config.ini
+source /app/scripts/load_constants.sh
 
 script_name=$(basename $0)
 pwd
@@ -10,8 +11,8 @@ pwd
 echo $(date -u +"%Y-%m-%d %H:%M:%S.%3NZ") - $script_name started
 
 delete_dataset_progress_sessions() {
-  delete_response=$(curl -s -X POST -H "Content-Type: application/json" "http://resql:8082/delete-completed-data-model-progress-sessions")
-
+  #updated the endpoint http://resql:8082/delete-completed-data-model-progress-sessions to - http://resql:8082/global-classifier/delete-completed-data-model-progress-sessions 
+  delete_response=$(curl -s -X POST -H "Content-Type: application/json" "${GLOBAL_CLASSIFIER_RESQL}/delete-completed-data-model-progress-sessions")
   echo "Response from delete request: $delete_response"
 
   session_ids=$(echo "$delete_response" | grep -oP '"id":\K\d+' | tr '\n' ' ' | sed 's/ $//')  # Remove trailing space
@@ -37,8 +38,7 @@ delete_from_opensearch() {
 
   echo "delete query: $delete_query"
 
-  opensearch_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$delete_query" "http://opensearch-node:9200/data_model_progress_sessions/_delete_by_query")
-
+  opensearch_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$delete_query" "${GLOBAL_CLASSIFIER_OPENSEARCH}/data_model_progress_sessions/_delete_by_query")
   echo "Response from OpenSearch delete request: $opensearch_response"
 }
 

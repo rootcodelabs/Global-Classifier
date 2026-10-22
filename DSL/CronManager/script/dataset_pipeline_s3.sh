@@ -1,4 +1,5 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 # Check if environment variable is set
 if [ -z "$signedUrls" ] || [ -z "$datasetId" ] || [ -z "$majorVersion" ] || [ -z "$minorVersion" ]; then
@@ -18,7 +19,7 @@ send_failure_status_update() {
     local response_body="$3"
     local failure_type="$4"  # "extraction_failure" or "generation_failure"
     
-    STATUS_UPDATE_URL="http://ruuter-public:8086/global-classifier/agencies/data/generation"
+    STATUS_UPDATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/generation"
     
     agencies_array="[]"
     
@@ -83,9 +84,8 @@ EOF
 }
 
 echo "Started Shell Script for S3 DataSet Processing"
-PROGRESS_CREATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/create"
-PROGRESS_UPDATE_URL="http://ruuter-public:8086/global-classifier/datasets/progress/update"
-
+PROGRESS_CREATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datasets/progress/create"
+PROGRESS_UPDATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datasets/progress/update"
 # Send progress session creation request
 progress_payload=$(cat <<EOF
 {
@@ -313,7 +313,7 @@ EOF
         # Call the dataset generation service with the list payload
         log "Calling dataset generation service for bulk processing..."
         
-        dataset_response=$(curl -s -o /tmp/dataset_response_body.txt -w "%{http_code}" -X POST "http://dataset-gen-service:8000/generate-bulk" \
+        dataset_response=$(curl -s -o /tmp/dataset_response_body.txt -w "%{http_code}" -X POST "${GLOBAL_CLASSIFIER_DATASET_GENERATOR}/generate-bulk" \
             -H "Content-Type: application/json" \
             -d "$payload_content")
         

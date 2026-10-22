@@ -67,7 +67,7 @@ getPaginatedChunkIds:
 download_single_chunk_data:
   call: http.post
   args:
-    url: "http://dataset-file-handler:8000/download-chunk"
+    url: "[#GLOBAL_CLASSIFIER_FILE_HANDLER]/download-chunk"
     body:
       datasetId: ${datasetId}
       pageNum: ${pageNum}
@@ -88,7 +88,7 @@ processSingleChunkResult:
 download_agency_chunks_data:
   call: http.post 
   args:
-    url: "http://dataset-file-handler:8000/download-multiple-chunks"
+    url: "[#GLOBAL_CLASSIFIER_FILE_HANDLER]/download-multiple-chunks"
     body:
       datasetId: ${datasetId}
       chunkIds: ${paginatedChunksResult.response.body.chunks}
