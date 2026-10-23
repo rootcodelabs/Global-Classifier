@@ -43,7 +43,7 @@ log_detailed_info:
 
 check_for_request_data:
   switch:
-    - condition: ${task_id !== null && status !== null && message !== null && file_path !== null && results !== null}
+    - condition: ${task_id !== null && status !== null && message !== null && results !== null && (file_path !== null || status == "failed" || status == "error")}
       next: determine_status_response
   next: return_incorrect_request
 
@@ -152,7 +152,7 @@ log_failed_dataset_not_found:
 
 log_failed_generation_update_error:
   log: "Failure callback could not update the generation status - Task ID: ${task_id}, Dataset ID: ${failed_dataset_id}"
-  next: return_failure_details
+  next: return_failure_not_recorded
 
 handle_unknown_status:
   assign:
@@ -163,17 +163,27 @@ handle_unknown_status:
   next: return_unknown_status
 
 return_failure_details:
-  status: 500
+  status: 200
   return: ${format_failure_callback_res}
+  next: end
+
+# Recording the failure did not work, so let the generator retry the callback
+return_failure_not_recorded:
+  status: 500
+  return: "Failure callback could not update the generation status"
+  next: end
 
 return_unknown_status:
   status: 200
   return: ${format_unknown_status_res}
+  next: end
 
 return_incorrect_request:
   status: 400
   return: 'Missing Required Fields'
+  next: end
 
 return_success:
   status: 200
   return: ${format_success_cron_response_res}
+  next: end
