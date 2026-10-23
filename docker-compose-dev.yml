@@ -174,7 +174,6 @@ services:
       - ./grafana-configs/loki_logger.py:/app/src/training/loki_logger.py
       - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
-      - ./src/scripts:/app/src/scripts
     runtime: nvidia 
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
