@@ -298,7 +298,7 @@ export function mapCentopsAgencies(agencies) {
     });
   }
 
-  const requiredFields = ["clientId", "clientName", "partOfNetwork", "presignedUrl", "presignedUrlEtag"];
+  const requiredFields = ["clientId", "clientName", "partOfNetwork", "presignedUrl", "presignedUrlDataHash"];
   for (let i = 0; i < agencies.length; i++) {
     const agency = agencies[i] || {};
     const missingField = requiredFields.find(
@@ -325,7 +325,7 @@ export function mapCentopsAgencies(agencies) {
     agencyName: agency.clientName,
     partOfNetwork: agency.partOfNetwork,
     presignedUrl: agency.presignedUrl,
-    dataHash: String(agency.presignedUrlEtag).replace(/^"+|"+$/g, ""),
+    dataHash: String(agency.presignedUrlDataHash).replace(/^"+|"+$/g, ""),
     urlExpiresAt: getPresignedUrlExpiry(agency.presignedUrl, agency.updatedAt),
   }));
 
