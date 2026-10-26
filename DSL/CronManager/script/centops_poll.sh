@@ -15,10 +15,8 @@ body=$(echo "$response" | sed '$d')
 # The reply holds only counts or an error message, never URLs or credentials
 if [ "$http_code" = "200" ]; then
   echo "CENTOPS POLL SUMMARY: $body"
-elif [ "$http_code" = "502" ]; then
-  echo "CENTOPS POLL FAILED - CentOps error, retrying at the next hourly poll. HTTP $http_code: $body"
-  exit 1
 else
-  echo "CENTOPS POLL FAILED - HTTP $http_code: $body"
+  # A CentOps outage comes back as an empty 500, not a 502, so every failure is logged the same way
+  echo "CENTOPS POLL FAILED - the next hourly poll will try again. HTTP $http_code: $body"
   exit 1
 fi
