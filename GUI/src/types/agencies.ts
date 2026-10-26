@@ -12,5 +12,6 @@ export interface Agency {
     lastUpdatedTimestamp:  Date | null |undefined;
     lastTrainedTimestamp:  Date | null |undefined;
     syncStatus: "Unavailable_in_CKB" | "Available_in_CKB" | "Syncing" | "Failed";
+    partOfNetwork: boolean;
     createdAt: string;
   }

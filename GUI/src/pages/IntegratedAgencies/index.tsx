@@ -125,6 +125,7 @@ const IntegratedAgencies: FC = () => {
                         isEnabled={agenciesData?.isEnabled}
                         agencyName={agenciesData?.agencyName}
                         syncStatus={agenciesData?.syncStatus}
+                        partOfNetwork={agenciesData?.partOfNetwork}
                         isLatest={agenciesData.isLatest}
                         lastSynced={agenciesData?.lastUpdatedTimestamp}
                         lastUsed={agenciesData?.lastTrainedTimestamp}
