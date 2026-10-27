@@ -133,6 +133,36 @@ else
         log "Error response: $(cat $temp_response)"
         rm -f "$temp_response"
     fi
+
+    # Without this the run stays in progress until the 3-hour stuck clean-up
+    if [[ "$dataset_id" =~ ^[0-9]+$ ]]; then
+        failure_payload="{\"agencies\": [], \"datasetId\": $dataset_id, \"generationStatus\": \"Generation_Failed\"}"
+        failure_response=$(curl -s -X POST "${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/agencies/data/generation" \
+          -H "Content-Type: application/json" \
+          -d "$failure_payload")
+        log "Failure status update response: $failure_response"
+    else
+        log "Could not read the dataset ID from the file path, so the failure was not reported"
+    fi
+
+    progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$taskId",
+  "generationStatus": "Fail",
+  "generationMessage": "Generation Failed",
+  "progressPercentage": 100,
+  "processComplete": true
+}
+EOF
+)
+    progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+      -H "Content-Type: application/json" \
+      -d "$progress_update_payload")
+    log "Progress status updated to failed: $progress_update_response"
+
+    # Leftover files make the next run for the same agency fail to unpack
+    find /app/data -mindepth 1 -maxdepth 1 ! -name processed -exec rm -rf {} +
+    log "Removed this run's files from /app/data"
     exit 1
 fi
 
