@@ -26,6 +26,7 @@ type IntegratedAgencyCardProps = {
   lastUsed?: Date | null;
   validationStatus?: string;
   syncStatus?: string;
+  partOfNetwork?: boolean;
   lastModelTrained?: string;
   lastSynced?: Date | null;
   enableAllowed?: boolean;
@@ -39,6 +40,7 @@ const IntegratedAgencyCard: FC<PropsWithChildren<IntegratedAgencyCardProps>> = (
   lastUpdated,
   lastTrained,
   syncStatus,
+  partOfNetwork,
   lastModelTrained,
   lastSynced,
   enableAllowed
@@ -158,6 +160,11 @@ const IntegratedAgencyCard: FC<PropsWithChildren<IntegratedAgencyCardProps>> = (
 
         <div className="flex">
           <SyncStatusLabel status={syncStatus} />
+          {partOfNetwork === false && (
+            <Label type={LabelType.WARNING}>
+              {t('integratedAgencies.agencyCard.notInNetwork')}
+            </Label>
+          )}
         </div>
 
         <div className="label-row">
