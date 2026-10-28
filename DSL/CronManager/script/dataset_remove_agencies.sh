@@ -1,4 +1,5 @@
 #!/bin/bash
+source /app/scripts/load_constants.sh
 
 echo "Started Shell Script for removing agencies that left the network from the dataset"
 
@@ -13,7 +14,7 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
-GENERATION_STATUS_UPDATE_URL="http://resql:8082/global-classifier/update-data-generation-status"
+GENERATION_STATUS_UPDATE_URL="${GLOBAL_CLASSIFIER_RESQL}/update-data-generation-status"
 REMOVE_AGENCIES_SCRIPT="/app/src/s3_dataset_processor/remove_agencies_from_dataset.py"
 
 # Marks the new version failed, so it doesn't block generation until the stuck check

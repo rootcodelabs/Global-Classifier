@@ -19,12 +19,12 @@ STATUS_UPDATE_URL = (
 PROGRESS_UPDATE_URL = (
     f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/datasets/progress/update"
 )
-AGENCIES_IN_NETWORK_URL = "http://resql:8082/global-classifier/get-agencies-in-network"
+AGENCIES_IN_NETWORK_URL = f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/get-agencies-in-network"
 LATEST_SUCCESSFUL_DATASET_URL = (
-    "http://resql:8082/global-classifier/get-latest-successful-dataset-version"
+    f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/get-latest-successful-dataset-version"
 )
 GENERATION_STATUS_UPDATE_URL = (
-    "http://resql:8082/global-classifier/update-data-generation-status"
+    f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/update-data-generation-status"
 )
 SCRIPT_DIR = Path("/app/src/s3_dataset_processor")
 AGGREGATED_CSV_FILE = "aggregated_dataset.csv"
