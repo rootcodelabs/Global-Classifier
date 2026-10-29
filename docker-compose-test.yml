@@ -1,0 +1,124 @@
+# Minimal BYK stack used for CI integration tests of the dataset-generator module.
+# Scope: Ruuter.public (datasets/progress/*), Resql (dataset + progress-session SQL),
+# CronManager (dataset_pipeline_scheduler, callback_formatter), SeaweedFS as the
+# S3 store, and src/s3_dataset_processor's download script.
+#
+# Data Mapper, notifications-node (and the OpenSearch it needs), and the real
+# LLM-backed Dataset-Generator service are replaced by the single stub in
+# tests/integration_tests/test_doubles — this is deliberate per the "mocked
+# external service" CI scope decision, not an oversight.
+
+# Without its own project name, compose treats a local stack in this folder as this one and replaces its containers
+name: gc-integration-test
+
+services:
+  users_db:
+    container_name: users_db_test
+    image: postgres:14.1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dbadmin
+      POSTGRES_DB: global-classifier
+    ports:
+      - "5438:5432"
+    networks:
+      - test-network
+
+  resql:
+    container_name: resql_test
+    image: ghcr.io/buerokratt/resql:v1.3.6
+    depends_on:
+      - users_db
+    environment:
+      - sqlms.datasources.[0].name=byk
+      - sqlms.datasources.[0].jdbcUrl=jdbc:postgresql://users_db:5432/global-classifier
+      - sqlms.datasources.[0].username=postgres
+      - sqlms.datasources.[0].password=dbadmin
+    volumes:
+      - ./DSL/Resql:/DSL
+    ports:
+      - "8082:8082"
+    networks:
+      - test-network
+
+  ruuter-public:
+    container_name: ruuter-public_test
+    image: ghcr.io/buerokratt/ruuter:v2.2.8
+    environment:
+      - application.cors.allowedOrigins=http://localhost:8086
+      - application.httpCodesAllowList=200,201,202,204,400,401,403,500
+      - application.internalRequests.allowedIPs=127.0.0.1
+      - application.internalRequests.disabled=true
+      - application.logging.displayRequestContent=true
+      - application.logging.displayResponseContent=true
+      - application.logging.printStackTrace=true
+      - server.port=8086
+    volumes:
+      - ./DSL/Ruuter.public:/DSL
+      - ./tests/integration_tests/constants.test.ini:/app/constants.ini
+    ports:
+      - "8086:8086"
+    networks:
+      - test-network
+
+  cron-manager:
+    container_name: cron-manager_test
+    # python-1.2.0 is the only published tag shipping Python (uv + a 3.12.10
+    # venv at /app/python_virtual_env). Do not bump to v3.3.x - those are
+    # Java-only. No python3 on PATH; it appears when the scripts source the
+    # venv, whose interpreter the default `cronmanager` user can't read,
+    # hence `user: root`.
+    #
+    # ShellExecuteJob runs jobs with only the job's allowedEnvs, never PATH,
+    # so the scripts source the venv by absolute path and use `uv pip install`
+    # (this venv has no pip module) - a production fix, not a test shim.
+    image: ghcr.io/buerokratt/cronmanager:python-1.2.0@sha256:65ca58a6f4a6ad63f6127c4a411ec15ae095d7324bc9b6552bbcc06783759f9e
+    user: "root"
+    volumes:
+      - ./DSL/CronManager/DSL:/DSL
+      - ./DSL/CronManager/script:/app/scripts
+      - ./tests/integration_tests/constants.test.ini:/app/constants.ini
+      - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
+      - ./src/s3_dataset_processor:/app/src/s3_dataset_processor
+    environment:
+      - PYTHONPATH=/app:/app/src/s3_dataset_processor:/app/src
+    ports:
+      - "9010:8080"
+    networks:
+      - test-network
+
+  seaweedfs:
+    container_name: seaweedfs_test
+    # S3-compatible object store standing in for the agencies' real S3. Not
+    # MinIO: minio/minio is no longer publicly pullable from Docker Hub or
+    # quay.io (both 401/deny), so CI cannot fetch it. SeaweedFS is Apache-2.0
+    # and speaks enough S3 for this test - SigV4 presigned GETs included,
+    # which is the only part the pipeline script actually exercises.
+    #
+    # Credentials come from s3_config.json; without it the S3 gateway allows
+    # anonymous access and presigning has nothing to sign with.
+    image: chrislusf/seaweedfs:4.50@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
+    command: server -s3 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data
+    volumes:
+      - ./tests/integration_tests/seaweedfs/s3_config.json:/etc/seaweedfs/s3_config.json:ro
+    ports:
+      - "9002:8333"
+    networks:
+      - test-network
+
+  test-doubles:
+    container_name: test-doubles_test
+    build:
+      context: ./tests/integration_tests/test_doubles
+    environment:
+      - CRON_MANAGER_URL=http://cron-manager:8080
+      - CALLBACK_DELAY_SECONDS=2
+    ports:
+      - "5050:5000"
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    name: gc-test-network
+    driver: bridge
