@@ -1,3 +1,4 @@
+import { SyncStatus } from 'enums/datasetEnums';
 export interface Agency {
     id?: string;
     agencyId: string;
@@ -11,7 +12,7 @@ export interface Agency {
     lastModelTrained: string;
     lastUpdatedTimestamp:  Date | null |undefined;
     lastTrainedTimestamp:  Date | null |undefined;
-    syncStatus: "Unavailable_in_CKB" | "Available_in_CKB" | "Syncing" | "Failed";
+    syncStatus: SyncStatus;
     partOfNetwork: boolean;
     createdAt: string;
   }
