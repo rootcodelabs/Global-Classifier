@@ -1,0 +1,61 @@
+name: Dataset Generator Module Integration Tests
+on:
+  pull_request:
+    branches: [feature/ckb-data-syncing, v1.0.0, v2.0.0, main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'DSL/Resql/global-classifier/**/dataset*'
+      - 'DSL/Ruuter.public/global-classifier/*/datasets/**'
+      - 'DSL/CronManager/**'
+      - 'DSL/Liquibase/**'
+      - 'src/s3_dataset_processor/**'
+      - 'docker-compose-test.yml'
+      - 'tests/integration_tests/**'
+      - '.github/workflows/dataset-generator-integration.yml'
+
+  workflow_dispatch:
+
+# Cancel a branch's in-flight run when a newer commit lands on it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dataset-generator-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies (locked)
+        run: uv sync --frozen --group dev
+
+      - name: Make CronManager scripts executable
+        run: chmod +x DSL/CronManager/script/*.sh
+
+      - name: Pull test stack images
+        run: docker compose -f docker-compose-test.yml pull --ignore-buildable
+
+      - name: Build the test-doubles image
+        run: docker compose -f docker-compose-test.yml build
+
+      - name: Run dataset-generator integration tests
+        run: uv run python -m pytest tests/integration_tests/ -v --tb=short --log-cli-level=INFO
+
+      - name: Capture docker compose logs on failure
+        if: failure()
+        run: docker compose -f docker-compose-test.yml logs --tail 300
+
+      - name: Cleanup docker resources
+        if: always()
+        run: docker compose -f docker-compose-test.yml down -v --remove-orphans || true

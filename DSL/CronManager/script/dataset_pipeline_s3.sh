@@ -137,9 +137,33 @@ echo "Extracted sessionId: $sessionId"
 data_generation_request="$signedUrls"
 chmod 777 /app/data
 
+# CronManager runs jobs with an environment limited to the job's declared
+# allowedEnvs (see CronService.executeJob) - PATH is never included, so
+# bare `python3`/`pip` calls would resolve via bash's bare-bones fallback
+# PATH and miss the venv entirely. Activating by absolute path fixes PATH
+# for the rest of this script regardless of what CronManager passed in.
+UV_BIN="/usr/local/bin/uv"
+if [ ! -f "$UV_BIN" ]; then
+    UV_BIN="/root/.local/bin/uv"
+fi
+if [ ! -f "$UV_BIN" ]; then
+    echo "[UV] Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh || {
+        echo "Failed to install uv"
+        exit 1
+    }
+    UV_BIN="/root/.local/bin/uv"
+fi
+
+VENV_PATH="/app/python_virtual_env"
+source "$VENV_PATH/bin/activate" || {
+    echo "Failed to activate virtual environment"
+    exit 1
+}
+
 # Install required Python packages if not present
 echo "Installing required Python packages..."
-python3 -m pip install --quiet --no-cache-dir requests pydantic || {
+"$UV_BIN" pip install --python "$VENV_PATH/bin/python3" --quiet requests pydantic || {
     echo "Failed to install packages"
     exit 1
 }

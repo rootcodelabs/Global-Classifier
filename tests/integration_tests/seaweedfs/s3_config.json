@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "testadmin",
+      "credentials": [
+        {
+          "accessKey": "s3testkey",
+          "secretKey": "s3testkey"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

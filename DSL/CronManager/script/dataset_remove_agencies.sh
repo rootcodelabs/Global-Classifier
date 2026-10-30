@@ -25,8 +25,34 @@ mark_version_failed() {
   log "Dataset version $datasetId set to Generation_Failed"
 }
 
+# CronManager runs jobs with an environment limited to the job's declared
+# allowedEnvs (see CronService.executeJob) - PATH is never included, so
+# bare `python3`/`pip` calls would resolve via bash's bare-bones fallback
+# PATH and miss the venv entirely. Activating by absolute path fixes PATH
+# for the rest of this script regardless of what CronManager passed in.
+UV_BIN="/usr/local/bin/uv"
+if [ ! -f "$UV_BIN" ]; then
+    UV_BIN="/root/.local/bin/uv"
+fi
+if [ ! -f "$UV_BIN" ]; then
+    echo "[UV] Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh || {
+        log "Failed to install uv"
+        mark_version_failed
+        exit 1
+    }
+    UV_BIN="/root/.local/bin/uv"
+fi
+
+VENV_PATH="/app/python_virtual_env"
+source "$VENV_PATH/bin/activate" || {
+    log "Failed to activate virtual environment"
+    mark_version_failed
+    exit 1
+}
+
 log "Installing required Python packages..."
-python3 -m pip install --quiet --no-cache-dir requests pydantic pandas || {
+"$UV_BIN" pip install --python "$VENV_PATH/bin/python3" --quiet requests pydantic pandas || {
     log "Failed to install packages"
     mark_version_failed
     exit 1
