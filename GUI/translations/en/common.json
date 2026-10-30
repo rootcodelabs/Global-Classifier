@@ -57,7 +57,9 @@
     "clearFilters": "Clear Filters",
     "showEntries": "Show",
     "entries": "records",
-    "deleteSelected": "Delete Selection"
+    "deleteSelected": "Delete Selection",
+    "chosen": "Selected",
+    "selectAll": "Select all"
   },
   "menu": {
     "userManagement": "User Management",
@@ -304,6 +306,9 @@
           "proceedToDashboard": "Proceed to dataset groups"
         }
       }
+    },
+    "table": {
+      "sortBy": "Sort by"
     }
   },
   "stopWords": {
@@ -478,7 +483,10 @@
     "results": "Classification Results",
     "topPrediction": "Top Prediction",
     "allPredictions": "All Predictions",
-    "classificationFailed": "Classification failed. Please try again."
+    "classificationFailed": "Classification failed. Please try again.",
+    "errors": {
+      "modelNotExist": "Model does not exist"
+    }
   },
   "optionLists": {
     "text": "Text",
