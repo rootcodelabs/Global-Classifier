@@ -286,8 +286,10 @@ function getPresignedUrlExpiry(presignedUrl, updatedAt) {
 
 /**
  * Validates the CentOps Common Knowledge Base list and maps it to GC's agency fields.
+ * Agencies with missing data are skipped so the rest of the list can still be synced.
+ * The download link and hash are only required while the agency is part of the network.
  * @param {Array} agencies - The reply of GET /centops/integration/global-classifier/common-knowledge-bases
- * @returns {string} JSON string: { valid, reason, error, agencies }
+ * @returns {string} JSON string: { valid, reason, error, agencies, skipped }
  */
 export function mapCentopsAgencies(agencies) {
   if (!Array.isArray(agencies)) {
@@ -298,38 +300,42 @@ export function mapCentopsAgencies(agencies) {
     });
   }
 
-  const requiredFields = ["clientId", "clientName", "partOfNetwork", "presignedUrl", "presignedUrlDataHash"];
-  for (let i = 0; i < agencies.length; i++) {
-    const agency = agencies[i] || {};
-    const missingField = requiredFields.find(
-      (field) => agency[field] === undefined || agency[field] === null || agency[field] === ""
-    );
-    if (missingField) {
-      return JSON.stringify({
-        valid: false,
-        reason: "MISSING_FIELD",
-        error: `Agency at index ${i} is missing ${missingField}`,
-      });
-    }
+  const isMissing = (value) => value === undefined || value === null || value === "";
+  const mapped = [];
+  const skipped = [];
+
+  agencies.forEach((item, index) => {
+    const agency = item || {};
+    const problems = ["clientId", "clientName"].filter((field) => isMissing(agency[field]));
     if (typeof agency.partOfNetwork !== "boolean") {
-      return JSON.stringify({
-        valid: false,
-        reason: "MISSING_FIELD",
-        error: `Agency at index ${i} has a partOfNetwork that is not true or false`,
-      });
+      problems.push("partOfNetwork is not true or false");
+    } else if (agency.partOfNetwork) {
+      problems.push(...["presignedUrl", "presignedUrlDataHash"].filter((field) => isMissing(agency[field])));
     }
-  }
 
-  const mapped = agencies.map((agency) => ({
-    agencyId: String(agency.clientId),
-    agencyName: agency.clientName,
-    partOfNetwork: agency.partOfNetwork,
-    presignedUrl: agency.presignedUrl,
-    dataHash: String(agency.presignedUrlDataHash).replace(/^"+|"+$/g, ""),
-    urlExpiresAt: getPresignedUrlExpiry(agency.presignedUrl, agency.updatedAt),
-  }));
+    if (problems.length > 0) {
+      skipped.push({
+        index,
+        agencyId: isMissing(agency.clientId) ? null : String(agency.clientId),
+        agencyName: isMissing(agency.clientName) ? null : agency.clientName,
+        reason: `missing ${problems.join(", ")}`,
+      });
+      return;
+    }
 
-  return JSON.stringify({ valid: true, agencies: mapped });
+    mapped.push({
+      agencyId: String(agency.clientId),
+      agencyName: agency.clientName,
+      partOfNetwork: agency.partOfNetwork,
+      presignedUrl: isMissing(agency.presignedUrl) ? null : agency.presignedUrl,
+      dataHash: isMissing(agency.presignedUrlDataHash)
+        ? null
+        : String(agency.presignedUrlDataHash).replace(/^"+|"+$/g, ""),
+      urlExpiresAt: getPresignedUrlExpiry(agency.presignedUrl, agency.updatedAt),
+    });
+  });
+
+  return JSON.stringify({ valid: true, agencies: mapped, skipped });
 }
 
 export function filterDataByAgency(aggregatedData, startIndex, agencyId, pageSize=5) {
