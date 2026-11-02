@@ -56,16 +56,32 @@ checkMappedAgencies:
   switch:
     - condition: ${mappedResult.response.body.reason === 'NOT_A_LIST'}
       next: logCentopsNotAList
-    - condition: ${!mappedResult.response.body.valid}
-      next: returnInvalidAgencyList
-    - condition: ${mappedResult.response.body.agencies.length === 0}
-      next: returnEmptyList
   next: assignMappedAgencies
 
 assignMappedAgencies:
   assign:
-    receivedCount: ${mappedResult.response.body.agencies.length}
+    receivedCount: ${mappedResult.response.body.agencies.length + mappedResult.response.body.skipped.length}
+    validCount: ${mappedResult.response.body.agencies.length}
+    invalidCount: ${mappedResult.response.body.skipped.length}
     agenciesJson: ${JSON.stringify(mappedResult.response.body.agencies)}
+    skippedJson: ${JSON.stringify(mappedResult.response.body.skipped)}
+  next: checkSkippedAgencies
+
+# An agency with missing data is skipped on its own, the rest of the list is still synced
+checkSkippedAgencies:
+  switch:
+    - condition: ${invalidCount > 0}
+      next: logSkippedAgencies
+  next: checkValidAgencies
+
+logSkippedAgencies:
+  log: "CentOps poll - skipped ${invalidCount} agencies with missing data: ${skippedJson}"
+  next: checkValidAgencies
+
+checkValidAgencies:
+  switch:
+    - condition: ${validCount === 0}
+      next: assignEmptyCounts
   next: insertNewAgencies
 
 insertNewAgencies:
@@ -102,8 +118,16 @@ startGeneration:
   error: logPollSummary
   next: logPollSummary
 
+# Nothing to save or generate: the list was empty or every agency had missing data
+assignEmptyCounts:
+  assign:
+    acceptedCount: 0
+    newAgencyCount: 0
+  next: logPollSummary
+
+# invalid: skipped for missing data, unchanged: valid but no new data to fetch
 logPollSummary:
-  log: "CentOps poll - received: ${receivedCount}, accepted: ${acceptedCount}, skipped: ${receivedCount - acceptedCount}, new agencies: ${newAgencyCount}"
+  log: "CentOps poll - received: ${receivedCount}, accepted: ${acceptedCount}, invalid: ${invalidCount}, unchanged: ${validCount - acceptedCount}, new agencies: ${newAgencyCount}"
   next: returnPollSummary
 
 returnPollSummary:
@@ -112,18 +136,9 @@ returnPollSummary:
       operationSuccessful: true
       received: ${receivedCount}
       accepted: ${acceptedCount}
-      skipped: ${receivedCount - acceptedCount}
+      invalid: ${invalidCount}
+      unchanged: ${validCount - acceptedCount}
       newAgencies: ${newAgencyCount}
-  next: respond200
-
-returnEmptyList:
-  assign:
-    pollResponse:
-      operationSuccessful: true
-      received: 0
-      accepted: 0
-      skipped: 0
-      newAgencies: 0
   next: respond200
 
 returnMissingSettings:
@@ -132,13 +147,6 @@ returnMissingSettings:
       operationSuccessful: false
       message: "CENTOPS_URL, CENTOPS_API_KEY and CENTOPS_API_SECRET must be set in constants.ini"
   next: respond500
-
-returnInvalidAgencyList:
-  assign:
-    pollResponse:
-      operationSuccessful: false
-      message: ${mappedResult.response.body.error}
-  next: respond400
 
 logCentopsUnauthorized:
   log: "CentOps poll failed - status: 401"
@@ -212,11 +220,6 @@ returnDatabaseError:
 
 respond200:
   status: 200
-  return: ${pollResponse}
-  next: end
-
-respond400:
-  status: 400
   return: ${pollResponse}
   next: end
 
