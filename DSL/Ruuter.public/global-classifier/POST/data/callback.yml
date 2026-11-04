@@ -43,7 +43,7 @@ log_detailed_info:
 
 check_for_request_data:
   switch:
-    - condition: ${task_id !== null && status !== null && message !== null && file_path !== null && results !== null}
+    - condition: ${task_id !== null && status !== null && message !== null && results !== null && (file_path !== null || status == "failed" || status == "error")}
       next: determine_status_response
   next: return_incorrect_request
 
@@ -93,7 +93,66 @@ handle_failure_callback:
       task_id: ${task_id}
       status: "received"
       message: "Failure callback processed"
-  next: return_failure_details 
+  next: extract_failed_file_name
+
+extract_failed_file_name:
+  assign:
+    failed_file_name: ${String(file_path || '').split('/').pop()}
+  next: extract_failed_dataset_id
+
+extract_failed_dataset_id:
+  assign:
+    failed_dataset_id: "${failed_file_name.endsWith('.csv') ? failed_file_name.slice(0, -4) : ''}"
+  next: check_failed_dataset_id
+
+check_failed_dataset_id:
+  switch:
+    - condition: ${failed_dataset_id !== '' && !isNaN(Number(failed_dataset_id))}
+      next: log_failed_generation
+  next: get_generation_in_progress
+
+get_generation_in_progress:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RESQL]/check-generation-in-progress"
+  result: in_progress_res
+  error: log_failed_dataset_not_found
+  next: assign_in_progress_dataset_id
+
+assign_in_progress_dataset_id:
+  assign:
+    failed_dataset_id: ${in_progress_res.response.body[0].datasetId}
+  next: check_in_progress_dataset_id
+
+check_in_progress_dataset_id:
+  switch:
+    - condition: ${failed_dataset_id === null || failed_dataset_id === undefined}
+      next: log_failed_dataset_not_found
+  next: log_failed_generation
+
+log_failed_generation:
+  log: "Marking dataset generation as failed - Task ID: ${task_id}, Dataset ID: ${failed_dataset_id}"
+  next: update_failed_generation
+
+update_failed_generation:
+  call: http.post
+  args:
+    url: "[#GLOBAL_CLASSIFIER_RUUTER_PUBLIC]/agencies/data/generation"
+    body:
+      datasetId: ${String(failed_dataset_id)}
+      generationStatus: "Generation_Failed"
+      agencies: []
+  result: failed_generation_res
+  error: log_failed_generation_update_error
+  next: return_failure_details
+
+log_failed_dataset_not_found:
+  log: "Failure callback could not find the dataset ID - Task ID: ${task_id}, File Path: ${file_path}"
+  next: return_failure_details
+
+log_failed_generation_update_error:
+  log: "Failure callback could not update the generation status - Task ID: ${task_id}, Dataset ID: ${failed_dataset_id}"
+  next: return_failure_not_recorded
 
 handle_unknown_status:
   assign:
@@ -104,17 +163,27 @@ handle_unknown_status:
   next: return_unknown_status
 
 return_failure_details:
-  status: 500
+  status: 200
   return: ${format_failure_callback_res}
+  next: end
+
+# Recording the failure did not work, so let the generator retry the callback
+return_failure_not_recorded:
+  status: 500
+  return: "Failure callback could not update the generation status"
+  next: end
 
 return_unknown_status:
   status: 200
   return: ${format_unknown_status_res}
+  next: end
 
 return_incorrect_request:
   status: 400
   return: 'Missing Required Fields'
+  next: end
 
 return_success:
   status: 200
   return: ${format_success_cron_response_res}
+  next: end

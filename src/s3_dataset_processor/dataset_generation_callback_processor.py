@@ -24,6 +24,8 @@ from constants import (
     SCRIPT_DIR,
     PROGRESS_UPDATE_URL,
     DATA_DIRECTORY,
+    AGENCIES_IN_NETWORK_URL,
+    LATEST_SUCCESSFUL_DATASET_URL,
 )
 
 # --- Logging Setup ---
@@ -66,14 +68,59 @@ def update_dataset_version_id(df: pd.DataFrame, dataset_id: int) -> pd.DataFrame
     return df
 
 
+def get_agencies_in_network() -> set:
+    """Return the agency_ids that are still part of the network."""
+    response = requests.post(
+        AGENCIES_IN_NETWORK_URL,
+        json={},
+        headers={"Content-Type": "application/json"},
+        timeout=30,
+    )
+    if response.status_code not in [200, 201]:
+        raise RuntimeError(f"Failed to get agencies in network: {response.text}")
+    agencies = {str(row["agencyId"]) for row in response.json()}
+    logger.info(f"Agencies in network: {len(agencies)}")
+    return agencies
+
+
+def get_previous_successful_dataset_id(dataset_id: int) -> int | None:
+    """Return the latest successfully generated version before this one, or None."""
+    response = requests.post(
+        LATEST_SUCCESSFUL_DATASET_URL,
+        json={"datasetId": dataset_id},
+        headers={"Content-Type": "application/json"},
+        timeout=30,
+    )
+    if response.status_code not in [200, 201]:
+        raise RuntimeError(f"Failed to get previous dataset version: {response.text}")
+    rows = response.json()
+    return int(rows[0]["id"]) if rows else None
+
+
+def keep_agencies_in_network(df: pd.DataFrame, in_network: set) -> pd.DataFrame:
+    """Drop the rows of agencies that are no longer part of the network."""
+    filtered_df = df[df["agency_id"].astype(str).isin(in_network)]
+    removed = len(df) - len(filtered_df)
+    if removed:
+        logger.info(f"Removed {removed} rows of agencies outside the network")
+    return filtered_df
+
+
 def combine_csvs_and_update_ids(
-    prev_csv_path: str, curr_csv_path: str, dataset_id: int, output_path: str
+    prev_csv_path: str,
+    curr_csv_path: str,
+    dataset_id: int,
+    output_path: str,
+    in_network: set,
 ) -> str:
     """Combine previous and current CSVs, update item_id and dataset_version_id, and save to output_path."""
     try:
-        prev_df = pd.read_csv(prev_csv_path)
-        curr_df = pd.read_csv(curr_csv_path)
+        prev_df = pd.read_csv(prev_csv_path, dtype={"agency_id": str})
+        curr_df = pd.read_csv(curr_csv_path, dtype={"agency_id": str})
+        # Agencies with new data in this run replace their old rows
+        prev_df = prev_df[~prev_df["agency_id"].isin(curr_df["agency_id"].unique())]
         combined_df = pd.concat([prev_df, curr_df], ignore_index=True)
+        combined_df = keep_agencies_in_network(combined_df, in_network)
         combined_df = update_item_ids(combined_df, dataset_id)
         combined_df = update_dataset_version_id(combined_df, dataset_id)
         combined_df.to_csv(output_path, index=False)
@@ -257,14 +304,20 @@ def process_callback_background(
         current_csv_path = file_path
         output_csv_path = f"{OUTPUT_DATA_DIR}/{dataset_id}_aggregated.csv"
 
-        if dataset_id <= 2:
+        # Fail the run if the list can't be fetched, so no version keeps agencies that left
+        in_network = get_agencies_in_network()
+        # Merge with the latest successful version, not dataset_id - 1, which may have failed
+        prev_dataset_id = get_previous_successful_dataset_id(dataset_id)
+
+        if prev_dataset_id is None:
             logger.info("No previous dataset. Using current CSV only.")
             df = pd.read_csv(current_csv_path)
+            df = keep_agencies_in_network(df, in_network)
             df = update_item_ids(df, dataset_id)
             df = update_dataset_version_id(df, dataset_id)
             df.to_csv(output_csv_path, index=False)
         else:
-            prev_dataset_id = dataset_id - 1
+            logger.info(f"Merging with previous successful version {prev_dataset_id}")
             prev_csv_local = f"{OUTPUT_DATA_DIR}/{prev_dataset_id}_prev.csv"
             prev_csv_s3_path = f"datasets/{prev_dataset_id}/{AGGREGATED_CSV_FILE}"
             logger.info(
@@ -283,11 +336,16 @@ def process_callback_background(
                 ):
                     logger.info(f"Previous CSV downloaded to {prev_csv_local}")
                     combine_csvs_and_update_ids(
-                        prev_csv_local, current_csv_path, dataset_id, output_csv_path
+                        prev_csv_local,
+                        current_csv_path,
+                        dataset_id,
+                        output_csv_path,
+                        in_network,
                     )
                 else:
                     logger.warning("Previous CSV not found in S3, using current only.")
                     df = pd.read_csv(current_csv_path)
+                    df = keep_agencies_in_network(df, in_network)
                     df = update_item_ids(df, dataset_id)
                     df = update_dataset_version_id(df, dataset_id)
                     df.to_csv(output_csv_path, index=False)
@@ -296,6 +354,7 @@ def process_callback_background(
                     f"Failed to download previous CSV: {e}. Using current only."
                 )
                 df = pd.read_csv(current_csv_path)
+                df = keep_agencies_in_network(df, in_network)
                 df = update_item_ids(df, dataset_id)
                 df = update_dataset_version_id(df, dataset_id)
                 df.to_csv(output_csv_path, index=False)

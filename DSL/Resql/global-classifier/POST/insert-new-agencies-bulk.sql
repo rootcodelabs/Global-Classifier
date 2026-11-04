@@ -39,14 +39,19 @@ upserted AS (
         '',
         CURRENT_TIMESTAMP,
         '1970-01-01T00:00:00Z'::timestamp with time zone,
-        'Sync_pending_with_CKB'::sync_status,
+        CASE WHEN i.part_of_network THEN 'Sync_pending_with_CKB'::sync_status ELSE NULL END,
         CURRENT_TIMESTAMP,
         i.part_of_network
     FROM incoming i
     ON CONFLICT (agency_id) DO UPDATE
-    SET agency_name     = EXCLUDED.agency_name,
-        part_of_network = EXCLUDED.part_of_network,
-        is_enabled      = CASE WHEN EXCLUDED.part_of_network THEN ia.is_enabled ELSE FALSE END
+    SET agency_name      = EXCLUDED.agency_name,
+        part_of_network  = EXCLUDED.part_of_network,
+        is_enabled       = CASE WHEN EXCLUDED.part_of_network THEN ia.is_enabled ELSE FALSE END,
+        -- Rejoining: its rows were removed from the dataset, so fetch its data again
+        sync_status      = CASE WHEN NOT ia.part_of_network AND EXCLUDED.part_of_network
+                                THEN 'Sync_pending_with_CKB'::sync_status ELSE ia.sync_status END,
+        agency_data_hash = CASE WHEN NOT ia.part_of_network AND EXCLUDED.part_of_network
+                                THEN '' ELSE ia.agency_data_hash END
     RETURNING ia.agency_id, ia.part_of_network
 ),
 cancelled AS (

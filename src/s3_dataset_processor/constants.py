@@ -19,6 +19,13 @@ STATUS_UPDATE_URL = (
 PROGRESS_UPDATE_URL = (
     f"{_dsl['GLOBAL_CLASSIFIER_RUUTER_PUBLIC']}/datasets/progress/update"
 )
+AGENCIES_IN_NETWORK_URL = f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/get-agencies-in-network"
+LATEST_SUCCESSFUL_DATASET_URL = (
+    f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/get-latest-successful-dataset-version"
+)
+GENERATION_STATUS_UPDATE_URL = (
+    f"{_dsl['GLOBAL_CLASSIFIER_RESQL']}/update-data-generation-status"
+)
 SCRIPT_DIR = Path("/app/src/s3_dataset_processor")
 AGGREGATED_CSV_FILE = "aggregated_dataset.csv"
 SYNCED_WITH_CKB = "Synced_with_CKB"

@@ -50,15 +50,32 @@
     "sessionTimeOutDesc": "Pikendage oma sessiooni või logige rakendusest välja {{seconds}}",
     "close": "Sulge",
     "proceed": "Jätka",
-    "maxFileSize": "Faili suurus ei tohiks ületada 20 MB."
+    "maxFileSize": "Faili suurus ei tohiks ületada 20 MB.",
+    "clearFilters": "Tühjenda filtrid",
+    "continue": "Jätka",
+    "deleteSelected": "Kustuta valik",
+    "entries": "kirjet",
+    "replace": "Asenda",
+    "select": "-Vali-",
+    "showEntries": "Näita",
+    "chosen": "Valitud",
+    "selectAll": "Vali kõik"
   },
   "menu": {
     "userManagement": "Kasutajate haldus",
     "agencies": "Integreeritud asutused",
-    "dataSets": "Andmekogumid",
+    "dataSets": {
+      "overview": "Ülevaade",
+      "progress": "Andmete genereerimise edenemine",
+      "title": "Andmekogumid"
+    },
     "datasetGroups": "Andmekogude grupid",
     "validationSessions": "Valideerimine",
-    "dataModels": "Andmemudelid",
+    "dataModels": {
+      "overview": "Ülevaade",
+      "progress": "Treeningu edenemine",
+      "title": "Andmemudelid"
+    },
     "models": "Mudelid",
     "trainingSessions": "Treenimine",
     "testModel": "Testmudel",
@@ -101,12 +118,38 @@
       "title": "Ametinimetus"
     }
   },
-
-  "integratedAgencies":{
-  "title": "Integreeritud asutused",
-  "search":"Otsi asutust"
-},
-
+  "integratedAgencies": {
+    "title": "Integreeritud asutused",
+    "search": "Otsi asutust",
+    "agencyCard": {
+      "lastModelTrained": "Viimati treenitud mudel",
+      "lastSynced": "Viimati sünkroonitud",
+      "lastUsedForTraining": "Viimati treeninguks kasutatud",
+      "latest": "Uusim",
+      "notInNetwork": "Ei ole võrgustikus",
+      "resync": "Sünkrooni uuesti",
+      "resyncNotPossible": "Seda asutust ei saa praegu uuesti sünkroonida. Selle allalaadimislink võib olla aegunud. Uus link saabub järgmise CentOpsi päringuga.",
+      "resyncStarted": "Uuesti sünkroonimine alustatud. Asutuse olek uueneb, kui andmete genereerimine lõpeb.",
+      "syncStatus": {
+        "failed": "Sünkroonimine CKB-ga ebaõnnestus",
+        "inProgress": "Sünkroonimine CKB-ga on pooleli",
+        "pending": "Sünkroonimine CKB-ga ootel",
+        "resync": "Vajab CKB-ga uuesti sünkroonimist",
+        "resyncInProgress": "Uuesti sünkroonimine CKB-ga on pooleli",
+        "synced": "Sünkroonitud CKB-ga",
+        "unavailable": "CKB-s ei ole saadaval"
+      }
+    },
+    "noClients": "Kliente ei leitud",
+    "sortOptions": {
+      "agencyAsc": "Kliendi nimi: A–Z",
+      "agencyDesc": "Kliendi nimi: Z–A",
+      "createdDateAsc": "Loodud: vanimad enne",
+      "createdDateDesc": "Loodud: uusimad enne",
+      "lastUpdatedDateAsc": "Uuendatud: vanimad enne",
+      "lastUpdatedDateDesc": "Uuendatud: uusimad enne"
+    }
+  },
   "integration": {
     "title": "Integratsioon",
     "jira": "Jira",
@@ -381,25 +424,30 @@
       "datasetGroup": "Andmestiku grupp",
       "trainingStatus": "Koolitusstaatus",
       "maturity": "Valmidus",
-      "sort": "Sorteeri nime järgi (A - Z)"
+      "sort": "Sorteeri nime järgi (A - Z)",
+      "modelStatus": "Mudeli olek"
     },
     "trainingStatus": {
       "retrainingNeeded": "Treening uuesti vajalik",
       "trained": "Treenitud",
       "trainingInProgress": "Treening käib",
       "untrainable": "Ei saa treenida",
-      "notTrained": "Ei ole treenitud"
+      "notTrained": "Ei ole treenitud",
+      "initiatingTraining": "Treeningu alustamine",
+      "trainingFailed": "Treening ebaõnnestus"
     },
     "maturity": {
       "development": "Arenduses",
       "production": "Toodangus",
       "staging": "Staging",
-      "testing": "Testimine"
+      "testing": "Testimine",
+      "undeployed": "Juurutamata"
     },
     "dataModelCard": {
       "datasetGroup": "Andmestiku grupp",
       "dgVersion": "Andmestiku grupi versioon",
-      "lastTrained": "Viimane treening"
+      "lastTrained": "Viimane treening",
+      "datasetVersion": "Andmekogumi versioon"
     },
     "trainingResults": {
       "title": "Treeningu tulemused",
@@ -440,7 +488,13 @@
       "deleteModal": "Kustuta mudel",
       "confirmRetrain": "Kinnita mudeli treenimine",
       "confirmRetrainDesc": "Kas oled kindel, et soovid seda mudelit uuesti treenida?",
-      "save": "Salvesta muudatused"
+      "save": "Salvesta muudatused",
+      "deleteModalSuccessDesc": "Andmemudel on edukalt kustutatud. Mudel ei ole enam saadaval ja kõik sellega seotud andmed on eemaldatud.",
+      "deleteModalSuccessTitle": "Mudel edukalt kustutatud",
+      "deployDataModalErrorDesc": "Andmemudeli laadimisel tekkis probleem. Palun proovige uuesti. Kui probleem püsib, võtke abi saamiseks ühendust toega.",
+      "deployDataModalErrorTitle": "Andmemudeli juurutamise viga",
+      "deployDataModalSuccessDesc": "Andmemudel on edukalt juurutatud.",
+      "deployDataModalSuccessTitle": "Mudel edukalt juurutatud"
     },
     "dataModelForm": {
       "modelVersion": "Mudeli versioon",
@@ -449,8 +503,15 @@
       "deploymentPlatform": "Vali rakenduse platvorm",
       "maturityLabel": "Vali valmiduse silt",
       "errors": {
-        "modelNameLength": "Mudeli nimi peab olema vähem kui 256 tähemärki"
+        "modelNameLength": "Mudeli nimi peab olema vähem kui 256 tähemärki",
+        "datasetVersionNotExist": "Andmekogumi versiooni ei ole olemas"
       }
+    },
+    "loadDataModel": {
+      "errorDesc": "Andmemudeli laadimisel tekkis probleem. Palun proovige uuesti. Kui probleem püsib, võtke abi saamiseks ühendust toega.",
+      "errorTitle": "Viga andmemudeli laadimisel",
+      "loaded": "Andmemudel laaditud",
+      "loading": "Andmemudeli laadimine..."
     }
   },
   "trainingSessions": {
@@ -469,7 +530,16 @@
     "classify": "Klassifitseeri",
     "predictedHierarchy": "Prognoositud klassihierarhia: ",
     "averageConfidence": "Keskmine kindlus: ",
-    "classProbabilities": "Klassi tõenäosused: "
+    "classProbabilities": "Klassi tõenäosused: ",
+    "allPredictions": "Kõik ennustused",
+    "classificationFailed": "Klassifitseerimine ebaõnnestus. Palun proovige uuesti.",
+    "error": "Klassifitseerimise viga",
+    "errorDesc": "Teksti klassifitseerimisel tekkis probleem. Palun proovige uuesti. Kui probleem püsib, võtke abi saamiseks ühendust toega.",
+    "results": "Klassifitseerimise tulemused",
+    "topPrediction": "Parim ennustus",
+    "errors": {
+      "modelNotExist": "Mudelit ei ole olemas"
+    }
   },
   "optionLists": {
     "text": "Tekst",
@@ -487,5 +557,52 @@
     "stopWords": "Stop-sõnad",
     "incomingTexts": "Sissetulevad tekstid",
     "testModel": "Testi mudelit"
+  },
+  "datasets": {
+    "datasetCard": {
+      "failed": "Andmete genereerimine ebaõnnestus",
+      "inProgress": "Andmete genereerimine on pooleli",
+      "settings": "Seaded",
+      "success": "Andmete genereerimine õnnestus"
+    },
+    "detailedView": {
+      "bulkDeleteDesc1": "Kas olete kindel, et soovite valitud kirjed kustutada?",
+      "bulkDeleteDesc2": "Märkus: kustutamine ei mõjuta algset andmekogumit enne, kui klõpsate nupul „Salvesta muudatused“.",
+      "bulkDeleteTitle": "Kustuta valitud kirjed",
+      "clientName": "Kliendi nimi",
+      "confirmDeleteDatasetDesc": "Kustutatud andmeread eemaldatakse andmekogumist",
+      "confirmDeleteDatasetTitle": "Kinnita andmekogumi kustutamine",
+      "confirmUpdateDatasetDesc": "Muudetud andmeread uuendatakse andmekogumis",
+      "confirmUpdateDatasetTitle": "Kinnita andmekogumi uuendamine",
+      "connectedModels": "Seotud mudelid",
+      "data": "Andmed",
+      "dataBeingUpdated": "Andmeid uuendatakse...",
+      "dataset": "Andmekogum",
+      "datasetUpdateUnsuccessfulDesc": "Andmekogumi uuendamisel läks midagi valesti. Palun proovige uuesti.",
+      "datasetUpdateUnsuccessfulTitle": "Andmekogumi uuendamine ebaõnnestus",
+      "delete": "Kustuta andmekogum",
+      "deleteDataRowDesc": "Kas olete kindel, et soovite selle andmekirje kustutada?",
+      "deleteDataRowTitle": "Kustuta andmekirje",
+      "editDataRowDesc": "Andmekirjes tehtud muudatused salvestatakse andmekogumisse",
+      "editDataRowTitle": "Muuda andmekirjet",
+      "export": "Ekspordi andmekogum",
+      "itemsSelected": "kirjet valitud",
+      "noOfItems": "Kirjete arv",
+      "table": {
+        "client": "Klient",
+        "data": "Andmed",
+        "id": "Kirje ID"
+      },
+      "version": "Andmekogumi versioon"
+    },
+    "noDatasets": "Andmekogumeid ei ole saadaval",
+    "sortOptions": {
+      "createdDateAsc": "Loodud: vanimad enne",
+      "createdDateDesc": "Loodud: uusimad enne"
+    },
+    "title": "Andmekogumid",
+    "table": {
+      "sortBy": "Sorteeri"
+    }
   }
 }

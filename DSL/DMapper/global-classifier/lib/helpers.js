@@ -254,6 +254,90 @@ export function getPaginatedChunkIds(chunks, agencyId, pageNum, pageSize = 5) {
   );
 }
 
+/**
+ * Returns when a SigV4 presigned URL expires: X-Amz-Date + X-Amz-Expires seconds.
+ * Falls back to updatedAt + 1 hour when the URL has no expiry, and to now when updatedAt is missing.
+ * @param {string} presignedUrl - The presigned download URL
+ * @param {string} updatedAt - When CentOps last updated the row, e.g. "2026-10-05T09:00:00"
+ * @returns {string} ISO timestamp of the expiry
+ */
+function getPresignedUrlExpiry(presignedUrl, updatedAt) {
+  try {
+    const params = new URL(presignedUrl).searchParams;
+    const amzDate = params.get("X-Amz-Date");
+    const amzExpires = Number(params.get("X-Amz-Expires"));
+    const dateMatch = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(amzDate || "");
+    if (dateMatch && Number.isFinite(amzExpires) && amzExpires > 0) {
+      const [, year, month, day, hour, minute, second] = dateMatch;
+      const signedAt = Date.UTC(year, month - 1, day, hour, minute, second);
+      return new Date(signedAt + amzExpires * 1000).toISOString();
+    }
+  } catch (err) {
+    // Not a valid URL, use the fallback below
+  }
+
+  const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(updatedAt || "");
+  const updatedTime = Date.parse(hasTimezone ? updatedAt : `${updatedAt}Z`);
+  if (Number.isFinite(updatedTime)) {
+    return new Date(updatedTime + 60 * 60 * 1000).toISOString();
+  }
+  return new Date().toISOString();
+}
+
+/**
+ * Validates the CentOps Common Knowledge Base list and maps it to GC's agency fields.
+ * Agencies with missing data are skipped so the rest of the list can still be synced.
+ * The download link and hash are only required while the agency is part of the network.
+ * @param {Array} agencies - The reply of GET /centops/integration/global-classifier/common-knowledge-bases
+ * @returns {string} JSON string: { valid, reason, error, agencies, skipped }
+ */
+export function mapCentopsAgencies(agencies) {
+  if (!Array.isArray(agencies)) {
+    return JSON.stringify({
+      valid: false,
+      reason: "NOT_A_LIST",
+      error: "CentOps reply is not a list",
+    });
+  }
+
+  const isMissing = (value) => value === undefined || value === null || value === "";
+  const mapped = [];
+  const skipped = [];
+
+  agencies.forEach((item, index) => {
+    const agency = item || {};
+    const problems = ["clientId", "clientName"].filter((field) => isMissing(agency[field]));
+    if (typeof agency.partOfNetwork !== "boolean") {
+      problems.push("partOfNetwork is not true or false");
+    } else if (agency.partOfNetwork) {
+      problems.push(...["presignedUrl", "presignedUrlDataHash"].filter((field) => isMissing(agency[field])));
+    }
+
+    if (problems.length > 0) {
+      skipped.push({
+        index,
+        agencyId: isMissing(agency.clientId) ? null : String(agency.clientId),
+        agencyName: isMissing(agency.clientName) ? null : agency.clientName,
+        reason: `missing ${problems.join(", ")}`,
+      });
+      return;
+    }
+
+    mapped.push({
+      agencyId: String(agency.clientId),
+      agencyName: agency.clientName,
+      partOfNetwork: agency.partOfNetwork,
+      presignedUrl: isMissing(agency.presignedUrl) ? null : agency.presignedUrl,
+      dataHash: isMissing(agency.presignedUrlDataHash)
+        ? null
+        : String(agency.presignedUrlDataHash).replace(/^"+|"+$/g, ""),
+      urlExpiresAt: getPresignedUrlExpiry(agency.presignedUrl, agency.updatedAt),
+    });
+  });
+
+  return JSON.stringify({ valid: true, agencies: mapped, skipped });
+}
+
 export function filterDataByAgency(aggregatedData, startIndex, agencyId, pageSize=5) {
 
   const filtered = aggregatedData.filter(item => String(item.agency_id) === String(agencyId));
@@ -268,4 +352,27 @@ export function filterDataByAgency(aggregatedData, startIndex, agencyId, pageSiz
   }));
   return JSON.stringify(result);
   
+}
+
+/**
+ * Keeps only the classification results of agencies that are still in the network.
+ * The out_of_distribution item is always kept, and is returned on its own when no agency is left.
+ * @param {Array} results - Triton's top-k predictions, one list per message
+ * @param {Array} agencies - The rows of get-agencies-in-network: [{ agencyId }]
+ * @returns {string} JSON string: { results }
+ */
+export function filterClassificationToNetwork(results, agencies) {
+  const inNetwork = new Set(agencies.map((agency) => String(agency.agencyId)));
+  const isOutOfDistribution = (item) => item.agency_name === "out_of_distribution";
+
+  const filtered = results.map((predictions) => {
+    const kept = predictions.filter(
+      (item) => isOutOfDistribution(item) || inNetwork.has(String(item.agency_id))
+    );
+    return kept.length > 0
+      ? kept
+      : [{ agency_id: 0, agency_name: "out_of_distribution", confidence: 1 }];
+  });
+
+  return JSON.stringify({ results: filtered });
 }
