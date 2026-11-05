@@ -83,6 +83,30 @@ EOF
     log "Failure status update response: $failure_response"
 }
 
+mark_progress_failed() {
+    progress_update_payload=$(cat <<EOF
+{
+  "sessionId": "$sessionId",
+  "generationStatus": "Fail",
+  "generationMessage": "Generation Failed",
+  "progressPercentage": 100,
+  "processComplete": true
+}
+EOF
+)
+    progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
+        -H "Content-Type: application/json" \
+        -d "$progress_update_payload")
+    log "Progress status updated to failed: $progress_update_response"
+}
+
+# Leftover files make the next run for the same agency fail to unpack
+cleanup_run_files() {
+    find /app/data -mindepth 1 -maxdepth 1 ! -name processed -exec rm -rf {} +
+    rm -f /tmp/download_response.json /tmp/dataset_payload.json /tmp/dataset_response_body.txt
+    log "Removed this run's files from /app/data"
+}
+
 echo "Started Shell Script for S3 DataSet Processing"
 PROGRESS_CREATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datasets/progress/create"
 PROGRESS_UPDATE_URL="${GLOBAL_CLASSIFIER_RUUTER_PUBLIC}/datasets/progress/update"
@@ -113,9 +137,33 @@ echo "Extracted sessionId: $sessionId"
 data_generation_request="$signedUrls"
 chmod 777 /app/data
 
+# CronManager runs jobs with an environment limited to the job's declared
+# allowedEnvs (see CronService.executeJob) - PATH is never included, so
+# bare `python3`/`pip` calls would resolve via bash's bare-bones fallback
+# PATH and miss the venv entirely. Activating by absolute path fixes PATH
+# for the rest of this script regardless of what CronManager passed in.
+UV_BIN="/usr/local/bin/uv"
+if [ ! -f "$UV_BIN" ]; then
+    UV_BIN="/root/.local/bin/uv"
+fi
+if [ ! -f "$UV_BIN" ]; then
+    echo "[UV] Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh || {
+        echo "Failed to install uv"
+        exit 1
+    }
+    UV_BIN="/root/.local/bin/uv"
+fi
+
+VENV_PATH="/app/python_virtual_env"
+source "$VENV_PATH/bin/activate" || {
+    echo "Failed to activate virtual environment"
+    exit 1
+}
+
 # Install required Python packages if not present
 echo "Installing required Python packages..."
-python3 -m pip install --quiet --no-cache-dir requests pydantic || {
+"$UV_BIN" pip install --python "$VENV_PATH/bin/python3" --quiet requests pydantic || {
     echo "Failed to install packages"
     exit 1
 }
@@ -200,31 +248,15 @@ if [ "$exit_code" -eq 0 ] && [ -f "$temp_response" ]; then
         # Get successful downloads count using improved parsing
         successful_downloads=$(echo "$response_body" | grep -o '"successful_downloads"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*' | tail -1)
         [ -z "$successful_downloads" ] && successful_downloads=0
-        log "Successfully downloaded and extracted $successful_downloads files"
+        extracted_count=$(echo "$response_body" | grep -o '"folder_path"' | wc -l)
+        log "Downloaded $successful_downloads files, unpacked $extracted_count"
 
-        # Check if we have any successful downloads before proceeding
-        if [ "$successful_downloads" -eq 0 ]; then
-            log "No files were successfully downloaded and extracted. Aborting dataset generation."
-            
-            # Update progress status to indicate failure
-            progress_update_payload=$(cat <<EOF
-{
-  "sessionId": "$sessionId",
-  "generationStatus": "Fail",
-  "generationMessage": "Generation Failed",
-  "progressPercentage": 100,
-  "processComplete": true
-}
-EOF
-)
-
-            progress_update_response=$(curl -s -X POST "$PROGRESS_UPDATE_URL" \
-            -H "Content-Type: application/json" \
-            -d "$progress_update_payload")
-            log "Progress status updated to failed: $progress_update_response"
-            
-            send_failure_status_update "All agency downloads failed - no data available for generation" "$CURRENT_DATASET_ID" "$response_body" "extraction_failure"
-            rm -f /tmp/download_response.json
+        # A download can succeed while its zip fails to unpack, which leaves nothing to generate from
+        if [ "$extracted_count" -eq 0 ]; then
+            log "No source datasets could be unpacked. Aborting dataset generation."
+            mark_progress_failed
+            send_failure_status_update "No source datasets could be unpacked" "$CURRENT_DATASET_ID" "$response_body" "extraction_failure"
+            cleanup_run_files
             exit 1
         fi
 
@@ -365,8 +397,7 @@ EOF
             log "Progress status updated to failed: $progress_update_response"
             
             send_failure_status_update "Dataset generation service call failed" "$CURRENT_DATASET_ID" "$response_body" "generation_failure"
-            # Cleanup temp files
-            rm -f /tmp/dataset_payload.json /tmp/dataset_response_body.txt /tmp/download_response.json
+            cleanup_run_files
             exit 1
         fi
         
@@ -379,8 +410,9 @@ EOF
     else
         log "S3 download failed - success status: $success_status"
         log "Response: $response_body"
+        mark_progress_failed
         send_failure_status_update "S3 download and extraction failed" "$CURRENT_DATASET_ID" "$response_body" "extraction_failure"
-        rm -f /tmp/download_response.json
+        cleanup_run_files
         exit 1
     fi
     
@@ -388,8 +420,11 @@ else
     log "Python script execution failed with exit code: $exit_code"
     if [ -f "$temp_response" ]; then
         log "Error response: $(cat $temp_response)"
-        rm -f /tmp/download_response.json
     fi
+    # Without this the run stays in progress until the 3-hour stuck clean-up
+    mark_progress_failed
+    send_failure_status_update "Source dataset download failed" "$CURRENT_DATASET_ID" "" "generation_failure"
+    cleanup_run_files
     exit 1
 fi
 

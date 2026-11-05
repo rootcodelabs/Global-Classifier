@@ -11,6 +11,7 @@ SELECT
     last_updated_timestamp,
     last_trained_timestamp,
     sync_status,
+    part_of_network,
     created_at,
     CEIL(COUNT(*) OVER() / :page_size::DECIMAL) AS total_pages
 FROM 
