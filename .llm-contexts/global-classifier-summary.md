@@ -26,6 +26,7 @@ The Global Classifier is a central intelligent routing system within the overarc
 - **DMR (Distributed Message Rooms) / BYK Central Com:** (As per the image) This component seems to be the central communication hub.
     - If the Global Classifier identifies a target agency (e.g., Agency B) that has its own Bürokratt (BYK B), the Global Classifier likely informs the DMR (or a similar central routing mechanism) to forward the conversation/query to BYK B.
     - If the Global Classifier determines "Agency Undetected" or if the target agency has no Bürokratt, the query might be routed to a general human agent pool or a specific backoffice for manual handling (as per PRD, "calls another endpoint within the Buerokratt chatbot management interface which will let the human answer the question").
+- **CentOps:** The central registry of the Bürokratt network. Tells the Global Classifier which agencies are part of the network and where to download each agency's Common Knowledge Base (CKB) data. The Global Classifier polls it every hour.
 - **Bürokratt Backoffice / Agency Admins:**
     - Receive conversations routed to their agency.
     - Can report conversations misclassified by the Global Classifier as "irrelevant" to their agency.
@@ -67,8 +68,9 @@ The Global Classifier is a central intelligent routing system within the overarc
 
 - **Function:** Allows Admins/Trainers to manage data sources for training the classifier.
 - **Features:**
-    - Per-agency data source management (represented as "tiles" in the UI).
-    - Supported data sources: Websites (URLs), information documents (PDF, DOCX, etc.), conversation text files, and textual descriptions of agency scope/services.
+    - Per-agency tiles on the Integrated Agencies page, showing each agency's sync status with CKB and whether it is part of the network.
+    - Agency data comes from each agency's CKB export, which CentOps provides as a presigned download URL. A changed data hash triggers a resync.
+    - New agencies create a major dataset version and data changes a minor one. Agencies that leave the network are removed from the next version.
     - Indication of dataset deployment status (used for training or not).
     - Dataset versioning.
     - Ability to download generated/aggregated datasets.
@@ -121,7 +123,7 @@ The Global Classifier is a central intelligent routing system within the overarc
 - **Function:** Manages access to the Global Classifier's backoffice functionalities.
 - **Implementation:** Leverages existing Bürokratt TIM/TARA for authentication.
 - **Roles:**
-    - **Administrator:** Full access, including user management, organization/agency management (adding agencies, their IP addresses for routing), and pushing models to production.
+    - **Administrator:** Full access, including user management, agency management (enabling or disabling the agencies CentOps reports as part of the network), and pushing models to production.
     - **Model Trainer:** Can create/manage training data, train models, push models to testing, and handle corrected conversations.
 
 ### Dashboard Module:
@@ -140,7 +142,7 @@ The Global Classifier is a central intelligent routing system within the overarc
 - **Outgoing Routing Instructions:** After classification, the Global Classifier needs to communicate the routing decision. This likely involves calling an endpoint on the DMR or a central Bürokratt platform management interface.
     - **Payload:** JSON containing `conversation_id` and `target_agency_id` (or a special identifier for "human" / "undetected").
 - **Feedback Loop Integration:** An endpoint (or mechanism) for the Global Classifier to receive "corrected conversation" data from the agency backoffices.
-- **Common Knowledge Base (CKB) Integration:** An API or interface to pull unstructured documents, URLs, and other content for agencies to be used in synthetic data generation.
+- **Common Knowledge Base (CKB) Data via CentOps:** The Global Classifier does not call CKB directly. Every hour it polls CentOps (`GET /centops/integration/global-classifier/common-knowledge-bases`) for each agency's network membership, a presigned URL to its CKB data export and a hash of that data. New or changed data is queued in `agency_data_requests` and processed in one dataset generation run at a time. Agencies outside the network are also filtered out of classification results. Full design: `docs/architecture/data-pipeline-architecture.md`.
 - **User Authentication:** Integration with TIM/TARA for securing its own backoffice/admin interface.
 - **MLflow Integration:** For experiment tracking, model versioning, and metrics storage.
 - **Ruuter:** Utilized for exposing its own API endpoints and potentially for orchestrating calls to other services.
@@ -153,11 +155,11 @@ The Global Classifier is a central intelligent routing system within the overarc
     - Uses their backoffice to flag conversations they believe were misrouted by the Global Classifier, triggering the feedback loop.
 - **Global Classifier Administrator:**
     - Manages user access to the Global Classifier system.
-    - Onboards new government agencies into the classifier (defines them as classes, adds their IP addresses/routing info).
+    - Enables or disables agencies once CentOps has added them to the network and their data is synced.
     - Oversees the health and performance of the Global Classifier via the dashboard.
     - Has the final say on promoting tested models to the production environment.
 - **Global Classifier Model Trainer:**
-    - Manages data sources for each agency in the Datasets Module.
+    - Monitors each agency's data sync and the dataset versions built from it.
     - Initiates and monitors the synthetic data generation process.
     - Defines training runs, selects data, and trains new versions of the classification model.
     - Evaluates trained models using metrics and the Testing Module.
