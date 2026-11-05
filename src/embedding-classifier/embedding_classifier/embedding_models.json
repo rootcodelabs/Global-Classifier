@@ -1,0 +1,14 @@
+{
+  "multilingual-e5-large-instruct": {
+    "hf_id": "intfloat/multilingual-e5-large-instruct",
+    "revision": "274baa43b0e13e37fafa6428dbc7938e62e5c439"
+  },
+  "bge-m3": {
+    "hf_id": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181"
+  },
+  "paraphrase-multilingual-mpnet-base-v2": {
+    "hf_id": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    "revision": "4328cf26390c98c5e3c738b4460a05b95f4911f5"
+  }
+}

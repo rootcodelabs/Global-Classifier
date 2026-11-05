@@ -1,0 +1,45 @@
+INSERT INTO public.data_models (
+    model_group_key,
+    model_name,
+    major,
+    minor,
+    latest,
+    deployment_env,
+    training_status,
+    base_models,
+    last_trained,
+    connected_ds_id,
+    connected_ds_major_version,
+    connected_ds_minor_version,
+    model_status,
+    model_s3_location,
+    training_results,
+    created_timestamp,
+    updated_timestamp
+)
+SELECT
+    model_group_key,
+    model_name,
+    :major,
+    0,
+    false,
+    'undeployed'::deployment_environment,
+    'initiating_training'::training_status,
+    base_models,
+    NULL,
+    :connectedDsId,
+    :connectedDsMajorVersion,
+    :connectedDsMinorVersion,
+    'active'::model_status,
+    NULL,
+    NULL,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+FROM public.data_models
+WHERE model_id = :sourceModelId
+RETURNING
+    model_id,
+    model_group_key,
+    model_name,
+    major,
+    minor;

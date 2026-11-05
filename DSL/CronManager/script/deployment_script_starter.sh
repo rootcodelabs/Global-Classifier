@@ -61,6 +61,24 @@ fi
 
 echo "[VALIDATION] All environment variables validated successfully"
 
+# Embedding classifier builds have build files at models/indexes/{modelId}/ and
+# deploy with their own script. Every other model goes on to the Triton
+# orchestrator below, exactly as before.
+EMBEDDING_CLASSIFIER_DIR="/app/src/embedding-classifier"
+EMBEDDING_VENV="/app/embedding_venv"
+if [ -x "$EMBEDDING_VENV/bin/python" ] && \
+   (cd "$EMBEDDING_CLASSIFIER_DIR" && "$EMBEDDING_VENV/bin/python" -m builder.deploy --model-id "$modelId" --has-build-files); then
+    echo "[EXECUTE] Model $modelId is an embedding classifier build; starting its deploy script..."
+    (cd "$EMBEDDING_CLASSIFIER_DIR" && "$EMBEDDING_VENV/bin/python" -m builder.deploy \
+        --model-id "$modelId" \
+        --current-env "$currentEnv" \
+        --target-env "$targetEnv" \
+        --first-deployment "$firstDeployment")
+    deployment_exit_code=$?
+    echo "[RESULT] Embedding classifier deploy script exited with code $deployment_exit_code"
+    exit $deployment_exit_code
+fi
+
 # Check if Python script exists
 if [ ! -f "$PYTHON_SCRIPT" ]; then
     echo "[ERROR] Python deployment orchestrator not found at: $PYTHON_SCRIPT"
