@@ -223,12 +223,15 @@ services:
   # S3-compatible object store for datasets and models. Replaces MinIO, whose
   # image can no longer be pulled publicly. Same pinned image as
   # docker-compose-test.yml.
-  seaweedfs:
+  # Named gc-seaweedfs, not seaweedfs: CKB's SeaweedFS is on the same bykstack
+  # network under the alias "seaweedfs", so that name can resolve to CKB's
+  # store instead of this one.
+  gc-seaweedfs:
     image: chrislusf/seaweedfs:4.50@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
-    container_name: seaweedfs
-    # -ip=seaweedfs: advertise an address other containers can resolve.
+    container_name: gc-seaweedfs
+    # -ip=gc-seaweedfs: advertise an address other containers can resolve.
     # -ip.bind=0.0.0.0: also listen on localhost, for the healthcheck.
-    command: server -filer -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=seaweedfs -ip.bind=0.0.0.0
+    command: server -filer -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=gc-seaweedfs -ip.bind=0.0.0.0
     configs:
       - source: seaweedfs_s3_config
         target: /etc/seaweedfs/s3_config.json
@@ -247,9 +250,9 @@ services:
 
   # One-off: creates the bucket once SeaweedFS is healthy, then exits.
   # rclone mkdir is a no-op when the bucket already exists.
-  seaweedfs-init:
+  gc-seaweedfs-init:
     image: rclone/rclone:1.68.2
-    container_name: seaweedfs-init
+    container_name: gc-seaweedfs-init
     env_file:
       - config.env
     entrypoint: ["/bin/sh", "-c"]
@@ -258,7 +261,7 @@ services:
         set -e
         export RCLONE_CONFIG_GC_TYPE=s3
         export RCLONE_CONFIG_GC_PROVIDER=SeaweedFS
-        export RCLONE_CONFIG_GC_ENDPOINT=http://seaweedfs:8333
+        export RCLONE_CONFIG_GC_ENDPOINT=http://gc-seaweedfs:8333
         export RCLONE_CONFIG_GC_ACCESS_KEY_ID="$$S3_ACCESS_KEY_ID"
         export RCLONE_CONFIG_GC_SECRET_ACCESS_KEY="$$S3_SECRET_ACCESS_KEY"
         export RCLONE_CONFIG_GC_REGION="$${S3_REGION:-us-east-1}"
@@ -267,7 +270,7 @@ services:
         rclone lsd gc: | grep -q " $$bucket$$"
         echo "Bucket $$bucket is ready"
     depends_on:
-      seaweedfs:
+      gc-seaweedfs:
         condition: service_healthy
     restart: "no"
     networks:
@@ -277,7 +280,7 @@ services:
     image: s3-ferry:latest
     container_name: gc-s3-ferry
     depends_on:
-      seaweedfs-init:
+      gc-seaweedfs-init:
         condition: service_completed_successfully
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
