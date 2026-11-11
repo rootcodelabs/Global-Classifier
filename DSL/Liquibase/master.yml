@@ -47,3 +47,5 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v25-sync-pending-with-ckb-status.sql
   - include:
       file: changelog/global-classifier-script-v26-drop-mock-centops-ckb.sql
+  - include:
+      file: changelog/global-classifier-script-v27-dmr-incoming-messages.sql

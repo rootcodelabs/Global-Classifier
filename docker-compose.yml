@@ -254,6 +254,29 @@ services:
     networks:
       - bykstack
 
+  # Receives chat messages from the GC's DMR agent, classifies them and sends the result back to the
+  # sender through that agent (GLOBAL_CLASSIFIER_DMR_AGENT in constants.ini). See docs/dmr-poc.md.
+  # No published port on purpose: /dmr/incoming has no authentication and trusts senderId, so only the
+  # GC DMR agent may reach it, over bykstack.
+  # Healthcheck: in the Dockerfile (GET /health).
+  dmr-incoming-service:
+    container_name: dmr-incoming-service
+    build:
+      context: ./src/dmr_incoming_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./constants.ini:/app/constants.ini:ro
+    environment:
+      # Acked messages still RECEIVED after this many seconds are marked FAILED and answered 'failed'
+      - DMR_STALE_AFTER_SECONDS=300
+      - DMR_SWEEP_INTERVAL_SECONDS=60
+    depends_on:
+      - resql
+      - ruuter-public
+    restart: unless-stopped
+    networks:
+      - bykstack
+
   # dataset-file-handler:
   #   container_name: dataset-file-handler
   #   build: ./src/dataset_file_handler
