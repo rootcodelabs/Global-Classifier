@@ -66,6 +66,21 @@ provider:
 In order to access the GUI, data migration script should be executed. It will add the initial configurations of the system
 run `migrate.sh` file and it will create the initial user with test Smart ID `EE30303039914` and the GUI can be accessed by logging in with the added Smart ID
 
+## CentOps Configuration
+
+Global Classifier gets its agency list and each agency's CKB data from CentOps. The `centops_poll` CronManager job polls CentOps every hour, and needs these values in `constants.ini`:
+
+```ini
+CENTOPS_URL=
+CENTOPS_API_KEY=
+CENTOPS_API_SECRET=
+```
+
+- `CENTOPS_URL` is the CentOps base URL. Global Classifier calls `/centops/integration/global-classifier/common-knowledge-bases` on it.
+- `CENTOPS_API_KEY` and `CENTOPS_API_SECRET` are the credentials of Global Classifier's CentOps client, which needs the `GLOBAL_CLASSIFIER` role.
+
+While any of them is empty, the poll fails and no agency data is synced. For how the sync works, see [Agency Data Sync and Dataset Pipeline](docs/architecture/data-pipeline-architecture.md).
+
 
 ## Contributing
 
@@ -76,15 +91,22 @@ This section outlines the guidelines for contributing to the Global Classifier p
 The project is organized into several key directories to maintain clarity and modularity:
 
 *   `configs/`: Holds global configuration files essential for different parts of the project.
-*   `docs/`: Contains all project documentation, including architectural diagrams (e.g., `classifier-architecture.drawio`), setup guides, technical explanations, and usage manuals.
-*   `DSL/`: Contains components related to DSLs belonging different to BYK stack services.
-*   `GUI/`: Contains the source code, assets, and build configurations for the project's Graphical User Interface. 
-*   `local-classifier/`: A copy of the local-classifier repo for module re-use purposes. Will be discarded after initial release
+*   `docs/`: Project documentation, including the architecture documents in `docs/architecture/`. Start with [docs/README.md](docs/README.md).
+*   `DSL/`: Ruuter, Resql, Data Mapper, Liquibase and CronManager configuration for the BYK stack services. See [DSL/README.md](DSL/README.md).
+*   `GUI/`: Contains the source code, assets, and build configurations for the project's Graphical User Interface.
+*   `experiments/`: Base model training and out-of-distribution detection experiments.
+*   `grafana-configs/`: Grafana and Loki logging configuration.
+*   `mlflow/`: MLflow tracking server image.
+*   `notification-server/`: Server-Sent Events server that streams dataset and model progress to the GUI.
 *   `src/`: Contains the core source code for the Global Classifier. This is further divided into modules for specific functionalities like:
-    *   `dataset-generation/`: Scripts and tools for creating and preparing datasets.
+    *   `classifier-service/`: Node.js mock service for chat classification.
+    *   `dataset_file_handler/`: Service that serves dataset files and chunks to the GUI.
     *   `inference/`: Code related to running model predictions.
-    *   `model-training/`: Scripts and notebooks for training machine learning models.
-    *   `tests/`: Unit, integration, or end-to-end tests for the `src/` components.
+    *   `model-training/`: Scripts for training machine learning models.
+    *   `s3_dataset_processor/`: Scripts CronManager runs to download agency data and build dataset versions.
+    *   `tests/`: Unit tests for the `src/` components.
+*   `tests/integration_tests/`: Integration tests that run the dataset generation pipeline against real containers.
+*   `test/`: MLflow connection check.
 
 Understanding this structure will help you locate relevant files and understand the project's architecture.
 
@@ -141,7 +163,6 @@ To maintain a high standard of code quality and ensure project stability, the fo
 Please run Ruff locally to check your code before pushing changes or creating a pull request. This helps streamline the review process and maintain a clean codebase.
 
 
-
 ## Branch Management Strategy
 
 The project follows a three-tier branching workflow to streamline development, testing, and integration.
@@ -192,6 +213,15 @@ def test_classify_text_valid_input():
     result = classify_text(sample)
     assert result in ["database", "technical"]
 ```
+
+To run the unit tests:
+
+```bash
+uv sync --group dev
+uv run pytest src/tests/ -v
+```
+
+The `pytest-unit-check` workflow (`.github/workflows/pytest-check.yml`) runs them on every pull request and on pushes to `v1.0.0`, `v2.0.0` and `main`.
 
 #### Frontend Testing with Playwright
 
