@@ -256,9 +256,10 @@ services:
         condition: service_started
 
   # Receives chat messages from the GC's DMR agent, classifies them and sends the result back to the
-  # sender through that agent (GLOBAL_CLASSIFIER_DMR_AGENT in constants.ini). See docs/dmr-poc.md.
+  # sender through that agent (GLOBAL_CLASSIFIER_DMR_AGENT in constants.ini).
+  # See src/dmr_incoming_service/README.md.
   # No published port on purpose: /dmr/incoming has no authentication and trusts senderId, so only the
-  # GC DMR agent may reach it, over bykstack. docker-compose-dmr-poc.yml publishes it for local tests.
+  # GC DMR agent may reach it, over bykstack.
   # Healthcheck: in the Dockerfile (GET /health).
   dmr-incoming-service:
     container_name: dmr-incoming-service
