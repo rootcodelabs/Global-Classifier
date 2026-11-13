@@ -43,15 +43,10 @@ get_production_model:
   next: check_model_availability
   error: return_model_error
 
-# switch and assign are separate steps: in one step the assign ran even with no model and read
-# body[0] of an empty list, so the flow returned 500 instead of 503
 check_model_availability:
   switch:
     - condition: ${!model_result.response.body || model_result.response.body.length == 0}
       next: return_no_model_error
-  next: assign_model_id
-
-assign_model_id:
   assign:
     modelId: ${model_result.response.body[0].modelId}
   next: prepare_inference_payload
