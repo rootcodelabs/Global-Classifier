@@ -316,23 +316,24 @@ Every claim is a single atomic `UPDATE`, so a slow background task and the sweep
 
 | Column | Meaning |
 |---|---|
-| `message_id` | Incoming envelope `id` (unique, the dedupe key) |
-| `sender_id`, `recipient_id` | From the envelope |
-| `chat_id`, `chat_created`, `message_type`, `sent_at` | From the envelope |
+| `message_id` | Incoming envelope `id` (primary key and dedupe key) |
+| `sender_id`, `recipient_id` | From the envelope (`uuid`; `recipient_id` is the GC's own agent id) |
+| `chat_id`, `message_type`, `sent_at` | From the envelope. `chat_id` is `uuid` and `message_type` is the `dmr_message_type` enum; a value they can't hold is stored as `NULL` and the message is rejected |
+| `chat_created_at` | `payload.chat.created` as sent (the chat's start time), kept as text because the result repeats it verbatim |
 | `received_at`, `processed_at` | When it was inserted and when it was closed |
-| `status` | `RECEIVED` → `CLASSIFIED` / `REJECTED` / `FAILED` |
+| `status` | `dmr_message_status`: `RECEIVED` → `CLASSIFIED` / `REJECTED` / `FAILED` |
 | `error_reason` | Why it was rejected or failed |
 | `sender_known` | Whether the sender is in the GC's agency table |
-| `result_status` | `classified` / `out_of_distribution` / `failed` |
-| `top_agency_id`, `top_agency_name`, `top_confidence` | The top classification |
+| `result_status` | `dmr_result_status`: `classified` / `out_of_distribution` / `failed` |
+| `top_agency_id`, `top_agency_name`, `top_confidence` | The top classification (`top_agency_id` is `uuid`, `NULL` when out of distribution) |
 | `classification` | The full classify response (JSONB) |
 | `response_message_id` | Envelope `id` of the result sent back |
-| `response_status` | `NULL` (not sent yet) → `PENDING` / `SENT` / `SKIPPED` / `FAILED` |
+| `response_status` | `dmr_response_status`: `NULL` (not sent yet) → `PENDING` / `SENT` / `SKIPPED` / `FAILED` |
 | `response_error`, `response_attempts`, `response_attempted_at`, `responded_at` | Send bookkeeping |
 
 The Resql queries are in `DSL/Resql/global-classifier/POST/*dmr*.sql`: insert, update the result, update the response status, claim stale rows, claim unanswered rows, and get one row. The service also uses the existing `get-agency` query.
 
-`GET /dmr/messages/{id}` returns the same columns in camelCase, without `chat_created` and `classification`.
+`GET /dmr/messages/{id}` returns the same columns in camelCase, without `chat_created_at` and `classification`.
 
 ---
 

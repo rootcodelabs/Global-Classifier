@@ -1,5 +1,5 @@
 UPDATE public.dmr_incoming_messages
-SET response_status       = :responseStatus,
+SET response_status       = :responseStatus::dmr_response_status,
     response_error        = NULLIF(:responseError, ''),
     response_attempts     = response_attempts + CASE WHEN :responseStatus = 'SKIPPED' THEN 0 ELSE 1 END,
     response_attempted_at = now(),

@@ -20,7 +20,7 @@ def stale_row(**overrides):
         "responseMessageId": RESPONSE_ID,
         "senderId": AGENCY_A,
         "chatId": CHAT_ID,
-        "chatCreated": CHAT_CREATED,
+        "chatCreatedAt": CHAT_CREATED,
         "messageType": "ChatMessage",
     }
     row.update(overrides)

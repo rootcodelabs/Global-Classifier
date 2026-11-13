@@ -21,6 +21,8 @@ from dmr_incoming_service.clients import (
 logger = logging.getLogger("dmr_incoming_service")
 
 CHAT_MESSAGE = "ChatMessage"
+# Values of the dmr_message_type enum
+MESSAGE_TYPES = (CHAT_MESSAGE,)
 RESULT_EVENT = "global-classifier-result"
 RESULT_AUTHOR_ROLE = "global-classifier"
 END_USER_ROLE = "end-user"
@@ -290,17 +292,23 @@ class Processor:
         chat_id = _text(chat.get("id"), 255)
         chat_created = _text(chat.get("created"), 100)
         message_type = _text(envelope.get("type"), 50)
+        recipient_id = envelope.get("recipientId")
 
         try:
+            # The uuid and enum columns get NULL for a value they can't hold, so a malformed
+            # envelope is still recorded (and rejected in process()) instead of failing the
+            # insert on every redelivery.
             rows = self.resql.call(
                 Q_INSERT,
                 {
                     "messageId": message_id,
                     "senderId": sender_id,
-                    "recipientId": _text(envelope.get("recipientId"), 255),
-                    "chatId": chat_id,
-                    "chatCreated": chat_created,
-                    "messageType": message_type,
+                    "recipientId": recipient_id if is_uuid(recipient_id) else "",
+                    "chatId": chat_id if is_uuid(chat_id) else "",
+                    "chatCreatedAt": chat_created,
+                    "messageType": message_type
+                    if message_type in MESSAGE_TYPES
+                    else "",
                     "sentAt": parse_timestamp(envelope.get("timestamp")),
                 },
             )
@@ -484,6 +492,7 @@ class Processor:
     ) -> bool:
         """Closes a RECEIVED row. False when the row was no longer RECEIVED (the sweeper got it)."""
         confidence = _confidence(top)
+        agency_id = str(top.get("agency_id", "")) if top else ""
         rows = self.resql.call(
             Q_UPDATE,
             {
@@ -492,8 +501,9 @@ class Processor:
                 "errorReason": reason,
                 "senderKnown": sender_known,
                 "resultStatus": result_status,
-                "topAgencyId": str(top.get("agency_id", "")) if top else "",
-                "topAgencyName": str(top.get("agency_name") or "")[:255] if top else "",
+                # top_agency_id is a uuid column; an out-of-distribution id like "0" is stored as NULL
+                "topAgencyId": agency_id if is_uuid(agency_id) else "",
+                "topAgencyName": str(top.get("agency_name") or "") if top else "",
                 "topConfidence": "" if confidence == "" else str(confidence),
                 "classification": json.dumps(classification)
                 if classification is not None
@@ -605,7 +615,7 @@ class Processor:
                 sender_id=str(row.get("senderId") or ""),
                 response_message_id=str(row.get("responseMessageId") or ""),
                 chat_id=str(row.get("chatId") or ""),
-                chat_created=str(row.get("chatCreated") or ""),
+                chat_created=str(row.get("chatCreatedAt") or ""),
                 message_type=str(row.get("messageType") or ""),
             )
             try:
@@ -649,7 +659,7 @@ class Processor:
                 sender_id=str(row.get("senderId") or ""),
                 response_message_id=str(row.get("responseMessageId") or ""),
                 chat_id=str(row.get("chatId") or ""),
-                chat_created=str(row.get("chatCreated") or ""),
+                chat_created=str(row.get("chatCreatedAt") or ""),
                 message_type=str(row.get("messageType") or ""),
                 response_attempts=int(row.get("responseAttempts") or 0),
             )

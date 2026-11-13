@@ -140,6 +140,8 @@ def test_out_of_distribution_result_has_no_agency(processor, classifier, resql, 
             resql.last("update-dmr-incoming-message")["resultStatus"]
             == "out_of_distribution"
         )
+        # top_agency_id is a uuid column, so the "0" id is stored as NULL
+        assert resql.last("update-dmr-incoming-message")["topAgencyId"] == ""
         content = sent_content(agent)
         assert content["status"] == "out_of_distribution"
         assert content["agencyId"] == ""

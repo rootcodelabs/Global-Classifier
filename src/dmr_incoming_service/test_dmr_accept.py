@@ -2,7 +2,7 @@
 
 from dmr_incoming_service.clients import ResqlError
 from dmr_incoming_service.processor import parse_envelope
-from dmr_test_helpers import AGENCY_A, CHAT_ID, RESPONSE_ID, make_envelope
+from dmr_test_helpers import AGENCY_A, CHAT_ID, GC_ID, RESPONSE_ID, make_envelope
 
 
 def test_new_message_is_accepted_and_returns_a_job(processor, resql):
@@ -19,7 +19,7 @@ def test_new_message_is_accepted_and_returns_a_job(processor, resql):
     assert job.chat_url == "https://www.eesti.ee"
     insert = resql.last("insert-dmr-incoming-message")
     assert insert["messageId"] == envelope["id"]
-    assert insert["chatCreated"] == "2026-11-09T10:00:00.000Z"
+    assert insert["chatCreatedAt"] == "2026-11-09T10:00:00.000Z"
     assert insert["sentAt"].startswith("2026-11-09T10:15:00")
 
 
@@ -89,7 +89,35 @@ def test_nul_characters_are_removed_before_the_insert(processor, resql):
     insert = resql.last("insert-dmr-incoming-message")
     assert "\x00" not in str(insert)
     assert insert["messageType"] == "ChatMessage"
-    assert insert["chatCreated"] == "2026-11-09T10:00:00.000Z"
+    assert insert["chatCreatedAt"] == "2026-11-09T10:00:00.000Z"
+
+
+def test_values_the_uuid_and_enum_columns_cant_hold_are_stored_as_empty(
+    processor, resql
+):
+    # A cast error would fail the insert on every redelivery; the message is rejected later instead
+    envelope = make_envelope(type="SomethingElse", recipientId="gc")
+    envelope["payload"]["chat"]["id"] = "chat-1"
+
+    status, body, job = processor.accept(envelope)
+
+    assert body["status"] == "accepted"
+    insert = resql.last("insert-dmr-incoming-message")
+    assert insert["recipientId"] == ""
+    assert insert["chatId"] == ""
+    assert insert["messageType"] == ""
+    # The job keeps the raw values, so the rejection reason names them
+    assert (job.chat_id, job.message_type) == ("chat-1", "SomethingElse")
+
+
+def test_valid_ids_and_type_are_passed_to_the_insert(processor, resql):
+    processor.accept(make_envelope())
+
+    insert = resql.last("insert-dmr-incoming-message")
+    assert insert["senderId"] == AGENCY_A
+    assert insert["recipientId"] == GC_ID
+    assert insert["chatId"] == CHAT_ID
+    assert insert["messageType"] == "ChatMessage"
 
 
 def test_unparseable_bodies_become_none_and_are_ignored(processor, resql):

@@ -1,32 +1,43 @@
 -- liquibase formatted sql
 
+-- changeset Oshan Nanayakkara:global-classifier-dmr-incoming-messages-enums
+-- DMR envelope type. ChatMessage is the only type DMR has; any other type is stored as NULL and rejected.
+CREATE TYPE dmr_message_type AS ENUM ('ChatMessage');
+-- Processing of the incoming message: RECEIVED until it is classified, rejected or failed.
+CREATE TYPE dmr_message_status AS ENUM ('RECEIVED', 'CLASSIFIED', 'REJECTED', 'FAILED');
+-- The result sent back to the sender.
+CREATE TYPE dmr_result_status AS ENUM ('classified', 'out_of_distribution', 'failed');
+-- Sending the result. PENDING: the last try failed with a transient error and the sweeper sends again. SENT, SKIPPED and FAILED are final.
+CREATE TYPE dmr_response_status AS ENUM ('PENDING', 'SENT', 'SKIPPED', 'FAILED');
+-- rollback DROP TYPE dmr_response_status; DROP TYPE dmr_result_status; DROP TYPE dmr_message_status; DROP TYPE dmr_message_type;
+
 -- changeset Oshan Nanayakkara:global-classifier-dmr-incoming-messages
 -- One row per chat message received over DMR: dedupe key, classification and the result sent back to the sender. No message content is stored.
 CREATE TABLE public.dmr_incoming_messages (
-    id BIGSERIAL PRIMARY KEY,
-    message_id UUID NOT NULL UNIQUE,
-    sender_id VARCHAR(255) NOT NULL,
-    recipient_id VARCHAR(255),
-    chat_id VARCHAR(255),
-    chat_created TEXT,
-    message_type VARCHAR(50),
+    -- The incoming envelope id. A redelivery of the same id is not inserted again (ON CONFLICT DO NOTHING) and is answered as a duplicate.
+    message_id UUID PRIMARY KEY,
+    -- The agency that sent the message (its DMR agent id, assigned by CentOps). The result is sent back to it.
+    sender_id UUID NOT NULL,
+    -- The envelope's recipientId: the GC's own DMR agent id.
+    recipient_id UUID,
+    chat_id UUID,
+    -- payload.chat.created: when the sender's chat started. Kept verbatim because the result message must repeat it.
+    chat_created_at TEXT,
+    message_type dmr_message_type,
     sent_at TIMESTAMPTZ,
     received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     processed_at TIMESTAMPTZ,
     sender_known BOOLEAN,
-    status VARCHAR(20) NOT NULL DEFAULT 'RECEIVED'
-        CHECK (status IN ('RECEIVED', 'CLASSIFIED', 'REJECTED', 'FAILED')),
+    status dmr_message_status NOT NULL DEFAULT 'RECEIVED',
     error_reason TEXT,
-    result_status VARCHAR(30)
-        CHECK (result_status IN ('classified', 'out_of_distribution', 'failed')),
-    top_agency_id VARCHAR(255),
-    top_agency_name VARCHAR(255),
+    result_status dmr_result_status,
+    top_agency_id UUID,
+    top_agency_name TEXT,
     top_confidence NUMERIC,
     classification JSONB,
     response_message_id UUID NOT NULL DEFAULT gen_random_uuid(),
-    -- NULL: not sent yet. PENDING: the last try failed with a transient error and the sweeper sends again. SENT, SKIPPED and FAILED are final.
-    response_status VARCHAR(20)
-        CHECK (response_status IN ('PENDING', 'SENT', 'SKIPPED', 'FAILED')),
+    -- NULL: not sent yet.
+    response_status dmr_response_status,
     response_error TEXT,
     response_attempts INTEGER NOT NULL DEFAULT 0,
     response_attempted_at TIMESTAMPTZ,

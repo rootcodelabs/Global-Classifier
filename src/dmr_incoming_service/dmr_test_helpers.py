@@ -77,7 +77,7 @@ class FakeResql:
         self.calls = []
         self.answers = {
             "insert-dmr-incoming-message": [
-                {"id": 1, "responseMessageId": RESPONSE_ID}
+                {"messageId": "x", "responseMessageId": RESPONSE_ID}
             ],
             "update-dmr-incoming-message": [{"messageId": "x"}],
             "update-dmr-response-status": [{"messageId": "x"}],
