@@ -384,8 +384,8 @@ The GC DMR agent needs `OUTGOING_MESSAGE_ENDPOINT=http://dmr-incoming-service:80
 | `settings.py` | `constants.ini` and environment settings |
 | `Dockerfile` | `python:3.12-slim` running uvicorn on port 8095 with one worker |
 
-Unit tests (Resql, classify and the agent are faked, so no stack is needed):
+Unit tests are in [`src/tests/dmr_incoming_service`](../tests/dmr_incoming_service). Resql, classify and the agent are faked, so no stack is needed:
 
 ```bash
-uv run pytest src/dmr_incoming_service -v
+uv run pytest src/tests/dmr_incoming_service -v
 ```
