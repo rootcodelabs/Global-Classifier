@@ -6,7 +6,7 @@ import { useDialog } from 'hooks/useDialog';
 import BackArrowButton from 'assets/BackArrowButton';
 
 import DataModelForm from 'components/molecules/DataModelForm';
-import { getChangedAttributes } from 'utils/dataModelsUtils';
+import { getChangedAttributes, parseVersion } from 'utils/dataModelsUtils';
 import { Maturity, UpdateType } from 'enums/dataModelsEnums';
 import { ButtonAppearanceTypes } from 'enums/commonEnums';
 import CircularSpinner from 'components/molecules/CircularSpinner/CircularSpinner';
@@ -185,17 +185,23 @@ const ConfigureDataModel: FC = () => {
     return undefined;
   };
 
-  const buildUpdatedPayload = (updateType: string | undefined) => ({
-    modelGroupKey: modelMetadata.modelGroupKey ?? "",
-    modelName: dataModel.modelName ?? "",
-    connectedDsId: Number(dataModel.datasetId) ?? 0,
-    deploymentEnv: dataModel.deploymentEnvironment ?? "",
-    baseModels: dataModel.baseModels ?? [],
-    connectedDsMajorVersion: Number(dataModel.version?.split('.')[0]?.[1]) ?? 0,
-    connectedDsMinorVersion: Number(dataModel.version?.split('.')[1]) ?? 0,
-    updateType: updateType ?? "",
-    isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
-  });
+  const buildUpdatedPayload = (updateType: string | undefined) => {
+    // The selected dataset's version, not the model's; the saved one when the dataset isn't changed
+    const datasetVersion = parseVersion(
+      dataModel.datasetVersion ?? `V${modelMetadata?.connectedDsMajorVersion}.${modelMetadata?.connectedDsMinorVersion}`
+    );
+    return {
+      modelGroupKey: modelMetadata.modelGroupKey ?? "",
+      modelName: dataModel.modelName ?? "",
+      connectedDsId: Number(dataModel.datasetId) ?? 0,
+      deploymentEnv: dataModel.deploymentEnvironment ?? "",
+      baseModels: dataModel.baseModels ?? [],
+      connectedDsMajorVersion: datasetVersion.major,
+      connectedDsMinorVersion: datasetVersion.minor,
+      updateType: updateType ?? "",
+      isTrainingNeeded: !areArraysEqual(initialData.baseModels as string[], dataModel.baseModels as string[])
+    };
+  };
 
   const deleteDataModelMutation = useMutation({
     mutationFn: deleteDataModel,

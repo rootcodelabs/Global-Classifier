@@ -6,6 +6,7 @@ export type DataModel = {
   baseModels: string[];
   deploymentEnvironment: string;
   version?: string;
+  datasetVersion?: string;
   trainingResults?: TrainingResultsResponse | null;
 };
 

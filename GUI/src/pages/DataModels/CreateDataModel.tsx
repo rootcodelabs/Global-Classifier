@@ -15,6 +15,7 @@ import {
 import { da } from 'date-fns/locale';
 import { createDataModel, getProductionDataModel } from 'services/datamodels';
 import { dataModelsQueryKeys } from 'utils/queryKeys';
+import { parseVersion } from 'utils/dataModelsUtils';
 
 const CreateDataModel: FC = () => {
   const { t } = useTranslation();
@@ -87,13 +88,15 @@ const CreateDataModel: FC = () => {
 
   const handleCreate = () => {
 
+    // The selected dataset's version, not the new model's
+    const datasetVersion = parseVersion(dataModel.datasetVersion);
     const paylod = {
       modelName: dataModel.modelName ?? "",
       deploymentEnv: dataModel.deploymentEnvironment ?? "",
       baseModels: dataModel.baseModels ?? [],
       connectedDsId: Number(dataModel.datasetId) ?? 0,
-      connectedDsMajorVersion: Number(dataModel?.version?.split('.')[0]?.[1]) ?? "",
-      connectedDsMinorVersion: Number(dataModel?.version?.split('.')[1]) ?? "",
+      connectedDsMajorVersion: datasetVersion.major,
+      connectedDsMinorVersion: datasetVersion.minor,
     }
 
     if (prodDataModel && dataModel.deploymentEnvironment === "production") {
