@@ -1,0 +1,5 @@
+embedding_index_refresh:
+  # trigger: "0 0/5 * * * ?"
+  trigger: off
+  type: exec
+  command: "/app/src/embedding-classifier/builder/refresh.sh"

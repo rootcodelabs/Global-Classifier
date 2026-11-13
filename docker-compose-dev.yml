@@ -174,12 +174,21 @@ services:
       - ./grafana-configs/loki_logger.py:/app/src/training/loki_logger.py
       - ./constants.ini:/app/inference_scripts/constants.ini
       - cron_data:/app/data
+      # Embedding classifier index builder: code, its Python environment,
+      # pinned model weights, embedding cache
+      - ./src/embedding-classifier:/app/src/embedding-classifier
+      - embedding_venv:/app/embedding_venv
+      - embedding_models:/app/embedding_models
+      - embedding_cache:/app/embedding_cache
     runtime: nvidia 
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - server.port=9010
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PYTHONPATH=/app:/app/src/model_training:/app/src/s3_dataset_processor:/app/src
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - EMBEDDING_CACHE_DIR=/app/embedding_cache
     ports:
       - 9010:8080
     networks:
@@ -521,6 +530,120 @@ services:
       minio:
         condition: service_started
 
+  # Embedding classifier (src/embedding-classifier): the vector database and
+  # two CPU classifier services answering the same Triton v2 calls as the
+  # Triton servers above, which keep running until cutover
+  qdrant:
+    container_name: qdrant
+    image: qdrant/qdrant:v1.19.2
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - bykstack
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+
+  embedding-classifier-production:
+    container_name: embedding-classifier-production
+    build:
+      context: ./src/embedding-classifier
+    image: embedding-classifier:latest
+    env_file:
+      - config.env
+    environment:
+      - INDEX_ENV=production
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - TORCH_THREADS=4
+      - SECOND_OPINION_MODE=${SECOND_OPINION_MODE:-off}
+      - SECOND_OPINION_URL=http://llm-reranker:8080
+      - SECOND_OPINION_TIMEOUT_MS=${SECOND_OPINION_TIMEOUT_MS:-5000}
+      - SECOND_OPINION_WEIGHT=${SECOND_OPINION_WEIGHT:-0.25}
+      - SECOND_OPINION_TRIGGERS=${SECOND_OPINION_TRIGGERS:-ood_band}
+      - SECOND_OPINION_MIN_PROBABILITY=${SECOND_OPINION_MIN_PROBABILITY:-0.9}
+      - SECOND_OPINION_SLOT=0
+    volumes:
+      - ./constants.ini:/app/constants.ini:ro
+      - ./grafana-configs/loki_logger.py:/app/loki_logger.py:ro
+    ports:
+      - "8010:8000"
+    networks:
+      - bykstack
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 3G
+    depends_on:
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  embedding-classifier-testing:
+    container_name: embedding-classifier-testing
+    image: embedding-classifier:latest
+    env_file:
+      - config.env
+    environment:
+      - INDEX_ENV=testing
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - TORCH_THREADS=4
+      - SECOND_OPINION_MODE=${SECOND_OPINION_MODE:-off}
+      - SECOND_OPINION_URL=http://llm-reranker:8080
+      - SECOND_OPINION_TIMEOUT_MS=${SECOND_OPINION_TIMEOUT_MS:-5000}
+      - SECOND_OPINION_WEIGHT=${SECOND_OPINION_WEIGHT:-0.25}
+      - SECOND_OPINION_TRIGGERS=${SECOND_OPINION_TRIGGERS:-ood_band}
+      - SECOND_OPINION_MIN_PROBABILITY=${SECOND_OPINION_MIN_PROBABILITY:-0.9}
+      - SECOND_OPINION_SLOT=1
+    volumes:
+      - ./constants.ini:/app/constants.ini:ro
+      - ./grafana-configs/loki_logger.py:/app/loki_logger.py:ro
+    ports:
+      - "8011:8000"
+    networks:
+      - bykstack
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 3G
+    depends_on:
+      embedding-classifier-production:
+        condition: service_started
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  # Second opinion for unsure messages (llama.cpp with Gemma 4 E4B). The
+  # classifiers work without it and call it only when SECOND_OPINION_MODE isn't off;
+  # each keeps its build's catalogue in its own slot (SECOND_OPINION_SLOT).
+  llm-reranker:
+    container_name: llm-reranker
+    build:
+      context: ./src/embedding-classifier/llm-reranker
+    image: llm-reranker:latest
+    environment:
+      # Equal to the CPU limit below
+      - LLAMA_ARG_THREADS=4
+    ports:
+      - "8012:8080"
+    networks:
+      - bykstack
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 7G
+    restart: unless-stopped
+
   # Logging Stack - Loki and Grafana
   loki:
     image: grafana/loki:2.9.0
@@ -571,6 +694,14 @@ volumes:
     name: grafana-data
   redis_data:
     name: redis_data
+  qdrant_data:
+    name: qdrant_data
+  embedding_venv:
+    name: embedding_venv
+  embedding_models:
+    name: embedding_models
+  embedding_cache:
+    name: embedding_cache
 
 
 networks:

@@ -1,0 +1,49 @@
+[project]
+name = "embedding-classifier"
+version = "0.1.0"
+description = "Training-free agency classifier: an embedding index per agency in Qdrant, keyword fusion and a confidence gate, on CPU"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.35",
+    "fastapi>=0.115",
+    "loguru>=0.7.2",
+    "numpy>=2.2",
+    "pandas>=2.2",
+    "qdrant-client==1.19.1",
+    "requests>=2.32",
+    "scikit-learn>=1.6",
+    "scipy>=1.14",
+    "sentence-transformers>=6.0",
+    "torch>=2.7",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8.4",
+    "ruff>=0.11",
+]
+
+[tool.uv]
+# An application, not a library: run from this folder, nothing to build
+package = false
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+# Same rules as the rest of the repo and its CI
+extend = "../../pyproject.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "qdrant_server: needs a running Qdrant server at QDRANT_URL (skipped when it is not set)",
+]

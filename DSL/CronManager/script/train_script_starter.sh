@@ -180,6 +180,45 @@ else
     exit 1
 fi
 
+# Embedding classifier model keys (src/embedding-classifier/embedding_classifier/embedding_models.json)
+# run the index builder, with the same arguments, in its own virtual environment.
+# Every other base model trains with model_trainer.py below, exactly as before.
+EMBEDDING_CLASSIFIER_DIR="/app/src/embedding-classifier"
+EMBEDDING_VENV="/app/embedding_venv"
+embedding_keys=$(grep -oE '^  "[^"]+": \{' "$EMBEDDING_CLASSIFIER_DIR/embedding_classifier/embedding_models.json" 2>/dev/null | sed -E 's/^  "([^"]+)".*/\1/')
+embedding_count=0
+other_count=0
+for key in $(echo "$model_types" | tr -d '[]" ' | tr ',' ' '); do
+    if [ -n "$embedding_keys" ] && echo "$embedding_keys" | grep -qxF "$key"; then
+        embedding_count=$((embedding_count + 1))
+    else
+        other_count=$((other_count + 1))
+    fi
+done
+
+if [ "$embedding_count" -gt 0 ]; then
+    if [ "$other_count" -gt 0 ]; then
+        echo "[ERROR] Embedding models can't be combined with trained base models: $model_types"
+        training_exit_code=1
+    else
+        echo "[INFO] Embedding model keys: running the index builder in $EMBEDDING_VENV"
+        (cd "$EMBEDDING_CLASSIFIER_DIR" && UV_PROJECT_ENVIRONMENT="$EMBEDDING_VENV" uv sync --frozen --no-dev) \
+        && (cd "$EMBEDDING_CLASSIFIER_DIR" && HF_HOME="${EMBEDDING_HF_HOME:-/app/embedding_models}" \
+            "$EMBEDDING_VENV/bin/python" -m builder.cli \
+            --model_types "$model_types" \
+            --model_id "$model_id" \
+            --job_id "$job_id" \
+            --dataset_id "$dataset_id" \
+            --model_name "$model_name" \
+            --major_version "$major_version" \
+            --minor_version "$minor_version" \
+            --latest "$latest" \
+            --deployment_environment "$deployment_environment" \
+            --session_id "$session_id")
+        training_exit_code=$?
+    fi
+else
+
 # Activate existing virtualenv
 echo "[INFO] Activating existing virtualenv at /app/python_virtual_env"
 source /app/python_virtual_env/bin/activate || { echo "[ERROR] Failed to activate virtualenv"; exit 1; }
@@ -307,6 +346,7 @@ python3 "$TRAINING_SCRIPT" \
     --session_id "$session_id" \
 
 training_exit_code=$?
+fi
 
 # Check training result
 if [ $training_exit_code -eq 0 ]; then

@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "environments": ["production", "testing"],
+  "gate_mode": "enforce",
+  "keep_versions": 3
+}

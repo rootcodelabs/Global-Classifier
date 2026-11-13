@@ -95,6 +95,7 @@ const DataModelForm: FC<DataModelFormType> = ({
                 label=""
                 onSelectionChange={(selection) => {
                   handleChange('datasetId', selection?.value);
+                  handleChange('datasetVersion', selection?.label);
                 }}
                 value={dataModel?.datasetId === null && ""}
                 defaultValue={dataModel?.datasetId ? dataModel?.datasetId : ""}

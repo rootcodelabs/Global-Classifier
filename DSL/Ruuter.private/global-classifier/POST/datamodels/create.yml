@@ -56,14 +56,16 @@ validateEnumValues:
   switch:
     - condition: ${!["production", "testing", "undeployed"].includes(deploymentEnv)}
       next: return_invalid_deployment_env
-    - condition: ${!baseModels.every(model => ["estbert", "xlm-roberta", "multilingual-distilbert"].includes(model))}
+    - condition: ${!baseModels.every(model => ["estbert", "xlm-roberta", "multilingual-distilbert", "multilingual-e5-large-instruct"].includes(model))}
       next: return_invalid_base_model
   next: checkProductionDeployment
 
 # Check if Production Deployment
+# An e5 model is saved undeployed and the production model stays until the
+# build passes and loads; the index builder then switches them
 checkProductionDeployment:
   switch:
-    - condition: ${deploymentEnv === "production"}
+    - condition: ${deploymentEnv === "production" && !baseModels.every(model => model === "multilingual-e5-large-instruct")}
       next: updateExistingProductionModels
   next: insertModelMetadata
 
@@ -89,8 +91,8 @@ insertModelMetadata:
     url: "[#GLOBAL_CLASSIFIER_RESQL]/insert-data-models"
     body:
       modelName: ${modelName}
-      deploymentEnv: ${deploymentEnv}
-      baseModels: ${JSON.stringify(baseModels)} 
+      deploymentEnv: "${baseModels.every(model => model === 'multilingual-e5-large-instruct') ? 'undeployed' : deploymentEnv}"
+      baseModels: ${JSON.stringify(baseModels)}
       connectedDsId: ${connectedDsId}
       connectedDsMajorVersion: ${connectedDsMajorVersion}
       connectedDsMinorVersion: ${connectedDsMinorVersion}
