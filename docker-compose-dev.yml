@@ -262,7 +262,33 @@ services:
       - bykstack
     depends_on:
       minio:
-        condition: service_started 
+        condition: service_started
+
+  # Receives chat messages from the GC's DMR agent, classifies them and sends the result back to the
+  # sender through that agent (GLOBAL_CLASSIFIER_DMR_AGENT in constants.ini).
+  # See src/dmr_incoming_service/README.md.
+  # No published port on purpose: /dmr/incoming has no authentication and trusts senderId, so only the
+  # GC DMR agent may reach it, over bykstack.
+  # Healthcheck: in the Dockerfile (GET /health).
+  dmr-incoming-service:
+    container_name: dmr-incoming-service
+    build:
+      context: ./src/dmr_incoming_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./constants.ini:/app/constants.ini:ro
+    environment:
+      # Acked messages still RECEIVED after this many seconds are marked FAILED and answered 'failed'
+      - DMR_STALE_AFTER_SECONDS=300
+      - DMR_SWEEP_INTERVAL_SECONDS=60
+    depends_on:
+      resql:
+        condition: service_started
+      ruuter-public:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - bykstack
 
   opensearch-node:
     image: opensearchproject/opensearch:2.11.1
