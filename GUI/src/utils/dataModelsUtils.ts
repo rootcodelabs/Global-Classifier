@@ -41,6 +41,12 @@ export const dgArrayWithVersions = <T extends Record<string, any>>(
   }));
 };
 
+// "V4.0" → { major: 4, minor: 0 }
+export const parseVersion = (version?: string) => {
+  const [major, minor] = (version ?? '').replace(/^V/, '').split('.').map(Number);
+  return { major, minor };
+};
+
 export const getChangedAttributes = (
   original: Partial<DataModel>,
   updated: Partial<DataModel>

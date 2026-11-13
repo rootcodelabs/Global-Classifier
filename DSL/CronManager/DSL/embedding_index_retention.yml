@@ -1,0 +1,4 @@
+embedding_index_retention:
+  trigger: "0 0 3 * * ?"
+  type: exec
+  command: "/app/src/embedding-classifier/builder/retention.sh"

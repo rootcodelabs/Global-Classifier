@@ -1,0 +1,9 @@
+{
+  "mode": "enforce",
+  "min_top3": 0.85,
+  "max_top1_regression": 0.02,
+  "max_routed_regression": 0.05,
+  "max_real_wrongly_flagged": 0.08,
+  "weak_agency_recall": 0.2,
+  "weak_agency_min_test_questions": 20
+}
