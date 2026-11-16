@@ -20,7 +20,7 @@ jobs:
       - name: Load environment variables and set them
         run: |
           if [ -f .env.mlflow ]; then
-            export $(cat .env.gui | grep -v '^#' | xargs)
+            export $(cat .env.mlflow | grep -v '^#' | xargs)
           fi
           echo "RELEASE=$RELEASE" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
