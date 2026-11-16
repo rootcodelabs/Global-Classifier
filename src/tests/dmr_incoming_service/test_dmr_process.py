@@ -43,7 +43,7 @@ def test_classified_message_sends_the_result_back_to_the_sender(
     ]
     update = resql.last("update-dmr-incoming-message")
     assert update["status"] == "CLASSIFIED"
-    assert update["resultStatus"] == "classified"
+    assert update["resultStatus"] == "CLASSIFIED"
     assert update["topAgencyId"] == POLICE
     assert update["topConfidence"] == "0.93"
     assert update["senderKnown"] is True
@@ -138,7 +138,7 @@ def test_out_of_distribution_result_has_no_agency(processor, classifier, resql, 
 
         assert (
             resql.last("update-dmr-incoming-message")["resultStatus"]
-            == "out_of_distribution"
+            == "OUT_OF_DISTRIBUTION"
         )
         # top_agency_id is a uuid column, so the "0" id is stored as NULL
         assert resql.last("update-dmr-incoming-message")["topAgencyId"] == ""
@@ -159,7 +159,7 @@ def test_classify_failure_is_recorded_and_answered_as_failed(
     update = resql.last("update-dmr-incoming-message")
     assert update["status"] == "FAILED"
     assert update["errorReason"] == "classify returned HTTP 503"
-    assert update["resultStatus"] == "failed"
+    assert update["resultStatus"] == "FAILED"
     assert sent_content(agent)["status"] == "failed"
     assert sent_content(agent)["agencyId"] == ""
     assert resql.last("update-dmr-response-status")["responseStatus"] == "SENT"

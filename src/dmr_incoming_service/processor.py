@@ -20,9 +20,11 @@ from dmr_incoming_service.clients import (
 
 logger = logging.getLogger("dmr_incoming_service")
 
+# DMR envelope type, as DMR and the agent spell it. ChatMessage is the only type DMR has.
 CHAT_MESSAGE = "ChatMessage"
-# Values of the dmr_message_type enum
-MESSAGE_TYPES = (CHAT_MESSAGE,)
+# The dmr_message_type enum value stored for each envelope type, and back
+DB_MESSAGE_TYPES = {CHAT_MESSAGE: "CHAT_MESSAGE"}
+ENVELOPE_MESSAGE_TYPES = {db: envelope for envelope, db in DB_MESSAGE_TYPES.items()}
 RESULT_EVENT = "global-classifier-result"
 RESULT_AUTHOR_ROLE = "global-classifier"
 END_USER_ROLE = "end-user"
@@ -39,10 +41,21 @@ SENT = "SENT"
 SKIPPED = "SKIPPED"
 PENDING = "PENDING"
 
-# Result status, sent in the result message and stored as result_status
-RESULT_CLASSIFIED = "classified"
-RESULT_OUT_OF_DISTRIBUTION = "out_of_distribution"
-RESULT_FAILED = "failed"
+# Result status: the dmr_result_status enum value, stored as result_status
+RESULT_CLASSIFIED = "CLASSIFIED"
+RESULT_OUT_OF_DISTRIBUTION = "OUT_OF_DISTRIBUTION"
+RESULT_FAILED = "FAILED"
+# How the result message spells it for the sender (its "status")
+SENT_RESULT_STATUS = {
+    RESULT_CLASSIFIED: "classified",
+    RESULT_OUT_OF_DISTRIBUTION: "out_of_distribution",
+    RESULT_FAILED: "failed",
+}
+# The classifier's agency_name for a question it can't place
+CLASSIFIER_OUT_OF_DISTRIBUTION = "out_of_distribution"
+
+# error_reason of a message not classified because it waited too long in the process pool's queue
+QUEUE_TIMEOUT_REASON = "waited too long in the queue"
 
 Q_INSERT = "insert-dmr-incoming-message"
 Q_UPDATE = "update-dmr-incoming-message"
@@ -74,6 +87,8 @@ class Job:
     messages: list = field(default_factory=list)
     # Rounds of tries to send the result so far (from the row, for the sweeper's resends)
     response_attempts: int = 0
+    # Processor clock reading when accept() recorded the message; None for the sweeper's jobs
+    accepted_at: float | None = None
 
 
 # --------------------------------------------------------------------------- helpers
@@ -153,7 +168,7 @@ def result_status_for(top: dict | None) -> str:
     agency_id = top.get("agency_id")
     if (
         agency_id in (None, "", 0, "0")
-        or top.get("agency_name") == RESULT_OUT_OF_DISTRIBUTION
+        or top.get("agency_name") == CLASSIFIER_OUT_OF_DISTRIBUTION
     ):
         return RESULT_OUT_OF_DISTRIBUTION
     return RESULT_CLASSIFIED
@@ -179,7 +194,7 @@ def build_result_payload(
     classified = result_status == RESULT_CLASSIFIED and top is not None
     content = {
         "requestMessageId": request_message_id,
-        "status": result_status,
+        "status": SENT_RESULT_STATUS[result_status],
         "agencyId": str(top.get("agency_id")) if classified else "",
         "agencyName": str(top.get("agency_name") or "") if classified else "",
         "confidence": _confidence(top) if classified else "",
@@ -214,6 +229,11 @@ def _answerable(job: "Job") -> bool:
     )
 
 
+def _message_type_from_row(row: dict) -> str:
+    """A row's message_type (the stored enum value) as the envelope type a Job carries."""
+    return ENVELOPE_MESSAGE_TYPES.get(str(row.get("messageType") or ""), "")
+
+
 def build_envelope(
     recipient_id: str, response_message_id: str, payload: dict, timestamp: str
 ) -> dict:
@@ -242,7 +262,9 @@ class Processor:
         retry_delay_seconds: float = 1.0,
         resend_after_seconds: int = 120,
         max_response_attempts: int = 5,
+        max_queue_wait_seconds: float | None = None,
         sleep=time.sleep,
+        clock=time.monotonic,
     ):
         self.resql = resql
         self.classifier = classifier
@@ -253,7 +275,11 @@ class Processor:
         self.retry_delay_seconds = retry_delay_seconds
         self.resend_after_seconds = resend_after_seconds
         self.max_response_attempts = max(1, max_response_attempts)
+        # A job that waited longer than this between accept() and process() is left to the
+        # sweeper (see _waited_too_long). None: no limit.
+        self.max_queue_wait_seconds = max_queue_wait_seconds
         self._sleep = sleep
+        self._clock = clock
         # Message ids being processed right now. In-process, so the service runs one worker.
         self._in_flight: set[str] = set()
         self._lock = threading.Lock()
@@ -306,9 +332,7 @@ class Processor:
                     "recipientId": recipient_id if is_uuid(recipient_id) else "",
                     "chatId": chat_id if is_uuid(chat_id) else "",
                     "chatCreatedAt": chat_created,
-                    "messageType": message_type
-                    if message_type in MESSAGE_TYPES
-                    else "",
+                    "messageType": DB_MESSAGE_TYPES.get(message_type, ""),
                     "sentAt": parse_timestamp(envelope.get("timestamp")),
                 },
             )
@@ -353,6 +377,7 @@ class Processor:
             message_type=message_type,
             chat_url=_text(chat.get("endUserUrl")),
             messages=messages,
+            accepted_at=self._clock(),
         )
         return 200, {"status": "accepted", "messageId": message_id}, job
 
@@ -364,7 +389,9 @@ class Processor:
             self._in_flight.add(message_id)
             return True
 
-    def _release(self, message_id: str) -> None:
+    def release(self, message_id: str) -> None:
+        """Ends the claim from accept(). process() does this itself; call it only for a job that
+        will never reach process(), so a redelivery can resume the message."""
         with self._lock:
             self._in_flight.discard(message_id)
 
@@ -396,10 +423,46 @@ class Processor:
         """Classifies and answers. Never raises: every outcome is recorded on the row."""
         try:
             self._process(job)
-        except Exception as error:  # the background task must not die silently
+        except Exception as error:  # the job must not die silently
             self._fail(job, error)
         finally:
-            self._release(job.message_id)
+            self.release(job.message_id)
+
+    def _waited_too_long(self, job: Job) -> bool:
+        """Whether the job waited in the queue so long that the sweeper would likely close its row
+        before the result is recorded. Classifying it then would probably be wasted, and under a
+        backlog that waste slows the queue down further. Best effort: the limit leaves a margin for
+        the calls before the record, but a call can run past its timeout. If the sweeper wins
+        anyway, _record() finds the row closed and nothing is sent twice.
+        """
+        if self.max_queue_wait_seconds is None or job.accepted_at is None:
+            return False
+        waited = self._clock() - job.accepted_at
+        if waited <= self.max_queue_wait_seconds:
+            return False
+        logger.warning(
+            "DMR message %s waited %.0fs in the queue (limit %.0fs): not classified, "
+            "answered 'failed'",
+            job.message_id,
+            waited,
+            self.max_queue_wait_seconds,
+        )
+        return True
+
+    def _answer_queue_timeout(self, job: Job) -> None:
+        """Closes the row as FAILED and answers 'failed', without classifying. Done here rather
+        than left to the sweeper: the sender gets its answer now, and the row says why. The
+        sweeper's 'processing interrupted' and its ERROR log are kept for crashes.
+        """
+        if not self._record(
+            job, FAILED, QUEUE_TIMEOUT_REASON, result_status=RESULT_FAILED
+        ):
+            logger.warning(
+                "DMR message %s was already closed by the sweeper, no result sent",
+                job.message_id,
+            )
+            return
+        self._respond(job, RESULT_FAILED, None)
 
     def _fail(self, job: Job, error: Exception) -> None:
         """Records an unexpected error as FAILED and answers 'failed' when possible."""
@@ -433,6 +496,10 @@ class Processor:
         question = extract_question(job.messages)
         if not question:
             return self._reject(job, "no message content")
+        # After the checks above (no I/O, and an unusable message is still rejected rather than
+        # answered), before the calls that take time
+        if self._waited_too_long(job):
+            return self._answer_queue_timeout(job)
 
         sender_known = self._sender_known(job.sender_id)
         result = self.classifier.classify(job.chat_id, question, job.chat_url)
@@ -616,7 +683,7 @@ class Processor:
                 response_message_id=str(row.get("responseMessageId") or ""),
                 chat_id=str(row.get("chatId") or ""),
                 chat_created=str(row.get("chatCreatedAt") or ""),
-                message_type=str(row.get("messageType") or ""),
+                message_type=_message_type_from_row(row),
             )
             try:
                 if _answerable(job):
@@ -660,7 +727,7 @@ class Processor:
                 response_message_id=str(row.get("responseMessageId") or ""),
                 chat_id=str(row.get("chatId") or ""),
                 chat_created=str(row.get("chatCreatedAt") or ""),
-                message_type=str(row.get("messageType") or ""),
+                message_type=_message_type_from_row(row),
                 response_attempts=int(row.get("responseAttempts") or 0),
             )
             result_status = str(row.get("resultStatus") or RESULT_FAILED)

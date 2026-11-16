@@ -7,6 +7,8 @@ import json
 import re
 from datetime import datetime
 
+import pytest
+
 from dmr_incoming_service.clients import top_from_classify
 from dmr_incoming_service.processor import (
     build_envelope,
@@ -103,16 +105,31 @@ def build(status, top):
 def test_result_envelopes_pass_the_agent_dto_for_every_status():
     police = {"agency_id": POLICE, "agency_name": "Police", "confidence": 0.93}
     for status, top in (
-        ("classified", police),
-        ("out_of_distribution", None),
-        ("failed", None),
+        ("CLASSIFIED", police),
+        ("OUT_OF_DISTRIBUTION", None),
+        ("FAILED", None),
     ):
         assert validate_external_message(build(status, top)) == []
 
 
+@pytest.mark.parametrize(
+    "stored, sent",
+    [
+        ("CLASSIFIED", "classified"),
+        ("OUT_OF_DISTRIBUTION", "out_of_distribution"),
+        ("FAILED", "failed"),
+    ],
+)
+def test_result_message_spells_the_stored_status_in_lowercase(stored, sent):
+    police = {"agency_id": POLICE, "agency_name": "Police", "confidence": 0.93}
+    envelope = build(stored, police if stored == "CLASSIFIED" else None)
+    content = json.loads(envelope["payload"]["messages"][0]["content"])
+    assert content["status"] == sent
+
+
 def test_numeric_agency_id_is_sent_as_a_string():
     content = json.loads(
-        build("classified", {"agency_id": 42, "agency_name": "X", "confidence": "0.5"})[
+        build("CLASSIFIED", {"agency_id": 42, "agency_name": "X", "confidence": "0.5"})[
             "payload"
         ]["messages"][0]["content"]
     )
@@ -131,18 +148,20 @@ def test_top_from_classify_accepts_wrapped_and_bare_bodies():
 def test_result_status_for():
     assert (
         result_status_for({"agency_id": POLICE, "agency_name": "Police"})
-        == "classified"
+        == "CLASSIFIED"
     )
     assert (
-        result_status_for({"agency_id": 0, "agency_name": "x"}) == "out_of_distribution"
+        result_status_for({"agency_id": 0, "agency_name": "x"}) == "OUT_OF_DISTRIBUTION"
     )
     assert (
         result_status_for({"agency_id": "", "agency_name": "x"})
-        == "out_of_distribution"
+        == "OUT_OF_DISTRIBUTION"
     )
+    # The classifier's own spelling of out of distribution, as agency_name
     assert result_status_for(
         {"agency_id": "7", "agency_name": "out_of_distribution"}
-    ) == ("out_of_distribution")
+    ) == ("OUT_OF_DISTRIBUTION")
+    assert result_status_for(None) == "FAILED"
 
 
 def test_extract_question_skips_results_and_falls_back_to_any_content():

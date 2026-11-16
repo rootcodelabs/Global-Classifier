@@ -44,7 +44,7 @@ sequenceDiagram
     AG->>GC: POST /dmr/incoming (decrypted envelope)
     GC->>DB: insert row (dedupe on envelope id)
     GC-->>AG: 200 {"status":"accepted"} (within 2 s)
-    Note over GC: background task, after the ack
+    Note over GC: process pool, after the ack
     GC->>CL: POST /chats/classify {chatId, message, url}
     CL-->>GC: [[{agency_id, agency_name, confidence}, ...]]
     GC->>DB: record CLASSIFIED / FAILED
@@ -55,7 +55,19 @@ sequenceDiagram
 
 The DMR agent decrypts the message and POSTs it to the URL in its `OUTGOING_MESSAGE_ENDPOINT`. Set that to `http://dmr-incoming-service:8095/dmr/incoming`. To send, the GC POSTs to the same agent's `/v1/messages`. The agent sets `senderId` to the GC, encrypts the message and hands it to the DMR server.
 
-**Why ack first:** DMR waits at most **2 s** (`MESSAGE_DELIVERY_TIMEOUT_MS`) for a 2xx. Without one, it redelivers the same envelope. Classifying takes longer than that, so the service acks after a single database insert and does the rest in a background task.
+**Why ack first:** DMR waits at most **2 s** (`MESSAGE_DELIVERY_TIMEOUT_MS`) for a 2xx. Without one, it redelivers the same envelope. Classifying takes longer than that, so the service acks after a single database insert and does the rest on its own thread pool (`DMR_PROCESS_WORKERS` threads).
+
+**Why a separate pool:** the ack runs on Starlette's shared thread pool (40 threads). If classifying ran there too, slow classifications could take every thread, the ack would wait past 2 s and DMR would redeliver. With a pool of its own, the ack no longer competes with classification; it shares its threads only with the quick Resql calls of other acks and `GET /dmr/messages/{id}`. A backlog waits in the process pool's queue instead:
+
+- The messages in it are already acked and recorded.
+- A message that waited longer than `DMR_STALE_AFTER_SECONDS − (2 × DMR_RESQL_TIMEOUT + DMR_CLASSIFY_TIMEOUT)` (260 s by default) is not classified, because the sweeper would likely close its row before the result is recorded. It's logged at WARNING, recorded as `FAILED` "waited too long in the queue", and answered `failed` right away. This keeps the workers on messages that can still be answered, and keeps the sweeper's "processing interrupted" ERROR for crashes. The limit is best effort: a call can run past its timeout, and if the sweeper closes the row first, the result is dropped and the sender gets the sweeper's single `failed`.
+- If `DMR_STALE_AFTER_SECONDS` isn't longer than `2 × DMR_RESQL_TIMEOUT + DMR_CLASSIFY_TIMEOUT` (40 s by default), for example `10` for a quick sweeper test, the limit is off, and a WARNING at startup says so.
+- When the queue reaches `DMR_QUEUE_WARN_AT` messages (waiting or in progress), a WARNING `DMR process pool backlog` is logged, and an INFO once it's back to half of that.
+- On shutdown, queued messages are dropped; their rows stay `RECEIVED` and the sweeper answers them after the restart. A message that arrives after the pool has stopped gets `503`, so DMR redelivers it and the redelivery resumes it.
+
+The pool size also caps this service's classify calls in flight. It helps keep DataMapper below its `429` limit, but other callers of DataMapper aren't counted.
+
+`GET /health` is `async`, so it answers even when every thread is busy. It shows the process is up, not that acks are fast.
 
 ---
 
@@ -164,8 +176,8 @@ flowchart TD
     C -- no --> D{question found?}
     D -- no --> R
     D -- yes --> E[POST /chats/classify]
-    E -- ok --> F[CLASSIFIED<br>classified or out_of_distribution]
-    E -- error --> G[FAILED<br>result_status failed]
+    E -- ok --> F[CLASSIFIED<br>CLASSIFIED or OUT_OF_DISTRIBUTION]
+    E -- error --> G[FAILED<br>result_status FAILED]
     F --> H[send result to the sender]
     G --> H
     H --> I{sender is the GC itself?}
@@ -176,14 +188,16 @@ flowchart TD
 
 | Outcome | `status` | `result_status` | Result sent to the sender? |
 |---|---|---|---|
-| Classified to an agency | `CLASSIFIED` | `classified` | Yes |
-| Model couldn't place it | `CLASSIFIED` | `out_of_distribution` | Yes |
-| Classify failed (timeout, 5xx, no model, bad body) | `FAILED` | `failed` | Yes |
-| Unexpected error in the service | `FAILED` | `failed` | Yes, if the chat is usable |
+| Classified to an agency | `CLASSIFIED` | `CLASSIFIED` | Yes |
+| Model couldn't place it | `CLASSIFIED` | `OUT_OF_DISTRIBUTION` | Yes |
+| Classify failed (timeout, 5xx, no model, bad body) | `FAILED` | `FAILED` | Yes |
+| Unexpected error in the service | `FAILED` | `FAILED` | Yes, if the chat is usable |
 | Unusable message, echo, or no content | `REJECTED` | none | No |
 | Duplicate | (unchanged) | (unchanged) | No |
 
-The result is `out_of_distribution` when the top `agency_id` is empty, `0` or `"0"`, or `agency_name` is `out_of_distribution`.
+The result is `OUT_OF_DISTRIBUTION` when the top `agency_id` is empty, `0` or `"0"`, or the classifier's `agency_name` is `out_of_distribution`.
+
+The database stores enum values in UPPER_CASE. The result message sent to the sender spells the status in lowercase (`classified`, `out_of_distribution`, `failed`; see [section 7](#7-outgoing-payload-gc--its-dmr-agent)), and the envelope `type` stays DMR's `ChatMessage`.
 
 The service also checks whether the sender is a known agency (`get-agency`) and stores it as `sender_known`. This is informational only. An unknown sender still gets a result.
 
@@ -304,7 +318,7 @@ DMR has only the `ChatMessage` type, and the agent's `ExternalServiceMessageDto`
 1. **Stale rows.** A row still `RECEIVED` after `DMR_STALE_AFTER_SECONDS` (300 s) was acked but never processed, for example because the service crashed. The sweeper marks it `FAILED` "processing interrupted" and sends a `failed` result. The content wasn't stored, so the message can't be classified again. This is logged at **ERROR** (`stale DMR message ...`).
 2. **Unanswered rows.** A closed row whose response is unset or `PENDING`, and whose last try was more than `DMR_RESEND_AFTER_SECONDS` (120 s) ago, gets its result sent again. The result is rebuilt from the stored classification, with the same envelope `id`. After `DMR_RESPONSE_MAX_ATTEMPTS` (5) rounds, the response is `FAILED` for good, logged at **ERROR** (`... FAILED for good`).
 
-Every claim is a single atomic `UPDATE`, so a slow background task and the sweeper never both send a result for the same message.
+Every claim is a single atomic `UPDATE`, so a slow job in the process pool and the sweeper never both send a result for the same message.
 
 **Resume after a late insert:** sometimes the insert times out here but still lands in the database. The service answers `500`, DMR redelivers, and the redelivery hits the dedupe. If that row is still `RECEIVED` and nothing is processing it, the redelivered envelope is processed (`accepted`) rather than treated as a duplicate.
 
@@ -318,13 +332,13 @@ Every claim is a single atomic `UPDATE`, so a slow background task and the sweep
 |---|---|
 | `message_id` | Incoming envelope `id` (primary key and dedupe key) |
 | `sender_id`, `recipient_id` | From the envelope (`uuid`; `recipient_id` is the GC's own agent id) |
-| `chat_id`, `message_type`, `sent_at` | From the envelope. `chat_id` is `uuid` and `message_type` is the `dmr_message_type` enum; a value they can't hold is stored as `NULL` and the message is rejected |
+| `chat_id`, `message_type`, `sent_at` | From the envelope. `chat_id` is `uuid` and `message_type` is the `dmr_message_type` enum (`ChatMessage` is stored as `CHAT_MESSAGE`); a value they can't hold is stored as `NULL` and the message is rejected |
 | `chat_created_at` | `payload.chat.created` as sent (the chat's start time), kept as text because the result repeats it verbatim |
 | `received_at`, `processed_at` | When it was inserted and when it was closed |
 | `status` | `dmr_message_status`: `RECEIVED` → `CLASSIFIED` / `REJECTED` / `FAILED` |
 | `error_reason` | Why it was rejected or failed |
 | `sender_known` | Whether the sender is in the GC's agency table |
-| `result_status` | `dmr_result_status`: `classified` / `out_of_distribution` / `failed` |
+| `result_status` | `dmr_result_status`: `CLASSIFIED` / `OUT_OF_DISTRIBUTION` / `FAILED` (sent in lowercase) |
 | `top_agency_id`, `top_agency_name`, `top_confidence` | The top classification (`top_agency_id` is `uuid`, `NULL` when out of distribution) |
 | `classification` | The full classify response (JSONB) |
 | `response_message_id` | Envelope `id` of the result sent back |
@@ -346,7 +360,7 @@ From `constants.ini` (mounted at `/app/constants.ini`, section `[DSL]`):
 | `GLOBAL_CLASSIFIER_RESQL` | Resql base URL |
 | `GLOBAL_CLASSIFIER_RUUTER_PUBLIC` | `/chats/classify` |
 | `GLOBAL_CLASSIFIER_DMR_AGENT` | The GC's DMR agent, for example `http://gc-dmr-agent:8077`. `/v1/messages` is appended. |
-| `GLOBAL_CLASSIFIER_DMR_AGENT_ID` | The GC's agent ID (its CentOps `clientId`), used by the loop guard. **Set it per environment.** While it's empty, the loop guard never matches. |
+| `GLOBAL_CLASSIFIER_DMR_AGENT_ID` | The GC's agent ID (its CentOps `clientId`), used by the loop guard. **Set it per environment.** While it's empty, the loop guard never matches, and a WARNING is logged at startup. A value that isn't a UUID (a typo, a placeholder) stops the service from starting. |
 
 From environment variables:
 
@@ -361,6 +375,8 @@ From environment variables:
 | `DMR_RESPONSE_MAX_ATTEMPTS` | `5` | Rounds (the first send plus resends) before `FAILED` |
 | `DMR_STALE_AFTER_SECONDS` | `300` | |
 | `DMR_SWEEP_INTERVAL_SECONDS` | `60` | |
+| `DMR_PROCESS_WORKERS` | `8` | Threads that classify and answer, apart from the ack's threads. Also the most classify calls in flight at once. Each HTTP session keeps up to 40 + this + 1 connections per host, so every thread has one. |
+| `DMR_QUEUE_WARN_AT` | `10 × DMR_PROCESS_WORKERS` | Messages waiting or in progress at which the backlog WARNING is logged |
 | `CONSTANTS_FILE` | `/app/constants.ini` | |
 
 The GC DMR agent needs `OUTGOING_MESSAGE_ENDPOINT=http://dmr-incoming-service:8095/dmr/incoming` and `LOGGER_LOG_LEVELS=error,warn,log`. Never set it to `debug`, because at that level the agent logs decrypted payloads.
@@ -378,7 +394,8 @@ The GC DMR agent needs `OUTGOING_MESSAGE_ENDPOINT=http://dmr-incoming-service:80
 
 | File | What it is |
 |---|---|
-| `app.py` | FastAPI routes, the background task and the sweeper thread |
+| `app.py` | FastAPI routes, starting the process pool and the sweeper thread |
+| `process_pool.py` | The bounded thread pool for classifying and answering, with the backlog warning |
 | `processor.py` | Accept, process, the payload builders and the sweeper logic |
 | `clients.py` | HTTP clients for Resql, `/chats/classify` and the DMR agent |
 | `settings.py` | `constants.ini` and environment settings |

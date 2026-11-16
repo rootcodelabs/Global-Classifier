@@ -1,7 +1,7 @@
 """Several agencies sending at the same time: each result goes back to its own sender, on its own chat.
-The processor is driven from plain threads here, the way FastAPI runs accept() and the background
-tasks in its thread pool. The classifier waits on a barrier, so every classification is in flight
-at once before any of them answers.
+The processor is driven from plain threads here, the way the service runs accept() on Starlette's
+thread pool and process() on its own process pool. The classifier waits on a barrier, so every
+classification is in flight at once before any of them answers.
 """
 
 import json
@@ -103,7 +103,7 @@ def classifier_for(senders, barrier=None):
 
 
 def receive(processor, envelope):
-    """What one request to POST /dmr/incoming does: accept, then the background task."""
+    """What one request to POST /dmr/incoming does: accept, then process() on the pool."""
     status, body, job = processor.accept(envelope)
     assert (status, body["status"]) == (200, "accepted")
     processor.process(job)

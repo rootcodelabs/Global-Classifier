@@ -21,7 +21,7 @@ def stale_row(**overrides):
         "senderId": AGENCY_A,
         "chatId": CHAT_ID,
         "chatCreatedAt": CHAT_CREATED,
-        "messageType": "ChatMessage",
+        "messageType": "CHAT_MESSAGE",  # rows hold the dmr_message_type enum value
     }
     row.update(overrides)
     return row
@@ -88,7 +88,7 @@ def test_stale_row_send_failure_is_tried_once_and_left_pending(
 
 def unanswered_row(**overrides):
     row = stale_row(
-        resultStatus="classified",
+        resultStatus="CLASSIFIED",
         topAgencyId=POLICE,
         topAgencyName="Police",
         topConfidence=0.93,
@@ -122,13 +122,35 @@ def test_unanswered_classified_result_is_sent_again_unchanged(processor, resql, 
 
 def test_unanswered_failed_result_is_sent_as_failed(processor, resql, agent):
     resql.answers["update-unanswered-dmr-incoming-messages"] = [
-        unanswered_row(resultStatus="failed", topAgencyId=None, topAgencyName=None)
+        unanswered_row(resultStatus="FAILED", topAgencyId=None, topAgencyName=None)
     ]
 
     processor.sweep_unanswered()
 
     content = json.loads(agent.sent[0]["payload"]["messages"][0]["content"])
     assert content["status"] == "failed" and content["agencyId"] == ""
+
+
+def test_resent_result_carries_the_envelope_type_not_the_stored_value(
+    processor, resql, agent
+):
+    resql.answers["update-unanswered-dmr-incoming-messages"] = [unanswered_row()]
+
+    processor.sweep_unanswered()
+
+    assert agent.sent[0]["type"] == "ChatMessage"
+
+
+def test_row_with_an_unknown_message_type_is_not_answered(processor, resql, agent):
+    # Only stored enum values map back; the envelope spelling is not a stored value
+    resql.answers["update-stale-dmr-incoming-messages-failed"] = [
+        stale_row(messageType="ChatMessage")
+    ]
+
+    processor.sweep_stale()
+
+    assert agent.sent == []
+    assert resql.last("update-dmr-response-status")["responseStatus"] == "SKIPPED"
 
 
 def test_unanswered_resend_failure_stays_pending_until_the_last_round(

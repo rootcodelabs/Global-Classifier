@@ -2,7 +2,7 @@
 
 These steps connect the Global Classifier (GC) to DMR in a staging environment. Once they're done, agencies can send chats to the GC and get the classification result back.
 
-To learn how the service works and what it sends and receives, see [README.md](README.md).
+To learn how the service works and what it sends and receives, see [Readme.md](Readme.md).
 
 The GC needs two containers on the `bykstack` network:
 
@@ -22,7 +22,7 @@ Get these from the other teams first:
   - an RSA key pair. CentOps holds the public key. Keep the private key in your secret store, **never in the repo**.
 - [ ] **The DMR server's WebSocket URL** for staging.
 - [ ] **The `dmr-agent` image** for staging. Use the tag your team publishes, or build it in the DMR repo with `docker build -f apps/dmr-agent/Dockerfile -t dmr-agent:<tag> .`.
-- [ ] **Agreement with the sending agencies on the result format** (see [README §7](README.md#7-outgoing-payload-gc--its-dmr-agent)). Their chatbot must recognise `event = "global-classifier-result"`, must not show that message to the end user, and must not send it back to the GC.
+- [ ] **Agreement with the sending agencies on the result format** (see [Readme §7](Readme.md#7-outgoing-payload-gc--its-dmr-agent)). Their chatbot must recognise `event = "global-classifier-result"`, must not show that message to the end user, and must not send it back to the GC.
 
 The GC also needs these already in place in staging:
 
@@ -40,11 +40,13 @@ GLOBAL_CLASSIFIER_DMR_AGENT=http://gc-dmr-agent:8077
 GLOBAL_CLASSIFIER_DMR_AGENT_ID=<the GC's CentOps clientId>
 ```
 - `GLOBAL_CLASSIFIER_DMR_AGENT` must point to the agent's **service name and port** (step 6).
-- `GLOBAL_CLASSIFIER_DMR_AGENT_ID` is empty in the repo on purpose. Set it in staging. While it's empty, the loop guard (which skips messages from the GC itself) is off.
+- `GLOBAL_CLASSIFIER_DMR_AGENT_ID` is empty in the repo on purpose. Set it in staging. While it's empty, the loop guard (which skips messages from the GC itself) is off, and the service logs `GLOBAL_CLASSIFIER_DMR_AGENT_ID is empty` at WARNING when it starts. If the value isn't a UUID (for example the placeholder above, left in), the service refuses to start with `... is not a UUID`.
 - Check that `GLOBAL_CLASSIFIER_RESQL` and `GLOBAL_CLASSIFIER_RUUTER_PUBLIC` are already correct. The service uses both.
 ---
 ## 3. Run the database migration
-The migration creates the `dmr_incoming_messages` table (Liquibase changeset `global-classifier-script-v28-dmr-incoming-messages.sql`).
+The migration creates the `dmr_incoming_messages` table and its enum types (Liquibase changelog `global-classifier-script-v28-dmr-incoming-messages.sql`).
+
+If this database already ran an earlier version of v28 (the enum values were renamed to UPPER_CASE before merge), Liquibase stops with a checksum error. Roll v28 back first (see [step 10](#10-rollback)), then run the migration.
 ```bash
 ./migrate.sh
 ```
@@ -85,6 +87,10 @@ The defaults below are fine for staging. Change them only if you need to:
 | `DMR_AGENT_SEND_ATTEMPTS` | `3` |
 | `DMR_RESEND_AFTER_SECONDS` | `120` |
 | `DMR_RESPONSE_MAX_ATTEMPTS` | `5` |
+| `DMR_PROCESS_WORKERS` | `8` (threads that classify and answer) |
+| `DMR_QUEUE_WARN_AT` | `10 × DMR_PROCESS_WORKERS` (messages queued or in progress before a backlog WARNING) |
+
+All variables are described in the [Readme, section 10](Readme.md#10-configuration).
 
 ---
 
@@ -149,15 +155,15 @@ These settings affect the existing classify flow too, not only DMR.
    You should see:
    ```
    DMR message <id> from <sender> accepted (chat <chat id>)
-   DMR message <id>: classified, top agency <agency id>
-   DMR message <id>: result classified to <sender> SENT
+   DMR message <id>: CLASSIFIED, top agency <agency id>
+   DMR message <id>: result CLASSIFIED to <sender> SENT
    ```
 
 4. **Look at the row** (no content is stored):
    ```bash
    docker exec dmr-incoming-service curl -s http://localhost:8095/dmr/messages/<message id>
    ```
-   Expect `status: CLASSIFIED`, `resultStatus: classified` and `responseStatus: SENT`.
+   Expect `status: CLASSIFIED`, `resultStatus: CLASSIFIED` and `responseStatus: SENT`. The database stores these in UPPER_CASE; the result message the agency receives spells the status in lowercase (`classified`).
 
 5. **The sending agency got the result:** one message with `event = "global-classifier-result"`, and its `content` naming the agency.
 
@@ -170,6 +176,7 @@ Common problems:
 | `FAILED` "classify returned HTTP 500" | Triton is down, or DataMapper is rate limiting (`429` in the `data-mapper` logs) |
 | `responseStatus: FAILED` "HTTP 400: ..." | The agent rejected the payload. Check that the agent version matches the expected DTO. |
 | `responseStatus: FAILED` "HTTP 500: ..." | The agent doesn't know the recipient. Check that the sender is registered in CentOps. |
+| `FAILED` "waited too long in the queue" | Messages arrive faster than they're classified, so they waited in the queue past the limit (260 s by default) and were answered `failed` without classifying. Check the classifier and DataMapper (`429`), or raise `DMR_PROCESS_WORKERS`. |
 | `responseStatus: PENDING` "GC DMR agent unreachable" | `GLOBAL_CLASSIFIER_DMR_AGENT` is wrong, or the agent is down. The sweeper sends the result again once the agent is back. |
 | `classified` result, but `agencyId` is unknown to the agency | The agency IDs don't match between CentOps and the GC's `integrated_agencies` |
 
@@ -185,14 +192,23 @@ Alert on these ERROR log lines from `dmr-incoming-service`:
 | `... FAILED for good` | A result couldn't be delivered after every retry |
 | `DMR sweeper failed` / `could not check for ...` | The sweeper can't reach Resql |
 
+Watch these WARNING lines too:
+
+| Log line | Meaning |
+|---|---|
+| `DMR process pool backlog: N messages waiting or in progress` | Messages are piling up faster than they're classified (logged once at `DMR_QUEUE_WARN_AT`, with an INFO `backlog cleared` when it drains) |
+| `DMR message ... waited Ns in the queue` | A message was answered `failed` without classifying, because it waited too long. Its row has `error_reason = 'waited too long in the queue'`. |
+| `the queue-wait limit is off` (at startup) | `DMR_STALE_AFTER_SECONDS` is too short for the timeouts. Fine for a quick test, not for staging. |
+| `GLOBAL_CLASSIFIER_DMR_AGENT_ID is empty` (at startup) | The loop guard is off. Set the ID (step 2). |
+
 A query for a dashboard:
 
 ```sql
-SELECT status, result_status, response_status, count(*)
+SELECT status, result_status, response_status, error_reason, count(*)
 FROM public.dmr_incoming_messages
 WHERE received_at > now() - INTERVAL '1 day'
-GROUP BY 1, 2, 3
-ORDER BY 4 DESC;
+GROUP BY 1, 2, 3, 4
+ORDER BY 5 DESC;
 ```
 
 Also watch for a growing number of `response_status = 'PENDING'` rows. That means the agent or the DMR server is down.
@@ -205,6 +221,10 @@ Decide how long to keep rows in `dmr_incoming_messages`. The table holds chat ID
 
 1. Stop the agent so no new messages arrive: `docker compose stop gc-dmr-agent`.
 2. Stop the service: `docker compose stop dmr-incoming-service`.
-3. Only if you need to remove the data too, roll back changeset v28. Its rollback is `DROP TABLE public.dmr_incoming_messages`.
+3. Only if you need to remove the data too, roll back v28. It has two changesets, so roll back both (newest first):
+   - `global-classifier-dmr-incoming-messages`: `DROP TABLE public.dmr_incoming_messages`;
+   - `global-classifier-dmr-incoming-messages-enums`: `DROP TYPE` for `dmr_response_status`, `dmr_result_status`, `dmr_message_status` and `dmr_message_type`.
+
+   With Liquibase that's `rollback-count 2`, if v28 is the last migration applied. Dropping the objects by hand also needs their two rows removed from `databasechangelog`, or a later `update` won't create them again.
 
 The `classify.yml` change is safe to keep. It only changes the error code from `500` to `503` when there's no production model.

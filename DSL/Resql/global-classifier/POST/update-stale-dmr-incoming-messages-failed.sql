@@ -1,7 +1,7 @@
 UPDATE public.dmr_incoming_messages
 SET status        = 'FAILED',
     error_reason  = 'processing interrupted',
-    result_status = 'failed',
+    result_status = 'FAILED',
     processed_at  = now()
 WHERE status = 'RECEIVED'
   AND received_at < now() - (:olderThanSeconds::integer * INTERVAL '1 second')

@@ -1,12 +1,12 @@
 -- liquibase formatted sql
 
 -- changeset Oshan Nanayakkara:global-classifier-dmr-incoming-messages-enums
--- DMR envelope type. ChatMessage is the only type DMR has; any other type is stored as NULL and rejected.
-CREATE TYPE dmr_message_type AS ENUM ('ChatMessage');
+-- DMR envelope type. DMR's only type, ChatMessage, is stored as CHAT_MESSAGE; any other type is stored as NULL and rejected.
+CREATE TYPE dmr_message_type AS ENUM ('CHAT_MESSAGE');
 -- Processing of the incoming message: RECEIVED until it is classified, rejected or failed.
 CREATE TYPE dmr_message_status AS ENUM ('RECEIVED', 'CLASSIFIED', 'REJECTED', 'FAILED');
--- The result sent back to the sender.
-CREATE TYPE dmr_result_status AS ENUM ('classified', 'out_of_distribution', 'failed');
+-- The result sent back to the sender. The result message spells it in lowercase (classified, out_of_distribution, failed).
+CREATE TYPE dmr_result_status AS ENUM ('CLASSIFIED', 'OUT_OF_DISTRIBUTION', 'FAILED');
 -- Sending the result. PENDING: the last try failed with a transient error and the sweeper sends again. SENT, SKIPPED and FAILED are final.
 CREATE TYPE dmr_response_status AS ENUM ('PENDING', 'SENT', 'SKIPPED', 'FAILED');
 -- rollback DROP TYPE dmr_response_status; DROP TYPE dmr_result_status; DROP TYPE dmr_message_status; DROP TYPE dmr_message_type;

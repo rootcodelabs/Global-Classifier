@@ -7,8 +7,21 @@ from dataclasses import dataclass
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
 
 JSON_HEADERS = {"Content-Type": "application/json"}
+# Connections kept per host when a client makes its own session. requests keeps 10 by default;
+# a full pool means a new connection per call plus a "Connection pool is full" warning. app.py
+# passes sessions sized from the thread counts (settings.HTTP_POOL_MAXSIZE).
+DEFAULT_POOL_MAXSIZE = 64
+
+
+def new_session(pool_maxsize: int = DEFAULT_POOL_MAXSIZE) -> requests.Session:
+    session = requests.Session()
+    adapter = HTTPAdapter(pool_maxsize=pool_maxsize)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 
 class ResqlError(Exception):
@@ -21,7 +34,7 @@ class ResqlClient:
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.session = session or requests.Session()
+        self.session = session or new_session()
 
     def call(self, query: str, params: dict) -> list[dict]:
         """POSTs to {RESQL}/{query} and returns the rows (camelCase keys)."""
@@ -83,7 +96,7 @@ class ClassifyClient:
     ):
         self.url = url
         self.timeout = timeout
-        self.session = session or requests.Session()
+        self.session = session or new_session()
 
     def classify(self, chat_id: str, message: str, url: str) -> ClassifyResult:
         try:
@@ -123,7 +136,7 @@ class DmrAgentClient:
     ):
         self.send_url = send_url
         self.timeout = timeout
-        self.session = session or requests.Session()
+        self.session = session or new_session()
 
     def send(self, envelope: dict) -> tuple[bool, str, bool]:
         """POSTs to the agent's /v1/messages. Returns (ok, reason, retryable).

@@ -88,7 +88,8 @@ def test_nul_characters_are_removed_before_the_insert(processor, resql):
 
     insert = resql.last("insert-dmr-incoming-message")
     assert "\x00" not in str(insert)
-    assert insert["messageType"] == "ChatMessage"
+    # The envelope's ChatMessage, stored as the dmr_message_type enum value
+    assert insert["messageType"] == "CHAT_MESSAGE"
     assert insert["chatCreatedAt"] == "2026-11-09T10:00:00.000Z"
 
 
@@ -117,7 +118,7 @@ def test_valid_ids_and_type_are_passed_to_the_insert(processor, resql):
     assert insert["senderId"] == AGENCY_A
     assert insert["recipientId"] == GC_ID
     assert insert["chatId"] == CHAT_ID
-    assert insert["messageType"] == "ChatMessage"
+    assert insert["messageType"] == "CHAT_MESSAGE"
 
 
 def test_unparseable_bodies_become_none_and_are_ignored(processor, resql):
