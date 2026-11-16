@@ -1,4 +1,4 @@
-name: Build and publish GUI
+name: Build and publish mlflow
 
 on:
   push:
