@@ -19,7 +19,7 @@ jobs:
 
       - name: Load environment variables and set them
         run: |
-          if [ -f .env.llm_orchestration_service ]; then
+          if [ -f .env.embedding_classifier ]; then
             export $(cat .env.llm_orchestration_service | grep -v '^#' | xargs)
           fi
           echo "RELEASE=$RELEASE" >> $GITHUB_ENV
