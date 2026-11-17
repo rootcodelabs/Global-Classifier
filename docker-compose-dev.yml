@@ -404,26 +404,68 @@ services:
       - ./DSL/DatasetGenerator/logs:/app/logs
     networks:
       - bykstack
+    depends_on:
+      gc-dragonfly:
+        condition: service_healthy
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis-embeddings
+  # Redis-compatible embedding cache for the dataset generator. Same image as
+  # the RAG module. Named gc-dragonfly, not dragonfly, so it can't clash with
+  # RAG's store if both are on the bykstack network.
+  gc-dragonfly:
+    image: ghcr.io/dragonflydb/dragonfly:v2.0.2
+    container_name: gc-dragonfly
+    command:
+      - --logtostderr
+      # Required: without it Dragonfly starts one thread per host CPU,
+      # each needing ~256MiB
+      - --proactor_threads=${DRAGONFLY_THREADS:-2}
+      - --maxmemory=${DRAGONFLY_MAXMEMORY:-1gb}
+      # Evict old keys near maxmemory, like Redis's allkeys-lru. Topic
+      # embeddings never expire, so without this writes fail once it's full.
+      - --cache_mode=true
+      - --dir=/data
+      - --dbfilename=dump
+      - --snapshot_cron=*/15 * * * *
+    mem_limit: ${DRAGONFLY_MEM_LIMIT:-1280m}
+    ulimits:
+      memlock: -1
     ports:
-      - "6378:6379"
+      - "127.0.0.1:6378:6379"
     volumes:
-      - redis_data:/data
-      - ./DSL/DatasetGenerator/config/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    environment:
-      - REDIS_REPLICATION_MODE=master
+      - dragonfly_data:/data
     restart: unless-stopped
     networks:
       - bykstack
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # Old Redis service, kept for one release as rollback. To roll back:
+  # uncomment it, point DSL/DatasetGenerator/config/config.yaml back at
+  # redis://redis:6379, restore redis.conf from git, and make
+  # dataset-gen-service depend on redis.
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: redis-embeddings
+  #   ports:
+  #     - "6378:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #     - ./DSL/DatasetGenerator/config/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: redis-server /usr/local/etc/redis/redis.conf
+  #   environment:
+  #     - REDIS_REPLICATION_MODE=master
+  #   restart: unless-stopped
+  #   networks:
+  #     - bykstack
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
 
   #temporarary container to initialize S3 storage with necessary buckets and models  
   init-storage:
@@ -724,8 +766,11 @@ volumes:
     name: loki-data
   grafana-data:
     name: grafana-data
+  # Old Redis volume: keep until the rollback period ends
   redis_data:
     name: redis_data
+  dragonfly_data:
+    name: gc_dragonfly_data
   qdrant_data:
     name: qdrant_data
   embedding_venv:
