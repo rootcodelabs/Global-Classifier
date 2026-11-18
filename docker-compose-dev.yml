@@ -408,9 +408,7 @@ services:
       gc-dragonfly:
         condition: service_healthy
 
-  # Redis-compatible embedding cache for the dataset generator. Same image as
-  # the RAG module. Named gc-dragonfly, not dragonfly, so it can't clash with
-  # RAG's store if both are on the bykstack network.
+  # Redis-compatible embedding cache for the dataset generator.
   gc-dragonfly:
     image: ghcr.io/dragonflydb/dragonfly:v2.0.2
     container_name: gc-dragonfly
