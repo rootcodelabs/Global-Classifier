@@ -410,8 +410,8 @@ volumes:
   cron_data:
 
 # S3 credentials for SeaweedFS. Compose fills these in from the shell or .env
-# (not from config.env), so the defaults match config.env's S3_ACCESS_KEY_ID /
-# S3_SECRET_ACCESS_KEY. Override both places together.
+# (not from config.env), and refuses to start if either is missing. Keep them
+# the same as S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in config.env.
 configs:
   seaweedfs_s3_config:
     content: |
@@ -421,8 +421,8 @@ configs:
             "name": "global-classifier",
             "credentials": [
               {
-                "accessKey": "${S3_ACCESS_KEY_ID:-minioadmin}",
-                "secretKey": "${S3_SECRET_ACCESS_KEY:-minioadmin}"
+                "accessKey": "${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID in .env}",
+                "secretKey": "${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY in .env}"
               }
             ],
             "actions": ["Admin", "Read", "Write", "List", "Tagging"]
