@@ -29,5 +29,5 @@ extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 # Fix the rule set, so a new Ruff release doesn't turn on extra rules in CI
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "W292"]
 

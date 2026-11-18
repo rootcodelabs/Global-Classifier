@@ -49,3 +49,5 @@ databaseChangeLog:
       file: changelog/global-classifier-script-v26-drop-mock-centops-ckb.sql
   - include:
       file: changelog/global-classifier-script-v27-embedding-classifier-base-model.sql
+  - include:
+      file: changelog/global-classifier-script-v28-dmr-incoming-messages.sql
