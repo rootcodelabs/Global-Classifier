@@ -54,13 +54,8 @@ upstream mlflow {
     keepalive 32;
 }
 
-upstream minio_api {
-    server 127.0.0.1:9000;
-    keepalive 32;
-}
-
-upstream minio_console {
-    server 127.0.0.1:9001;
+upstream seaweedfs_s3 {
+    server 127.0.0.1:8333;
     keepalive 32;
 }
 
@@ -304,17 +299,17 @@ server {
         proxy_request_buffering off;
     }
 
-    # MinIO (S3 API)
-    location /minio/ {
+    # SeaweedFS (S3 API)
+    location /seaweedfs/ {
         limit_req zone=api burst=100 nodelay;
-        rewrite ^/minio/(.*) /$1 break;
-        proxy_pass http://minio_api;
+        rewrite ^/seaweedfs/(.*) /$1 break;
+        proxy_pass http://seaweedfs_s3;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # MinIO specific headers
+
+        # S3 proxy headers
         proxy_set_header X-Forwarded-Host $host;
         proxy_connect_timeout 300;
         proxy_http_version 1.1;
@@ -324,22 +319,6 @@ server {
         # Large file upload support
         proxy_request_buffering off;
         proxy_max_temp_file_size 0;
-    }
-
-    # MinIO Console (separate location for web UI)
-    location /minio-console/ {
-        limit_req zone=general burst=20 nodelay;
-        proxy_pass http://minio_console/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Prefix /minio-console;
-        
-        # WebSocket support for MinIO console
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
     }
 
     # GC S3 Ferry

@@ -39,7 +39,8 @@ No GPU is needed for any of them. All timings in these documents come from a
 **Network**
 
 - The classifiers reach `qdrant` on 6333 and 6334 (gRPC is the default;
-  `QDRANT_GRPC=false` uses REST only), S3 (MinIO) and `llm-reranker` on 8080.
+  `QDRANT_GRPC=false` uses REST only), S3 (`gc-seaweedfs` on 8333) and
+  `llm-reranker` on 8080.
 - `cron-manager` reaches `qdrant` on 6333, S3 Ferry, Resql, Ruuter, and both
   classifiers through the model-server URLs in `constants.ini`.
 - Ruuter reaches the classifiers through the URLs in `constants.ini`.
