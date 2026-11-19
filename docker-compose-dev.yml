@@ -220,27 +220,59 @@ services:
     networks:
       - bykstack
   
-  minio:
-    image: minio/minio:latest
-    container_name: minio
+  # S3-compatible object store for datasets and models. Replaces MinIO, whose
+  # image can no longer be pulled publicly. Same pinned image as
+  # docker-compose-test.yml.
+  # Named gc-seaweedfs, not seaweedfs: CKB's SeaweedFS is on the same bykstack
+  # network under the alias "seaweedfs", so that name can resolve to CKB's
+  # store instead of this one.
+  gc-seaweedfs:
+    image: chrislusf/seaweedfs:4.50@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
+    container_name: gc-seaweedfs
+    # -ip=gc-seaweedfs: advertise an address other containers can resolve.
+    # -ip.bind=0.0.0.0: also listen on localhost, for the healthcheck.
+    command: server -filer -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=gc-seaweedfs -ip.bind=0.0.0.0
+    configs:
+      - source: seaweedfs_s3_config
+        target: /etc/seaweedfs/s3_config.json
+    volumes:
+      - seaweedfs_data:/data
+    ports:
+      - "8333:8333"  # S3 API
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && wget -q -O /dev/null http://127.0.0.1:8333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - bykstack
+
+  # One-off: creates the bucket once SeaweedFS is healthy, then exits.
+  # rclone mkdir is a no-op when the bucket already exists.
+  gc-seaweedfs-init:
+    image: rclone/rclone:1.68.2
+    container_name: gc-seaweedfs-init
     env_file:
       - config.env
-
-    # command: server /data --console-address ":9001"
-    entrypoint:  >
-          sh -c "
-            export MINIO_ROOT_USER=$${S3_ACCESS_KEY_ID} && \
-            export MINIO_ROOT_PASSWORD=$${S3_SECRET_ACCESS_KEY} && \
-            export MINIO_BROWSER_REDIRECT_URL=$${MINIO_BROWSER_REDIRECT_URL} && \
-
-            minio server /app/minio_data --console-address ":9001"
-          "
-        
-    volumes:
-      - minio_data:/app/minio_data
-    ports:
-      - "9000:9000"  # API port
-      - "9001:9001"  # Console port
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        export RCLONE_CONFIG_GC_TYPE=s3
+        export RCLONE_CONFIG_GC_PROVIDER=SeaweedFS
+        export RCLONE_CONFIG_GC_ENDPOINT=http://gc-seaweedfs:8333
+        export RCLONE_CONFIG_GC_ACCESS_KEY_ID="$$S3_ACCESS_KEY_ID"
+        export RCLONE_CONFIG_GC_SECRET_ACCESS_KEY="$$S3_SECRET_ACCESS_KEY"
+        export RCLONE_CONFIG_GC_REGION="$${S3_REGION:-us-east-1}"
+        bucket="$${S3_DATA_BUCKET_NAME:-global-classifier}"
+        rclone mkdir "gc:$$bucket"
+        rclone lsd gc: | grep -q " $$bucket$$"
+        echo "Bucket $$bucket is ready"
+    depends_on:
+      gc-seaweedfs:
+        condition: service_healthy
+    restart: "no"
     networks:
       - bykstack
 
@@ -261,8 +293,9 @@ services:
     networks:
       - bykstack
     depends_on:
-      minio:
-        condition: service_started
+      gc-seaweedfs-init:
+        condition: service_completed_successfully
+        
   # Receives chat messages from the GC's DMR agent, classifies them and sends the result back to the
   # sender through that agent (GLOBAL_CLASSIFIER_DMR_AGENT in constants.ini).
   # See src/dmr_incoming_service/Readme.md.
@@ -288,6 +321,7 @@ services:
     restart: unless-stopped
     networks:
       - bykstack
+
 
   opensearch-node:
     image: opensearchproject/opensearch:2.11.1
@@ -397,26 +431,66 @@ services:
       - ./DSL/DatasetGenerator/logs:/app/logs
     networks:
       - bykstack
+    depends_on:
+      gc-dragonfly:
+        condition: service_healthy
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis-embeddings
+  # Redis-compatible embedding cache for the dataset generator.
+  gc-dragonfly:
+    image: ghcr.io/dragonflydb/dragonfly:v2.0.2
+    container_name: gc-dragonfly
+    command:
+      - --logtostderr
+      # Required: without it Dragonfly starts one thread per host CPU,
+      # each needing ~256MiB
+      - --proactor_threads=${DRAGONFLY_THREADS:-2}
+      - --maxmemory=${DRAGONFLY_MAXMEMORY:-1gb}
+      # Evict old keys near maxmemory, like Redis's allkeys-lru. Topic
+      # embeddings never expire, so without this writes fail once it's full.
+      - --cache_mode=true
+      - --dir=/data
+      - --dbfilename=dump
+      - --snapshot_cron=*/15 * * * *
+    mem_limit: ${DRAGONFLY_MEM_LIMIT:-1280m}
+    ulimits:
+      memlock: -1
     ports:
-      - "6378:6379"
+      - "127.0.0.1:6378:6379"
     volumes:
-      - redis_data:/data
-      - ./DSL/DatasetGenerator/config/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    environment:
-      - REDIS_REPLICATION_MODE=master
+      - dragonfly_data:/data
     restart: unless-stopped
     networks:
       - bykstack
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # Old Redis service, kept for one release as rollback. To roll back:
+  # uncomment it, point DSL/DatasetGenerator/config/config.yaml back at
+  # redis://redis:6379, restore redis.conf from git, and make
+  # dataset-gen-service depend on redis.
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: redis-embeddings
+  #   ports:
+  #     - "6378:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #     - ./DSL/DatasetGenerator/config/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: redis-server /usr/local/etc/redis/redis.conf
+  #   environment:
+  #     - REDIS_REPLICATION_MODE=master
+  #   restart: unless-stopped
+  #   networks:
+  #     - bykstack
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
 
   #temporarary container to initialize S3 storage with necessary buckets and models  
   init-storage:
@@ -433,7 +507,7 @@ services:
           aws configure set aws_secret_access_key $${S3_SECRET_ACCESS_KEY} && 
 
           echo \"WAITING for S3 storage to be ready...\" &&
-          until curl -s $${S3_HEALTH_ENDPOINT}; do sleep 2; done &&
+          until curl -sf $${S3_HEALTH_ENDPOINT}; do sleep 2; done &&
 
           echo \"Checking for S3 bucket: $${S3_DATA_BUCKET_NAME} ...\" && 
           if ! aws --endpoint-url $${S3_ENDPOINT_URL} s3api head-bucket --bucket $${S3_DATA_BUCKET_NAME} 2>/dev/null; then
@@ -465,8 +539,8 @@ services:
     networks:
       - bykstack
     depends_on:
-      minio:
-        condition: service_started
+      gc-seaweedfs-init:
+        condition: service_completed_successfully
       cron-manager:
         condition: service_started
       ruuter-private:
@@ -511,8 +585,8 @@ services:
         condition: service_started
       ruuter-private:
         condition: service_started
-      minio:
-        condition: service_started
+      gc-seaweedfs:
+        condition: service_healthy
 
   triton-test-server:
     container_name: triton-test-server
@@ -552,8 +626,8 @@ services:
         condition: service_started
       ruuter-private:
         condition: service_started
-      minio:
-        condition: service_started
+      gc-seaweedfs:
+        condition: service_healthy
 
   # Embedding classifier (src/embedding-classifier): the vector database and
   # two CPU classifier services answering the same Triton v2 calls as the
@@ -605,8 +679,8 @@ services:
     depends_on:
       qdrant:
         condition: service_started
-      minio:
-        condition: service_started
+      gc-seaweedfs-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   embedding-classifier-testing:
@@ -643,8 +717,8 @@ services:
         condition: service_started
       qdrant:
         condition: service_started
-      minio:
-        condition: service_started
+      gc-seaweedfs-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Second opinion for unsure messages (llama.cpp with Gemma 4 E4B). The
@@ -711,14 +785,17 @@ volumes:
     name: dataset_gen_ollama_models
   cron_data:
     name: cron_data
-  minio_data:
-    name: minio_data
+  seaweedfs_data:
+    name: gc_seaweedfs_data
   loki-data:
     name: loki-data
   grafana-data:
     name: grafana-data
+  # Old Redis volume: keep until the rollback period ends
   redis_data:
     name: redis_data
+  dragonfly_data:
+    name: gc_dragonfly_data
   qdrant_data:
     name: qdrant_data
   embedding_venv:
@@ -728,6 +805,26 @@ volumes:
   embedding_cache:
     name: embedding_cache
 
+# S3 credentials for SeaweedFS. Compose fills these in from the shell or .env
+# (not from config.env), and refuses to start if either is missing. Keep them
+# the same as S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in config.env.
+configs:
+  seaweedfs_s3_config:
+    content: |
+      {
+        "identities": [
+          {
+            "name": "global-classifier",
+            "credentials": [
+              {
+                "accessKey": "${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID in .env}",
+                "secretKey": "${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY in .env}"
+              }
+            ],
+            "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+          }
+        ]
+      }
 
 networks:
   bykstack:

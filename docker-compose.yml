@@ -220,28 +220,68 @@ services:
     networks:
       - bykstack
 
-  
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    env_file:
-      - sidecar.env
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}
-    command: server /data --console-address ":9001"
+  # S3-compatible object store for datasets and models. Replaces MinIO, whose
+  # image can no longer be pulled publicly. Same pinned image as
+  # docker-compose-test.yml.
+  # Named gc-seaweedfs, not seaweedfs: CKB's SeaweedFS is on the same bykstack
+  # network under the alias "seaweedfs", so that name can resolve to CKB's
+  # store instead of this one.
+  gc-seaweedfs:
+    image: chrislusf/seaweedfs:4.50@sha256:c2658820e763294a9e9de7b36c81e59b879e3459148351aee4e31a126ca64860
+    container_name: gc-seaweedfs
+    # -ip=gc-seaweedfs: advertise an address other containers can resolve.
+    # -ip.bind=0.0.0.0: also listen on localhost, for the healthcheck.
+    command: server -filer -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=gc-seaweedfs -ip.bind=0.0.0.0
+    configs:
+      - source: seaweedfs_s3_config
+        target: /etc/seaweedfs/s3_config.json
     volumes:
-      - minio_data:/data
+      - seaweedfs_data:/data
     ports:
-      - "9000:9000"  # API port
-      - "9001:9001"  # Console port
+      - "8333:8333"  # S3 API
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status && wget -q -O /dev/null http://127.0.0.1:8333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - bykstack
+
+  # One-off: creates the bucket once SeaweedFS is healthy, then exits.
+  # rclone mkdir is a no-op when the bucket already exists.
+  gc-seaweedfs-init:
+    image: rclone/rclone:1.68.2
+    container_name: gc-seaweedfs-init
+    env_file:
+      - config.env
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        export RCLONE_CONFIG_GC_TYPE=s3
+        export RCLONE_CONFIG_GC_PROVIDER=SeaweedFS
+        export RCLONE_CONFIG_GC_ENDPOINT=http://gc-seaweedfs:8333
+        export RCLONE_CONFIG_GC_ACCESS_KEY_ID="$$S3_ACCESS_KEY_ID"
+        export RCLONE_CONFIG_GC_SECRET_ACCESS_KEY="$$S3_SECRET_ACCESS_KEY"
+        export RCLONE_CONFIG_GC_REGION="$${S3_REGION:-us-east-1}"
+        bucket="$${S3_DATA_BUCKET_NAME:-global-classifier}"
+        rclone mkdir "gc:$$bucket"
+        rclone lsd gc: | grep -q " $$bucket$$"
+        echo "Bucket $$bucket is ready"
+    depends_on:
+      gc-seaweedfs:
+        condition: service_healthy
+    restart: "no"
     networks:
       - bykstack
 
   gc-s3-ferry:
     image: s3-ferry:latest
     container_name: gc-s3-ferry
+    depends_on:
+      gc-seaweedfs-init:
+        condition: service_completed_successfully
     volumes:
       - ./DSL/DatasetGenerator/output_datasets:/app/output_datasets
       - shared-volume:/app/shared
@@ -390,8 +430,29 @@ volumes:
   shared-volume:
   opensearch-data:
   dataset_gen_ollama_models:
-  minio_data:
+  seaweedfs_data:
   cron_data:
+
+# S3 credentials for SeaweedFS. Compose fills these in from the shell or .env
+# (not from config.env), and refuses to start if either is missing. Keep them
+# the same as S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in config.env.
+configs:
+  seaweedfs_s3_config:
+    content: |
+      {
+        "identities": [
+          {
+            "name": "global-classifier",
+            "credentials": [
+              {
+                "accessKey": "${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID in .env}",
+                "secretKey": "${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY in .env}"
+              }
+            ],
+            "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+          }
+        ]
+      }
 
 networks:
   bykstack:

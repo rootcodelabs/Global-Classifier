@@ -169,12 +169,12 @@ models:
   embedding_model: "paraphrase-multilingual-mpnet-base-v2"
 
 
-# redis configuration
+# Embedding cache (Dragonfly, Redis-compatible)
 redis:
-  # Redis connection URL - modify according to your setup
-  # url: "redis://localhost:6379"  # For local Redis
-  url: "redis://redis:6379"  # For Docker Compose setup
-  # url: "redis://:password@redis-host:6379"  # With password
+  # Connection URL - modify according to your setup
+  # url: "redis://localhost:6378"  # From the host
+  url: "redis://gc-dragonfly:6379"  # For Docker Compose setup
+  # url: "redis://:password@gc-dragonfly:6379"  # With password
   
   # Redis database number to use (0-15 typically available)
   db: 0
