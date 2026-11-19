@@ -507,7 +507,7 @@ services:
           aws configure set aws_secret_access_key $${S3_SECRET_ACCESS_KEY} && 
 
           echo \"WAITING for S3 storage to be ready...\" &&
-          until curl -sf http://gc-seaweedfs:8333/healthz; do sleep 2; done &&
+          until curl -sf $${S3_HEALTH_ENDPOINT}; do sleep 2; done &&
 
           echo \"Checking for S3 bucket: $${S3_DATA_BUCKET_NAME} ...\" && 
           if ! aws --endpoint-url $${S3_ENDPOINT_URL} s3api head-bucket --bucket $${S3_DATA_BUCKET_NAME} 2>/dev/null; then
