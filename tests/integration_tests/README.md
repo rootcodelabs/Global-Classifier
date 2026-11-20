@@ -103,8 +103,8 @@ gate. Measured characteristics:
 - Cold start is ~100s, because the `paraphrase-multilingual-mpnet-base-v2`
   embedding model is **not** baked into the image and downloads at runtime.
 - A Redis-compatible store (Dragonfly in the dev stack) is a hard dependency;
-  `/generate-bulk` returns 503 without it, and the hostname must resolve as
-  `gc-dragonfly` to match `config.yaml`.
+  `/generate-bulk` returns 503 without it. The image reads its address from
+  `CACHE_URL` in `.env` (`redis://gc-dragonfly:6379` in the dev stack).
 - Both `config/` and `user_configs/` must be mounted. With only `config/` you
   get `Found 0 dataset structures` and generation fails.
 - With Azure OpenAI as the provider, Ollama and its GPU requirement drop away

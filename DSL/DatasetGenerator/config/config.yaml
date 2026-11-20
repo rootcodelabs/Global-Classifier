@@ -170,13 +170,13 @@ models:
 
 
 # Embedding cache (Dragonfly, Redis-compatible)
-redis:
-  # Connection URL - modify according to your setup
-  # url: "redis://localhost:6378"  # From the host
-  url: "redis://gc-dragonfly:6379"  # For Docker Compose setup
-  # url: "redis://:password@gc-dragonfly:6379"  # With password
-  
-  # Redis database number to use (0-15 typically available)
+cache:
+  # The connection URL comes from CACHE_URL in .env, e.g.
+  #   CACHE_URL=redis://gc-dragonfly:6379            # Docker Compose
+  #   CACHE_URL=redis://localhost:6378               # From the host
+  #   CACHE_URL=redis://:password@gc-dragonfly:6379  # With password
+
+  # Database number to use (0-15 typically available)
   db: 0
   
   # Connection pool settings
