@@ -469,7 +469,7 @@ services:
       start_period: 5s
 
   # Old Redis service, kept for one release as rollback. To roll back:
-  # uncomment it, point DSL/DatasetGenerator/config/config.yaml back at
+  # uncomment it, set CACHE_URL in .env back to
   # redis://redis:6379, restore redis.conf from git, and make
   # dataset-gen-service depend on redis.
   # redis:
