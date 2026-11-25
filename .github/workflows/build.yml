@@ -13,9 +13,6 @@ jobs:
     name: SonarQube
     runs-on: ubuntu-latest
 
-    # The secrets context is not allowed in a job-level `if`, so expose the
-    # token via env and gate each step on it instead. Fork PRs don't receive
-    # secrets, in which case the scan is skipped with a notice.
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
